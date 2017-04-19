@@ -458,7 +458,7 @@
 
     <grid compset="(DOCN|XOCN|SOCN|AQUAP)">
       <sname>ne0np4_enax4v1</sname>
-      <lname>a%ne0np4_enax4v1_l%ne30np4_oi%ne0np4_enax4v1_r%r01_m%gx1v6_g%null_w%null</lname>
+      <lname>a%ne0np4_enax4v1_l%0.9x1.25_oi%ne0np4_enax4v1_r%r01_m%tx0.1v2_g%null_w%null</lname>
       <alias>enax4v1</alias>
     </grid>
 
@@ -1457,8 +1457,12 @@
       <desc>1-deg with 1/4-deg over Eastern North Atlantic (ENA; version 1):</desc>
       <file atm_mask="gx1v6">domain.lnd.enax4v1_gx1v6.170323.nc</file>
       <file ice_mask="gx1v6">domain.ocn.enax4v1_gx1v6.170323.nc</file>
-      <file lnd_mask="gx1v6">domain.lnd.ne30np4_gx1v6.110905.nc</file>
+      <file lnd_mask="gx1v6">domain.lnd.enax4v1_gx1v6.170323.nc</file>
       <file ocn_mask="gx1v6">domain.ocn.enax4v1_gx1v6.170323.nc</file>
+      <file atm_mask="tx0.1v2">domain.lnd.enax4v1_tx0.1v2.170417.nc</file>
+      <file ice_mask="tx0.1v2">domain.ocn.enax4v1_tx0.1v2.170417.nc</file>
+      <file lnd_mask="tx0.1v2">domain.lnd.enax4v1_tx0.1v2.170417.nc</file>
+      <file ocn_mask="tx0.1v2">domain.ocn.enax4v1_tx0.1v2.170417.nc</file>
     </domain>
 
     <domain name="ne0np4_svalbard_x8v1_lowcon">
@@ -1750,6 +1754,18 @@
       <ATM2LND_SMAPNAME>cpl/cpl6/map_enax4v1_TO_ne30np4_aave.170323.nc</ATM2LND_SMAPNAME>
       <LND2ATM_FMAPNAME>cpl/cpl6/map_ne30np4_TO_enax4v1_aave.170323.nc</LND2ATM_FMAPNAME>
       <LND2ATM_SMAPNAME>cpl/cpl6/map_ne30np4_TO_enax4v1_aave.170323.nc</LND2ATM_SMAPNAME>
+    </gridmap>
+    <gridmap atm_grid="ne0np4_enax4v1" lnd_grid="ne120np4">
+      <ATM2LND_FMAPNAME>cpl/cpl6/map_enax4v1_TO_ne120np4_aave.170417.nc</ATM2LND_FMAPNAME>
+      <ATM2LND_SMAPNAME>cpl/cpl6/map_enax4v1_TO_ne120np4_aave.170417.nc</ATM2LND_SMAPNAME>
+      <LND2ATM_FMAPNAME>cpl/cpl6/map_ne120np4_TO_enax4v1_aave.170417.nc</LND2ATM_FMAPNAME>
+      <LND2ATM_SMAPNAME>cpl/cpl6/map_ne120np4_TO_enax4v1_aave.170417.nc</LND2ATM_SMAPNAME>
+    </gridmap>
+    <gridmap atm_grid="ne0np4_enax4v1" lnd_grid="0.9x1.25">
+      <ATM2LND_FMAPNAME>cpl/cpl6/map_enax4v1_TO_fv0.9x1.25_aave.170417.nc</ATM2LND_FMAPNAME>
+      <ATM2LND_SMAPNAME>cpl/cpl6/map_enax4v1_TO_fv0.9x1.25_aave.170417.nc</ATM2LND_SMAPNAME>
+      <LND2ATM_FMAPNAME>cpl/cpl6/map_fv0.9x1.25_TO_enax4v1_aave.170417.nc</LND2ATM_FMAPNAME>
+      <LND2ATM_SMAPNAME>cpl/cpl6/map_fv0.9x1.25_TO_enax4v1_aave.170417.nc</LND2ATM_SMAPNAME>
     </gridmap>
 
 
