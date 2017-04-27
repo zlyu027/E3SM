@@ -186,6 +186,11 @@ contains
     if (atm_present) then
        gsmap_a  => component_get_gsmap_cx(atm) ! gsmap_ax
        atmdom_a => component_get_dom_cx(atm)   ! dom_ax
+       !ELR 25 april 2017 start
+       ! is a pointer, how to get i/o information?
+       !write(logunit,'(2A)') atm,' atm '
+       !write(logunit,'(2A)') atmdom_a,' atmdom_a '
+       !ELR 25 april 2017 end
        atmsize  = mct_avect_lsize(atmdom_a%data)
        gatmsize = mct_gsMap_gsize(gsMap_a)
     end if
@@ -675,7 +680,10 @@ contains
 	  diff = abs(data1(n)-data2(n))
 	  max_diff = max(max_diff,diff)
 	  if (diff > eps) then
-      !debug            write(logunit,*)'n= ',n,' data1= ',data1(n),' data2= ',data2(n),' diff= ',diff, ' eps= ',eps
+       ! ELR 25 apr 2017 start
+       !original !debug            write(logunit,*)'n= ',n,' data1= ',data1(n),' data2= ',data2(n),' diff= ',diff, ' eps= ',eps
+       write(logunit,*)'n= ',n,' data1= ',data1(n),' data2= ',data2(n),' diff= ',diff, ' npts= ',npts
+       ! ELR 25 apr 2017 end
 	     ndiff = ndiff + 1
 	  endif
        end if
