@@ -37,6 +37,9 @@ however, still missing some functionality:
   grid.  It's missing the special logic to allow the lat dimension of V to
   become the slat dimension of VS (and similar for U --> US).
 
+. While the code can produce outputs on non-rectangular grids, the input
+  must still be on a rectangular (lat/lon) grid.
+
 It has been generalized as follows:
 
 . Can produce non-rectangular grids for output, e.g. cubed sphere grid.
