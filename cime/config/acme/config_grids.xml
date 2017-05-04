@@ -458,8 +458,14 @@
 
     <grid compset="(DOCN|XOCN|SOCN|AQUAP)">
       <sname>ne0np4_enax4v1</sname>
-      <lname>a%ne0np4_enax4v1_l%0.9x1.25_oi%ne0np4_enax4v1_r%r01_m%tx0.1v2_g%null_w%null</lname>
+      <lname>a%ne0np4_enax4v1_l%ne0np4_enax4v1_oi%ne0np4_enax4v1_r%r01_m%tx0.1v2_g%null_w%null</lname>
       <alias>enax4v1</alias>
+    </grid>
+
+    <grid compset="(DOCN|XOCN|SOCN|AQUAP)">
+      <sname>ne0np4_enax4v1_ne30np4_ne0np4_enax4v1</sname>
+      <lname>a%ne0np4_enax4v1_l%ne30np4_oi%ne0np4_enax4v1_r%r01_m%tx0.1v2_g%null_w%null</lname>
+      <alias>enax4v1_ne30_enax4v1</alias>
     </grid>
 
     <grid compset="(DOCN|XOCN|SOCN|AQUAP)">

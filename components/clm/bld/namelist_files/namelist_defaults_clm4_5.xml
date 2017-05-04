@@ -380,9 +380,9 @@ lnd/clm2/surfdata_map/surfdata_conusx4v1_simyr2000_c160503.nc</fsurdat>
 
 <!-- For ENA RRM grid -->
 <fsurdat hgrid="ne0np4_enax4v1" sim_year="1850" use_crop=".false." >
-lnd/clm2/surfdata/surfdata_enax4v1_simyr1850_c170503.nc</fsurdat>
+lnd/clm2/surfdata/surfdata_enax4v1_mp24_simyr1850_c170503.nc</fsurdat>
 <fsurdat hgrid="ne0np4_enax4v1" sim_year="2000" use_crop=".false." >
-lnd/clm2/surfdata/surfdata_enax4v1_simyr2000_c170503.nc</fsurdat>
+lnd/clm2/surfdata/surfdata_enax4v1_mp24_simyr2000_c170503.nc</fsurdat>
 
 <!-- Regional Refinement Variable Resolution RRM 1850 and 2000-->
 <!--Not ready for clm4.5 fsurdat hgrid="ne0np4_arm_x8v3_lowcon"    sim_year="1850" irrig=".false." >
