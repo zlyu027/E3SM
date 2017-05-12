@@ -312,6 +312,7 @@ module PhosphorusFluxType
      real(r8), pointer :: plant_to_litter_pflux                     (:)     ! for the purpose of mass balance check
      real(r8), pointer :: plant_to_cwd_pflux                        (:)     ! for the purpose of mass balance check
 
+     real(r8), pointer :: pflx_plant_to_soilbgc_col                 (:)
    contains
 
      procedure , public  :: Init
@@ -645,7 +646,7 @@ contains
     allocate(this%smin_p_to_plant_col         (begc:endc                   )) ; this%smin_p_to_plant_col         (:)   = nan
     allocate(this%plant_to_litter_pflux       (begc:endc                   )) ; this%plant_to_litter_pflux       (:)   = nan
     allocate(this%plant_to_cwd_pflux          (begc:endc                   )) ; this%plant_to_cwd_pflux          (:)   = nan
-
+    allocate(this%pflx_plant_to_soilbgc_col   (begc:endc                   )) ; this%pflx_plant_to_soilbgc_col   (:)   = nan
     ! clm_bgc_interface & pflotran
     !------------------------------------------------------------------------
     allocate(this%plant_pdemand_col                 (begc:endc))                                    ; this%plant_pdemand_col                 (:)     = nan
@@ -2153,7 +2154,7 @@ contains
                 this%primp_to_labilep_vr_col(c,j) * dzsoi_decomp(j)
         end do
      end do
-     
+
      do fc = 1,num_soilc
         c = filter_soilc(fc)
 
@@ -2166,6 +2167,33 @@ contains
              this%prod1p_loss_col(c) + &
              this%prod10p_loss_col(c) + &
              this%prod100p_loss_col(c)
+
+
+        this%pflx_plant_to_soilbgc_col(c) = 0._r8
+
+        do j = 1, nlevdecomp
+          this%pflx_plant_to_soilbgc_col(c) = this%pflx_plant_to_soilbgc_col(c) + dzsoi_decomp(j) * &
+              (this%phenology_p_to_litr_met_p_col(c,j)     + &
+               this%dwt_frootp_to_litr_met_p_col(c,j)      + &
+               this%gap_mortality_p_to_litr_met_p_col(c,j) + &
+               this%harvest_p_to_litr_met_p_col(c,j)       + &
+               this%m_p_to_litr_met_fire_col(c,j)          + &
+               this%phenology_p_to_litr_cel_p_col(c,j)     + &
+               this%dwt_frootp_to_litr_cel_p_col(c,j)      + &
+               this%gap_mortality_p_to_litr_cel_p_col(c,j) + &
+               this%harvest_p_to_litr_cel_p_col(c,j)       + &
+               this%m_p_to_litr_cel_fire_col(c,j)          + &
+               this%phenology_p_to_litr_lig_p_col(c,j)     + &
+               this%dwt_frootp_to_litr_lig_p_col(c,j)      + &
+               this%gap_mortality_p_to_litr_lig_p_col(c,j) + &
+               this%harvest_p_to_litr_lig_p_col(c,j)       + &
+               this%m_p_to_litr_lig_fire_col(c,j)          + &
+               this%dwt_livecrootp_to_cwdp_col(c,j)        + &
+               this%dwt_deadcrootp_to_cwdp_col(c,j)        + &
+               this%gap_mortality_p_to_cwdp_col(c,j)       + &
+               this%harvest_p_to_cwdp_col(c,j)             + &
+               this%fire_mortality_p_to_cwdp_col(c,j))
+       enddo
      end do
 
      ! supplementary P supplement_to_sminp
@@ -2177,6 +2205,8 @@ contains
                 this%supplement_to_sminp_vr_col(c,j) * dzsoi_decomp(j)
         end do
      end do
+
+
 
   end subroutine Summary_betr
  !-----------------------------------------------------------------------
@@ -2451,6 +2481,7 @@ contains
                this%actual_immob_p_vr_col(c,j) * dzsoi_decomp(j)
           this%smin_p_to_plant_col(c)= this%smin_p_to_plant_col(c) + &
                this%sminp_to_plant_vr_col(c,j) * dzsoi_decomp(j)
+
           this%plant_to_litter_pflux(c) = &
                this%plant_to_litter_pflux(c)  + &
                this%phenology_p_to_litr_met_p_col(c,j)* dzsoi_decomp(j) + &
@@ -2467,6 +2498,7 @@ contains
                this%gap_mortality_p_to_cwdp_col(c,j)* dzsoi_decomp(j) + &
                this%fire_mortality_p_to_cwdp_col(c,j)* dzsoi_decomp(j)
        end do
+
     end do
 
     !! bgc interface & pflotran:

@@ -113,6 +113,7 @@ module PhosphorusStateType
      real(r8), pointer :: actual_graincp               (:)     ! dynamic grain cp ratio
 
      ! debug
+     real(r8), pointer :: totabgp_col                  (:)
      real(r8), pointer :: totpftp_beg_col              (:)
      real(r8), pointer :: solutionp_beg_col            (:)
      real(r8), pointer :: labilep_beg_col              (:)
@@ -273,6 +274,7 @@ contains
     allocate(this%totlitp_beg_col    (begc:endc)); this%totlitp_beg_col      (:) = nan
     allocate(this%cwdp_beg_col       (begc:endc)); this%cwdp_beg_col         (:) = nan
     allocate(this%totsomp_beg_col    (begc:endc)); this%totsomp_beg_col      (:) = nan
+    allocate(this%totabgp_col        (begc:endc)); this%totabgp_col          (:) = nan
 
     allocate(this%totlitp_end_col    (begc:endc)); this%totlitp_end_col      (:) = nan
     allocate(this%totpftp_end_col    (begc:endc)); this%totpftp_end_col      (:) = nan
@@ -659,6 +661,7 @@ contains
     use clm_varpar     , only : crop_prog
     use decompMod      , only : bounds_type
     use pftvarcon      , only : noveg, npcropmin
+    use tracer_varcon  , only : is_active_betr_bgc
     !
     ! !ARGUMENTS:
     class(phosphorusstate_type)      :: this
@@ -795,6 +798,7 @@ contains
           ! column phosphorus state variables
           this%ptrunc_col(c) = 0._r8
           this%sminp_col(c) = 0._r8
+          if(.not. is_active_betr_bgc)then
           do j = 1, nlevdecomp
              do k = 1, ndecomp_pools
                 this%decomp_ppools_vr_col(c,j,k) = decomp_cpools_vr_col(c,j,k) / decomp_cascade_con%initial_cp_ratio(k)
@@ -815,7 +819,7 @@ contains
              this%decomp_ppools_col(c,k)    = decomp_cpools_col(c,k)    / decomp_cascade_con%initial_cp_ratio(k)
              this%decomp_ppools_1m_col(c,k) = decomp_cpools_1m_col(c,k) / decomp_cascade_con%initial_cp_ratio(k)
           end do
-
+          endif
           do j = 1, nlevdecomp_full
              this%solutionp_vr_col(c,j) = 0._r8
              this%labilep_vr_col(c,j)   = 0._r8
@@ -1302,6 +1306,7 @@ contains
     ! !DESCRIPTION:
     ! Set phosphorus state variables
     !
+    use tracer_varcon  , only : is_active_betr_bgc
     ! !ARGUMENTS:
     class (phosphorusstate_type) :: this
     integer , intent(in) :: num_patch
@@ -1392,7 +1397,7 @@ contains
           this%ptrunc_vr_col(i,j)      = value_column
        end do
     end do
-
+    if(.not. is_active_betr_bgc)then
     ! column and decomp_pools
     do k = 1, ndecomp_pools
        do fi = 1,num_column
@@ -1411,7 +1416,7 @@ contains
           end do
        end do
     end do
-
+    endif
   end subroutine SetValues
 
   !-----------------------------------------------------------------------
@@ -1502,6 +1507,11 @@ contains
               this%totlitp_col(c) + &
               this%totsomp_col(c) + &
               this%sminp_col(c) + &
+              this%totprodp_col(c) + &
+              this%seedp_col(c)
+
+         this%totabgp_col(c) = &
+              this%totpftp_col(c) + &
               this%totprodp_col(c) + &
               this%seedp_col(c)
       end do
@@ -1830,6 +1840,13 @@ contains
            this%totprodp_col(c) + &
            this%seedp_col(c)    + &
            this%ptrunc_col(c)
+
+      this%totabgp_col(c) = &
+           this%totpftp_col(c) + &
+           this%totprodp_col(c) + &
+           this%seedp_col(c)    + &
+           this%ptrunc_col(c)
+
    end do
 
  end subroutine Summary

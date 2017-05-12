@@ -88,7 +88,14 @@ contains
             flux_mineralization(c,j) = 0._r8
          enddo
       enddo
-      if(.not. is_active_betr_bgc)then
+      if(is_active_betr_bgc)then
+        do j = 1, nlevdecomp
+          do fc = 1,num_soilc
+            c = filter_soilc(fc)
+            ps%primp_vr_col(c,j)   = ps%primp_vr_col(c,j) - pf%primp_to_labilep_vr_col(c,j) *dt + pf%pdep_to_sminp_col(c)*dt * pdep_prof(c,j)
+          end do
+        enddo
+      else
       do k = 1, ndecomp_cascade_transitions
          if ( cascade_receiver_pool(k) /= 0 ) then  ! skip terminal transitions
             do j = 1, nlevdecomp

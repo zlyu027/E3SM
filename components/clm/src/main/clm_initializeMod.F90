@@ -469,7 +469,7 @@ contains
       allocate(ep_betr, source=create_betr_simulation_alm())
       !set internal filters for betr
       call ep_betr%BeTRSetFilter(maxpft_per_col=max_patch_per_col, boffline=.false.)
-      call ep_betr%InitOnline(bounds_proc, lun, col, pft, waterstate_vars, betr_namelist_buffer)
+      call ep_betr%InitOnline(bounds_proc, lun, col, pft, waterstate_vars, betr_namelist_buffer, masterproc)
       is_active_betr_bgc = ep_betr%do_soibgc()
     endif
 

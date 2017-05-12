@@ -702,7 +702,6 @@ contains
     if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(__FILE__, __LINE__))
     call ncd_io('max_SH_planting_date',mxSHplantdate, 'read', ncid, readvar=readv)  
     if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft data'//errMsg(__FILE__, __LINE__))
-
     if (nu_com .ne. 'RD') then
         call ncd_io('VMAX_PLANT_NH4',VMAX_PLANT_NH4, 'read', ncid, readvar=readv)  
         if ( .not. readv ) call endrun(msg=' ERROR: error in reading in pft VMAX_PLANT_NH4'//errMsg(__FILE__, __LINE__))

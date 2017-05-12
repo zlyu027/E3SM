@@ -753,6 +753,8 @@ contains
     use clm_varpar     , only : crop_prog
     use decompMod      , only : bounds_type
     use pftvarcon      , only : noveg, npcropmin
+    use tracer_varcon    , only : is_active_betr_bgc
+
     !
     ! !ARGUMENTS:
     class(nitrogenstate_type)      :: this
@@ -888,9 +890,10 @@ contains
           ! column nitrogen state variables
           this%ntrunc_col(c) = 0._r8
           this%sminn_col(c) = 0._r8
+          if(.not. is_active_betr_bgc)then
           do j = 1, nlevdecomp
              do k = 1, ndecomp_pools
-                this%decomp_npools_vr_col(c,j,k) = decomp_cpools_vr_col(c,j,k) / decomp_cascade_con%initial_cn_ratio(k)
+               this%decomp_npools_vr_col(c,j,k) = decomp_cpools_vr_col(c,j,k) / decomp_cascade_con%initial_cn_ratio(k)
              end do
              this%sminn_vr_col(c,j) = 0._r8
              this%ntrunc_vr_col(c,j) = 0._r8
@@ -908,6 +911,7 @@ contains
              this%decomp_npools_col(c,k)    = decomp_cpools_col(c,k)    / decomp_cascade_con%initial_cn_ratio(k)
              this%decomp_npools_1m_col(c,k) = decomp_cpools_1m_col(c,k) / decomp_cascade_con%initial_cn_ratio(k)
           end do
+          endif
           if (use_nitrif_denitrif) then
              do j = 1, nlevdecomp_full
                 this%smin_nh4_vr_col(c,j) = 0._r8
@@ -1405,6 +1409,7 @@ contains
     ! !DESCRIPTION:
     ! Set nitrogen state variables
     !
+    use tracer_varcon    , only : is_active_betr_bgc
     ! !ARGUMENTS:
     class (nitrogenstate_type) :: this
     integer , intent(in) :: num_patch
@@ -1508,7 +1513,7 @@ contains
           this%decomp_npools_1m_col(i,k) = value_column
        end do
     end do
-
+    if(.not. is_active_betr_bgc)then
     ! column levdecomp, and decomp_pools
     do j = 1,nlevdecomp_full
        do k = 1, ndecomp_pools
@@ -1518,7 +1523,7 @@ contains
           end do
        end do
     end do
-
+    endif
   end subroutine SetValues
 
   !-----------------------------------------------------------------------

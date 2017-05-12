@@ -17,7 +17,7 @@ module CNBalanceCheckMod
   use CNCarbonStateType   , only : carbonstate_type
   use CNNitrogenFluxType  , only : nitrogenflux_type
   use CNNitrogenStateType , only : nitrogenstate_type
-  use ColumnType          , only : col                
+  use ColumnType          , only : col
   use GridcellType        , only : grc
 
   use CNDecompCascadeConType , only : decomp_cascade_con
@@ -54,7 +54,7 @@ contains
     ! conservation checks.
     !
     ! !ARGUMENTS:
-    type(bounds_type)      , intent(in)    :: bounds          
+    type(bounds_type)      , intent(in)    :: bounds
     integer                , intent(in)    :: num_soilc       ! number of soil columns filter
     integer                , intent(in)    :: filter_soilc(:) ! filter for soil columns
     type(carbonstate_type) , intent(inout) :: carbonstate_vars
@@ -64,7 +64,7 @@ contains
     integer :: fc   ! lake filter indices
     !-----------------------------------------------------------------------
 
-    associate(                                        & 
+    associate(                                        &
          totcolc   =>  carbonstate_vars%totcolc_col , & ! Input:  [real(r8) (:)]  (gC/m2) total column carbon, incl veg and cpool
          col_begcb =>  carbonstate_vars%begcb_col     & ! Output: [real(r8) (:)]  carbon mass, beginning of time step (gC/m**2)
          )
@@ -73,13 +73,13 @@ contains
       do fc = 1,num_soilc
          c = filter_soilc(fc)
          col_begcb(c) = totcolc(c)
- 
+
       end do
 
     end associate
 
   end subroutine BeginCBalance
- 
+
   !-----------------------------------------------------------------------
   subroutine BeginNBalance(bounds, num_soilc, filter_soilc, &
        nitrogenstate_vars)
@@ -89,7 +89,7 @@ contains
     ! conservation checks.
     !
     ! !ARGUMENTS:
-    type(bounds_type)        , intent(in)    :: bounds          
+    type(bounds_type)        , intent(in)    :: bounds
     integer                  , intent(in)    :: num_soilc       ! number of soil columns filter
     integer                  , intent(in)    :: filter_soilc(:) ! filter for soil columns
     type(nitrogenstate_type) , intent(inout) :: nitrogenstate_vars
@@ -99,8 +99,8 @@ contains
     integer :: fc   ! lake filter indices
     !-----------------------------------------------------------------------
 
-    associate(                                         & 
-         totcoln   => nitrogenstate_vars%totcoln_col , & ! Input:  [real(r8) (:)]  (gN/m2) total column nitrogen, incl veg 
+    associate(                                         &
+         totcoln   => nitrogenstate_vars%totcoln_col , & ! Input:  [real(r8) (:)]  (gN/m2) total column nitrogen, incl veg
          col_begnb => nitrogenstate_vars%begnb_col     & ! Output: [real(r8) (:)]  nitrogen mass, beginning of time step (gN/m**2)
          )
 
@@ -123,7 +123,7 @@ contains
     ! conservation checks.
     !
     ! !ARGUMENTS:
-    type(bounds_type)        , intent(in)    :: bounds          
+    type(bounds_type)        , intent(in)    :: bounds
     integer                  , intent(in)    :: num_soilc       ! number of soil columns filter
     integer                  , intent(in)    :: filter_soilc(:) ! filter for soil columns
     type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
@@ -133,15 +133,15 @@ contains
     integer :: fc   ! lake filter indices
     !-----------------------------------------------------------------------
 
-    associate(                                         & 
-         totcolp   => phosphorusstate_vars%totcolp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         !X.YANG - checking P balance problem, starting from VEGP 
-         totpftp   => phosphorusstate_vars%totpftp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         totsomp   => phosphorusstate_vars%totsomp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         cwdp   => phosphorusstate_vars%cwdp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         totlitp   => phosphorusstate_vars%totlitp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         sminp   => phosphorusstate_vars%sminp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
- 
+    associate(                                         &
+         totcolp   => phosphorusstate_vars%totcolp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         !X.YANG - checking P balance problem, starting from VEGP
+         totpftp   => phosphorusstate_vars%totpftp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         totsomp   => phosphorusstate_vars%totsomp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         cwdp   => phosphorusstate_vars%cwdp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         totlitp   => phosphorusstate_vars%totlitp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         sminp   => phosphorusstate_vars%sminp_col , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+
          col_begpb => phosphorusstate_vars%begpb_col     & ! Output: [real(r8) (:)]  phosphorus mass, beginning of time step (gP/m**2)
          )
 
@@ -149,9 +149,6 @@ contains
       do fc = 1,num_soilc
          c = filter_soilc(fc)
          col_begpb(c) = totcolp(c)
-!         col_begpb(c) = totpftp(c)
-!         col_begpb(c) = sminp(c)
-!         col_begpb(c) = totsomp(c)+totlitp(c)+cwdp(c)
       end do
 
     end associate
@@ -167,7 +164,7 @@ contains
     ! On the radiation time step, perform carbon mass conservation check for column and pft
     !
     ! !ARGUMENTS:
-    type(bounds_type)      , intent(in)    :: bounds          
+    type(bounds_type)      , intent(in)    :: bounds
     integer                , intent(in)    :: num_soilc       ! number of soil columns in filter
     integer                , intent(in)    :: filter_soilc(:) ! filter for soil columns
     type(carbonstate_type) , intent(inout) :: carbonstate_vars
@@ -182,20 +179,20 @@ contains
     real(r8) :: col_coutputs
     !-----------------------------------------------------------------------
 
-    associate(                                                                   & 
+    associate(                                                                   &
          totcolc                 =>    carbonstate_vars%totcolc_col            , & ! Input:  [real(r8) (:) ]  (gC/m2)   total column carbon, incl veg and cpool
-         
-         gpp                     =>    carbonflux_vars%gpp_col                 , & ! Input:  [real(r8) (:) ]  (gC/m2/s) gross primary production      
+
+         gpp                     =>    carbonflux_vars%gpp_col                 , & ! Input:  [real(r8) (:) ]  (gC/m2/s) gross primary production
          er                      =>    carbonflux_vars%er_col                  , & ! Input:  [real(r8) (:) ]  (gC/m2/s) total ecosystem respiration, autotrophic + heterotrophic
          col_fire_closs          =>    carbonflux_vars%fire_closs_col      , & ! Input:  [real(r8) (:) ]  (gC/m2/s) total column-level fire C loss
-         col_hrv_xsmrpool_to_atm =>    carbonflux_vars%hrv_xsmrpool_to_atm_col , & ! Input:  [real(r8) (:) ]  (gC/m2/s) excess MR pool harvest mortality 
+         col_hrv_xsmrpool_to_atm =>    carbonflux_vars%hrv_xsmrpool_to_atm_col , & ! Input:  [real(r8) (:) ]  (gC/m2/s) excess MR pool harvest mortality
          dwt_closs               =>    carbonflux_vars%dwt_closs_col           , & ! Input:  [real(r8) (:) ]  (gC/m2/s) total carbon loss from product pools and conversion
          product_closs           =>    carbonflux_vars%product_closs_col       , & ! Input:  [real(r8) (:) ]  (gC/m2/s) total wood product carbon loss
-         som_c_leached           =>    carbonflux_vars%som_c_leached_col       , & ! Input:  [real(r8) (:) ]  (gC/m^2/s)total SOM C loss from vertical transport 
+         som_c_leached           =>    carbonflux_vars%som_c_leached_col       , & ! Input:  [real(r8) (:) ]  (gC/m^2/s)total SOM C loss from vertical transport
          col_decompc_delta       =>    carbonflux_vars%externalc_to_decomp_delta_col, & ! Input: [real(r8) (:) ] (gC/m2/s) summarized net change of whole column C i/o to decomposing pool bwtn time-step
-         
+
          col_begcb               =>    carbonstate_vars%begcb_col              , & ! Output: [real(r8) (:) ]  carbon mass, beginning of time step (gC/m**2)
-         col_endcb               =>    carbonstate_vars%endcb_col              , & ! Output: [real(r8) (:) ]  carbon mass, end of time step (gC/m**2) 
+         col_endcb               =>    carbonstate_vars%endcb_col              , & ! Output: [real(r8) (:) ]  carbon mass, end of time step (gC/m**2)
          col_errcb               =>    carbonstate_vars%errcb_col                & ! Output: [real(r8) (:) ]  carbon balance error for the timestep (gC/m**2)
          )
 
@@ -237,7 +234,7 @@ contains
             err_index = c
          end if
       end do ! end of columns loop
-      
+
       if (.not. use_ed) then
          if (err_found) then
             c = err_index
@@ -257,7 +254,8 @@ contains
             write(iulog,*)'endcb       = ',col_endcb(c),carbonstate_vars%totsomc_col(c)
             write(iulog,*)'delta store = ',col_endcb(c)-col_begcb(c)
             write(iulog,*)'plant_to_soilbgc=',carbonflux_vars%cflx_plant_to_soilbgc_col(c)*dt
-            write(iulog,*)'end beg'
+            write(iulog,*)'total abg c',carbonstate_vars%totabgc_col(c)
+            write(iulog,*)'total nonabg c',col_endcb(c)-carbonstate_vars%totabgc_col(c)
             call endrun(msg=errMsg(__FILE__, __LINE__))
          end if
       end if !use_ed
@@ -277,7 +275,7 @@ contains
     !
     use tracer_varcon,  only : is_active_betr_bgc
     ! !ARGUMENTS:
-    type(bounds_type)         , intent(in)    :: bounds          
+    type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_soilc       ! number of soil columns in filter
     integer                   , intent(in)    :: filter_soilc(:) ! filter for soil columns
     type(nitrogenstate_type) , intent(inout) :: nitrogenstate_vars
@@ -290,14 +288,14 @@ contains
     real(r8):: dt             ! radiation time step (seconds)
     !-----------------------------------------------------------------------
 
-    associate(                                                             & 
-         totcoln             =>    nitrogenstate_vars%totcoln_col            , & ! Input:  [real(r8) (:)]  (gN/m2) total column nitrogen, incl veg 
+    associate(                                                             &
+         totcoln             =>    nitrogenstate_vars%totcoln_col            , & ! Input:  [real(r8) (:)]  (gN/m2) total column nitrogen, incl veg
          ndep_to_sminn       =>    nitrogenflux_vars%ndep_to_sminn_col       , & ! Input:  [real(r8) (:)]  atmospheric N deposition to soil mineral N (gN/m2/s)
          nfix_to_sminn       =>    nitrogenflux_vars%nfix_to_sminn_col       , & ! Input:  [real(r8) (:)]  symbiotic/asymbiotic N fixation to soil mineral N (gN/m2/s)
-         fert_to_sminn       =>    nitrogenflux_vars%fert_to_sminn_col       , & ! Input:  [real(r8) (:)]                                          
-         soyfixn_to_sminn    =>    nitrogenflux_vars%soyfixn_to_sminn_col    , & ! Input:  [real(r8) (:)]                                          
-         supplement_to_sminn =>    nitrogenflux_vars%supplement_to_sminn_col , & ! Input:  [real(r8) (:)]  supplemental N supply (gN/m2/s)         
-         denit               =>    nitrogenflux_vars%denit_col               , & ! Input:  [real(r8) (:)]  total rate of denitrification (gN/m2/s) 
+         fert_to_sminn       =>    nitrogenflux_vars%fert_to_sminn_col       , & ! Input:  [real(r8) (:)]
+         soyfixn_to_sminn    =>    nitrogenflux_vars%soyfixn_to_sminn_col    , & ! Input:  [real(r8) (:)]
+         supplement_to_sminn =>    nitrogenflux_vars%supplement_to_sminn_col , & ! Input:  [real(r8) (:)]  supplemental N supply (gN/m2/s)
+         denit               =>    nitrogenflux_vars%denit_col               , & ! Input:  [real(r8) (:)]  total rate of denitrification (gN/m2/s)
          sminn_leached       =>    nitrogenflux_vars%sminn_leached_col       , & ! Input:  [real(r8) (:)]  soil mineral N pool loss to leaching (gN/m2/s)
          smin_no3_leached    =>    nitrogenflux_vars%smin_no3_leached_col    , & ! Input:  [real(r8) (:)]  soil mineral NO3 pool loss to leaching (gN/m2/s)
          smin_no3_runoff     =>    nitrogenflux_vars%smin_no3_runoff_col     , & ! Input:  [real(r8) (:)]  soil mineral NO3 pool loss to runoff (gN/m2/s)
@@ -310,8 +308,8 @@ contains
          col_decompn_delta   =>    nitrogenflux_vars%externaln_to_decomp_delta_col, & ! Input: [real(r8) (:) ] (gN/m2/s) summarized net change of whole column N i/o to decomposing pool bwtn time-step
          col_no3_delta       =>    nitrogenflux_vars%no3_net_transport_delta_col  , & ! Input: [real(r8) (:) ] (gN/m2/s) summarized net change of whole column NO3 leaching bwtn time-step
 
-         col_ninputs         =>    nitrogenflux_vars%ninputs_col         , & ! Output: [real(r8) (:)]  column-level N inputs (gN/m2/s)         
-         col_noutputs        =>    nitrogenflux_vars%noutputs_col        , & ! Output: [real(r8) (:)]  column-level N outputs (gN/m2/s)        
+         col_ninputs         =>    nitrogenflux_vars%ninputs_col         , & ! Output: [real(r8) (:)]  column-level N inputs (gN/m2/s)
+         col_noutputs        =>    nitrogenflux_vars%noutputs_col        , & ! Output: [real(r8) (:)]  column-level N outputs (gN/m2/s)
          col_begnb           =>    nitrogenstate_vars%begnb_col              , & ! Output: [real(r8) (:)]  nitrogen mass, beginning of time step (gN/m**2)
          col_endnb           =>    nitrogenstate_vars%endnb_col              , & ! Output: [real(r8) (:)]  nitrogen mass, end of time step (gN/m**2)
          col_errnb           =>    nitrogenstate_vars%errnb_col                & ! Output: [real(r8) (:)]  nitrogen balance error for the timestep (gN/m**2)
@@ -386,7 +384,7 @@ contains
          write(iulog,*)'net flux              = ',(col_ninputs(c)-col_noutputs(c))*dt
          write(iulog,*)'denit                 = ',denit(c)*dt
          write(iulog,*)'n2onit                = ',f_n2o_nit(c)*dt
-         write(iulog,*)'no3 leach             = ', smin_no3_leached(c)*dt 
+         write(iulog,*)'no3 leach             = ', smin_no3_leached(c)*dt
          write(iulog,*)'no3 runof             = ', smin_no3_runoff(c)*dt
          write(iulog,*)'ndep                  = ',ndep_to_sminn(c)*dt
          write(iulog,*)'nfix                  = ', nfix_to_sminn(c)*dt
@@ -396,7 +394,7 @@ contains
             write(iulog,*)'soyfx                 = ',soyfixn_to_sminn(c)*dt
          endif
          write(iulog,*)'fire                  = ',col_fire_nloss(c)*dt
-         write(iulog,*)'dwt                   = ',dwt_nloss(c)*dt 
+         write(iulog,*)'dwt                   = ',dwt_nloss(c)*dt
          write(iulog,*)'prod                  = ',product_nloss(c)*dt
          call endrun(msg=errMsg(__FILE__, __LINE__))
       end if
@@ -416,7 +414,7 @@ contains
     ! for column and pft
     !
     ! !ARGUMENTS:
-    type(bounds_type)         , intent(in)    :: bounds          
+    type(bounds_type)         , intent(in)    :: bounds
     integer                   , intent(in)    :: num_soilc       ! number of soil columns in filter
     integer                   , intent(in)    :: filter_soilc(:) ! filter for soil columns
     type(phosphorusstate_type) , intent(inout) :: phosphorusstate_vars
@@ -428,14 +426,14 @@ contains
     logical :: err_found      ! error flag
     real(r8):: dt             ! radiation time step (seconds)
 
-    real(r8) :: leafp_to_litter_col(bounds%begc:bounds%endc) 
-    real(r8) :: frootp_to_litter_col(bounds%begc:bounds%endc) 
+    real(r8) :: leafp_to_litter_col(bounds%begc:bounds%endc)
+    real(r8) :: frootp_to_litter_col(bounds%begc:bounds%endc)
    real(r8):: flux_mineralization_col(bounds%begc:bounds%endc)   !!  local temperary variable
     !-----------------------------------------------------------------------
 
-    associate(                                                             & 
-         totcolp             =>    phosphorusstate_vars%totcolp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         supplement_to_sminp =>    phosphorusflux_vars%supplement_to_sminp_col , & ! Input:  [real(r8) (:)]  supplemental P supply (gP/m2/s)         
+    associate(                                                             &
+         totcolp             =>    phosphorusstate_vars%totcolp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         supplement_to_sminp =>    phosphorusflux_vars%supplement_to_sminp_col , & ! Input:  [real(r8) (:)]  supplemental P supply (gP/m2/s)
          sminp_leached       =>    phosphorusflux_vars%sminp_leached_col       , & ! Input:  [real(r8) (:)]  soil mineral P pool loss to leaching (gP/m2/s)
          col_fire_ploss      =>    phosphorusflux_vars%fire_ploss_col      , & ! Input:  [real(r8) (:)]  total column-level fire P loss (gP/m2/s)
          dwt_ploss           =>    phosphorusflux_vars%dwt_ploss_col           , & ! Input:  [real(r8) (:)]  (gP/m2/s) total phosphorus loss from product pools and conversion
@@ -443,19 +441,19 @@ contains
          primp_to_labilep=>    phosphorusflux_vars%primp_to_labilep_col    , &
          secondp_to_occlp=>    phosphorusflux_vars%secondp_to_occlp_col    , &
          fert_p_to_sminp =>    phosphorusflux_vars%fert_p_to_sminp_col     , &
- 
-         col_pinputs         =>    phosphorusflux_vars%pinputs_col         , & ! Output: [real(r8) (:)]  column-level P inputs (gP/m2/s)         
-         col_poutputs        =>    phosphorusflux_vars%poutputs_col        , & ! Output: [real(r8) (:)]  column-level P outputs (gP/m2/s)        
+
+         col_pinputs         =>    phosphorusflux_vars%pinputs_col         , & ! Output: [real(r8) (:)]  column-level P inputs (gP/m2/s)
+         col_poutputs        =>    phosphorusflux_vars%poutputs_col        , & ! Output: [real(r8) (:)]  column-level P outputs (gP/m2/s)
          col_begpb           =>    phosphorusstate_vars%begpb_col              , & ! Output: [real(r8) (:)]  phosphorus mass, beginning of time step (gP/m**2)
          col_endpb           =>    phosphorusstate_vars%endpb_col              , & ! Output: [real(r8) (:)]  phosphorus mass, end of time step (gP/m**2)
          col_errpb           =>    phosphorusstate_vars%errpb_col              ,  & ! Output: [real(r8) (:)]  phosphorus balance error for the timestep (gP/m**2)
 
          !X.YANG testing P Balance, from VEGP
-         totpftp             =>    phosphorusstate_vars%totpftp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         totsomp             =>    phosphorusstate_vars%totsomp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         cwdp             =>    phosphorusstate_vars%cwdp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         totlitp             =>    phosphorusstate_vars%totlitp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
-         sminp             =>    phosphorusstate_vars%sminp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg 
+         totpftp             =>    phosphorusstate_vars%totpftp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         totsomp             =>    phosphorusstate_vars%totsomp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         cwdp             =>    phosphorusstate_vars%cwdp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         totlitp             =>    phosphorusstate_vars%totlitp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
+         sminp             =>    phosphorusstate_vars%sminp_col            , & ! Input:  [real(r8) (:)]  (gP/m2) total column phosphorus, incl veg
          leafp_to_litter       =>    phosphorusflux_vars%leafp_to_litter_patch       , & ! Input:  [real(r8) (:)]  soil mineral P pool loss to leaching (gP/m2/s)
          frootp_to_litter       =>   phosphorusflux_vars%frootp_to_litter_patch      , & ! Input:  [real(r8) (:)]  soil mineral P pool loss to leaching (gP/m2/s)
          sminp_to_plant         =>   phosphorusflux_vars%sminp_to_plant_col          ,&
@@ -468,64 +466,20 @@ contains
 
       err_found = .false.
 
-      call p2c(bounds,num_soilc,filter_soilc, &
-           leafp_to_litter(bounds%begp:bounds%endp), &
-           leafp_to_litter_col(bounds%begc:bounds%endc))
-      call p2c(bounds,num_soilc,filter_soilc, &
-           frootp_to_litter(bounds%begp:bounds%endp), &
-           frootp_to_litter_col(bounds%begc:bounds%endc))
-
-      !! immobilization/mineralization in litter-to-SOM and SOM-to-SOM fluxes
-      !! - X.YANG
-         ! column loop
-         do fc = 1,num_soilc
-            c = filter_soilc(fc)
-            flux_mineralization_col(c) = 0._r8
-         enddo
-
-      do k = 1, ndecomp_cascade_transitions
-         if ( cascade_receiver_pool(k) /= 0 ) then  ! skip terminal transitions
-               ! column loop
-               do fc = 1,num_soilc
-                  c = filter_soilc(fc)
-                    flux_mineralization_col(c) = flux_mineralization_col(c) - &
-                                               pf%decomp_cascade_sminp_flux_col(c,k)*dt
-               end do
-         else
-               ! column loop
-               do fc = 1,num_soilc
-                  c = filter_soilc(fc)
-                    flux_mineralization_col(c) = flux_mineralization_col(c) + &
-                                               pf%decomp_cascade_sminp_flux_col(c,k)*dt
-
-               end do
-         endif
-      end do
-
-
-
       ! column loop
       do fc = 1,num_soilc
          c=filter_soilc(fc)
 
          ! calculate the total column-level phosphorus storage, for mass conservation check
-!         col_endpb(c) = totpftp(c)
-!         col_endpb(c) = sminp(c)
-         col_endpb(c) = totcolp(c)
-!         col_endpb(c) = totsomp(c)+cwdp(c)+totlitp(c)
 
+         col_endpb(c) = totcolp(c)
 
          ! calculate total column-level inputs
          col_pinputs(c) = primp_to_labilep(c) + supplement_to_sminp(c)
-!         col_pinputs(c) = leafp_to_litter_col(c)+frootp_to_litter_col(c)
-!         col_pinputs(c) = sminp_to_plant(c)
-!         col_pinputs(c) =  flux_mineralization_col(c)/dt
-!         if (crop_prog) col_pinputs(c) = col_pinputs(c) + fert_p_to_sminp(c) 
+
+!         if (crop_prog) col_pinputs(c) = col_pinputs(c) + fert_p_to_sminp(c)
 
          col_poutputs(c) = secondp_to_occlp(c) + sminp_leached(c) + col_fire_ploss(c) + dwt_ploss(c) + product_ploss(c)
-!         col_poutputs(c) = leafp_to_litter_col(c)+frootp_to_litter_col(c)
-!         col_poutputs(c) =  flux_mineralization_col(c)/dt
-!          col_poutputs(c) = sminp_to_plant(c)
 
          ! calculate the total column-level phosphorus balance error for this time step
          col_errpb(c) = (col_pinputs(c) - col_poutputs(c))*dt - &
@@ -548,6 +502,15 @@ contains
          write(iulog,*)'input mass  = ',col_pinputs(c)*dt
          write(iulog,*)'output mass = ',col_poutputs(c)*dt
          write(iulog,*)'net flux    = ',(col_pinputs(c)-col_poutputs(c))*dt
+         write(iulog,*)'weathering p= ', primp_to_labilep(c) * dt
+         write(iulog,*)'supp p      = ', supplement_to_sminp(c) * dt
+         write(iulog,*)'2nd2occl p  = ', secondp_to_occlp(c) * dt
+         write(iulog,*)'leached  p  = ',sminp_leached(c) * dt
+         write(iulog,*)'lost to fire= ', col_fire_ploss(c) * dt
+         write(iulog,*)'harvest loss= ', dwt_ploss(c) * dt
+         write(iulog,*)'woodpro loss= ', product_ploss(c) * dt
+         write(iulog,*)'plant2bgcp  = ', phosphorusflux_vars%pflx_plant_to_soilbgc_col(c)*dt
+         write(iulog,*)'abgp        = ', phosphorusstate_vars%totabgp_col(c)
          call endrun(msg=errMsg(__FILE__, __LINE__))
       end if
 

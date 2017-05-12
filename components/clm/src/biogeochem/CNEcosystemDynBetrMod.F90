@@ -175,20 +175,11 @@ module CNEcosystemDynBetrMod
             atm2lnd_vars, nitrogenflux_vars)
        call t_stopf('CNDeposition')
 
-       call t_startf('CNFixation')
-       call CNNFixation_balance( num_soilc, filter_soilc, &
-               cnstate_vars, carbonflux_vars, nitrogenstate_vars, nitrogenflux_vars, &
-               temperature_vars, waterstate_vars, carbonstate_vars, phosphorusstate_vars)
-       call t_stopf('CNFixation')
-
        call t_startf('CNMResp')
        if (crop_prog) then
           call CNNFert(bounds, num_soilc,filter_soilc, &
                nitrogenflux_vars)
 
-          call CNSoyfix(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
-               waterstate_vars, crop_vars, cnstate_vars, &
-               nitrogenstate_vars, nitrogenflux_vars)
        end if
        call CNMResp(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
             canopystate_vars, soilstate_vars, temperature_vars, photosyns_vars, &
@@ -202,11 +193,6 @@ module CNEcosystemDynBetrMod
                cnstate_vars,phosphorusstate_vars,phosphorusflux_vars)
        call t_stopf('PWeathering')
 
-       ! nu_com_phosphatase is true
-       call t_startf('PBiochemMin')
-       call PBiochemMin_balance(bounds,num_soilc, filter_soilc, &
-                  cnstate_vars,nitrogenstate_vars,phosphorusstate_vars,phosphorusflux_vars)
-       call t_stopf('PBiochemMin')
 
        ! --------------------------------------------------
        ! Phosphorus Deposition ! X.SHI
@@ -234,7 +220,27 @@ module CNEcosystemDynBetrMod
 
        call t_stopf('CNAllocation - phase-1')
 
+       call t_startf('CNFixation')
+       !nfixation comes after SetPlantMicNPDemand because it needs cnp ratio
+       !computed first
+       call CNNFixation_balance( num_soilc, filter_soilc, &
+               cnstate_vars, carbonflux_vars, nitrogenstate_vars, nitrogenflux_vars, &
+               temperature_vars, waterstate_vars, carbonstate_vars, phosphorusstate_vars)
+       call t_stopf('CNFixation')
 
+       ! nu_com_phosphatase is true
+       call t_startf('PBiochemMin')
+       call PBiochemMin_balance(bounds,num_soilc, filter_soilc, &
+                  cnstate_vars,nitrogenstate_vars,phosphorusstate_vars,phosphorusflux_vars)
+       call t_stopf('PBiochemMin')
+
+       if (crop_prog) then
+          !be careful about CNSoyfix, it is coded by using CTC-RD formulation
+          !of CN interactions
+          call CNSoyfix(bounds, num_soilc, filter_soilc, num_soilp, filter_soilp, &
+               waterstate_vars, crop_vars, cnstate_vars, &
+               nitrogenstate_vars, nitrogenflux_vars)
+      endif
       call t_startf('CNAllocation - phase-3')
       call CNAllocation3_PlantCNPAlloc (bounds                      , &
                 num_soilc, filter_soilc, num_soilp, filter_soilp    , &
