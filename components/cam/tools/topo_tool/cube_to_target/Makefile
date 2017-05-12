@@ -5,17 +5,18 @@ RM = rm
 .SUFFIXES:
 .SUFFIXES: .F90 .o
 
-FC = lf95
-DEBUG = FALSE
-
+ifeq ($(FC),$(null))
+    FC = lf95
+    DEBUG = FALSE
+endif
 
 # Check for the NetCDF library and include directories 
 ifeq ($(LIB_NETCDF),$(null))
-LIB_NETCDF := /usr/local/lib
+    LIB_NETCDF := /usr/local/lib
 endif
 
 ifeq ($(INC_NETCDF),$(null))
-INC_NETCDF := /usr/local/include
+    INC_NETCDF := /usr/local/include
 endif
 
 # Determine platform 
@@ -46,10 +47,13 @@ ifeq ($(FC),lf95)
 
 endif
 
-
+ifeq ($(FC),ifort)
+    FFLAGS += -g -check all -fpe0 -traceback -ftz -convert big_endian -fp-model precise
+    LDFLAGS += -L$(LIB_NETCDF) -lnetcdf -lnetcdff
+endif
 
 .F90.o:
-	$(FC) $(FFLAGS) $<
+	$(FC) -c $(FFLAGS) $<
 
 #------------------------------------------------------------------------
 # Default rules and macros

@@ -21,11 +21,16 @@ program convterr
   ! if smoothed PHIS is available SGH needs to be recomputed  to account for the sub-grid-scale
   ! variability introduced by the smoothing
   !
-  logical :: lsmooth_terr = .FALSE. 
+#ifdef SMOOTH_TERR
+  logical :: lsmooth_terr = .TRUE. 
   !
   ! PHIS is smoothed by other software/dynamical core
   !
-  logical :: lexternal_smooth_terr = .FALSE. ! lexternal_smooth_terr = .FALSE. is NOT supported currently
+  logical :: lexternal_smooth_terr = .TRUE. ! lexternal_smooth_terr = .FALSE. is NOT supported currently
+#else
+  logical :: lsmooth_terr = .FALSE.
+  logical :: lexternal_smooth_terr = .FALSE.
+#endif
   !
   ! set PHIS=0.0 if LANDFRAC<0.01
   !
