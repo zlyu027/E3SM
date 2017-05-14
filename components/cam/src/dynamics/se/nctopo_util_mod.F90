@@ -145,9 +145,6 @@ contains
      
     
     deallocate(tmp)
-    deallocate(PHISdyn)
-    deallocate(SGHdyn)
-    deallocate(SGH30dyn)
 
   end subroutine nctopo_util_inidat
 
@@ -166,6 +163,10 @@ contains
     if (smooth_phis_numcycle==0) return
     call smooth_topo_datasets(phisdyn,sghdyn,sgh30dyn,elem,hybrid,nets,nete)
 
+    ! deallocate arrays here?
+    !deallocate(PHISdyn)
+    !deallocate(SGHdyn)
+    !deallocate(SGH30dyn)
 
   end subroutine 
 
