@@ -48,7 +48,8 @@ ifeq ($(FC),lf95)
 endif
 
 ifeq ($(FC),ifort)
-    FFLAGS += -g -check all -fpe0 -traceback -ftz -convert big_endian -fp-model precise
+    #FFLAGS += -g -check all -fpe0 -traceback -ftz -convert big_endian -fp-model precise
+    FFLAGS += -g -check all -fpe0 -traceback -ftz -fp-model precise
     LDFLAGS += -L$(LIB_NETCDF) -lnetcdf -lnetcdff
 endif
 
