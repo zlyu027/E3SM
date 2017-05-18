@@ -5793,6 +5793,11 @@ Number of cycles for topography smoothing.
 Default: 0.
 </entry>
 
+<entry id="smooth_phis_nudt" type="real" category="se"
+       group="ctl_nl" valid_values="" >
+For topography smoothing.
+Default: 0.
+</entry>
 
 
 <!-- CAM I/O  -->
