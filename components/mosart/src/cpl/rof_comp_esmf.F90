@@ -25,7 +25,7 @@ module rof_comp_esmf
   use seq_flds_mod
   use esmf
   use esmfshr_mod
-  use RunoffMod        , only : rtmCTL, TRunoff
+  use RunoffMod        , only : rtmCTL, TRunoff, THeat
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
                                 inst_index, inst_suffix, inst_name, RtmVarSet
@@ -33,12 +33,16 @@ module rof_comp_esmf
   use RtmMod           , only : Rtmini, Rtmrun
   use RtmTimeManager   , only : timemgr_setup, get_curr_date, get_step_size, advance_timestep 
   use rof_cpl_indices  , only : rof_cpl_indices_set, nt_rtm, rtm_tracers, &
-                                index_r2x_Forr_rofl, index_r2x_Forr_rofi, &
-                                index_x2r_Flrl_rofi, index_x2r_Flrl_rofsur, &
+                                index_x2r_Flrl_rofsur, index_x2r_Flrl_rofi, &
                                 index_x2r_Flrl_rofgwl, index_x2r_Flrl_rofsub, &
                                 index_x2r_Flrl_rofdto, &
+                                index_r2x_Forr_rofl, index_r2x_Forr_rofi, &
                                 index_r2x_Flrr_flood, &
-                                index_r2x_Flrr_volr, index_r2x_Flrr_volrmch
+                                index_r2x_Flrr_volr, index_r2x_Flrr_volrmch, &
+								index_x2r_Flrl_Tqsur, index_x2r_Flrl_Tqsub, &
+								index_x2r_Flrl_forc_t, index_x2r_Flrl_forc_pbot, &
+								index_x2r_Flrl_forc_wind, index_x2r_Flrl_forc_lwrad &
+								index_x2r_Flrl_forc_solar
   use perf_mod         , only : t_startf, t_stopf, t_barrierf
 !
 ! !PUBLIC MEMBER FUNCTIONS:
@@ -697,6 +701,18 @@ contains
        rtmCTL%qgwl(n,nfrz) = 0.0_r8
        rtmCTL%qdto(n,nfrz) = 0.0_r8
 
+	   rtmCTL%Tqsur(n,nliq) = x2r_r%rAttr(index_x2r_Flrl_Tqsur,n2)
+	   rtmCTL%Tqsub(n,nliq) = x2r_r%rAttr(index_x2r_Flrl_Tqsub,n2)
+	   
+	   THeat%Tqsur(n) = rtmCTL%Tqsur(n,nliq)
+	   THeat%Tqsub(n) = rtmCTL%Tqsub(n,nliq)
+	   
+	   THeat%forc_t(n) = x2r_r%rAttr(index_x2r_Flrl_forc_t,n2)
+	   THeat%forc_pbot(n) = x2r_r%rAttr(index_x2r_Flrl_forc_pbot,n2)
+	   THeat%forc_wind(n) = x2r_r%rAttr(index_x2r_Flrl_forc_wind,n2)
+	   THeat%forc_lwrad(n) = x2r_r%rAttr(index_x2r_Flrl_forc_lwrad,n2)
+	   THeat%forc_solar(n) = x2r_r%rAttr(index_x2r_Flrl_forc_solar,n2)
+	   
     enddo
 
   end subroutine rof_import_esmf

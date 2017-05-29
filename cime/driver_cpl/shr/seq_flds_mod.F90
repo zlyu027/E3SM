@@ -266,6 +266,8 @@ module seq_flds_mod
      integer :: mpicom             ! MPI communicator
      integer :: ierr               ! I/O error code
      integer :: unitn              ! Namelist unit number to read
+     integer           :: num
+     character(len= 2) :: cnum
 
      character(len=CSS) :: attname
      character(len=CSS) :: units
@@ -1840,38 +1842,6 @@ module seq_flds_mod
      ! lnd->rof exchange
      ! TODO: put in attributes below
      !-----------------------------
-     call seq_flds_add(l2x_fluxes,'Flrl_rofsur_DOC')
-     call seq_flds_add(x2r_fluxes,'Flrl_rofsur_DOC')
-     longname = 'DOC flux from land (liquid surface)'
-     stdname  = 'DOC_flux_into_runoff_surface'
-     units    = 'gC m-2 s-1'
-     attname  = 'Flrl_rofsur_DOC'
-     call metadata_set(attname, longname, stdname, units)
-
-     call seq_flds_add(l2x_fluxes,'Flrl_rofsur_DIC')
-     call seq_flds_add(x2r_fluxes,'Flrl_rofsur_DIC')
-     longname = 'DIC flux from land (liquid surface)'
-     stdname  = 'DIC_flux_into_runoff_surface'
-     units    = 'gC m-2 s-1'
-     attname  = 'Flrl_rofsur_DIC'
-     call metadata_set(attname, longname, stdname, units)
-
-     call seq_flds_add(l2x_fluxes,'Flrl_rofsub_DOC')
-     call seq_flds_add(x2r_fluxes,'Flrl_rofsub_DOC')
-     longname = 'DOC flux from land (liquid subsurface)'
-     stdname  = 'DOC_flux_into_runoff_subsurface'
-     units    = 'gC m-2 s-1'
-     attname  = 'Flrl_rofsub_DOC'
-     call metadata_set(attname, longname, stdname, units)
-
-     call seq_flds_add(l2x_fluxes,'Flrl_rofsub_DIC')
-     call seq_flds_add(x2r_fluxes,'Flrl_rofsub_DIC')
-     longname = 'DIC flux from land (liquid subsurface)'
-     stdname  = 'DIC_flux_into_runoff_subsurface'
-     units    = 'gC m-2 s-1'
-     attname  = 'Flrl_rofsub_DIC'
-     call metadata_set(attname, longname, stdname, units)
-
      call seq_flds_add(l2x_fluxes,'Flrl_rofsur')
      call seq_flds_add(x2r_fluxes,'Flrl_rofsur')
      longname = 'Water flux from land (liquid surface)'
@@ -1960,6 +1930,102 @@ module seq_flds_mod
      stdname  = 'rtm_volrmch'
      units    = 'm'
      attname  = 'Flrr_volrmch'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_rofsur_DOC')
+     call seq_flds_add(x2r_fluxes,'Flrl_rofsur_DOC')
+     longname = 'DOC flux from land (liquid surface)'
+     stdname  = 'DOC_flux_into_runoff_surface'
+     units    = 'gC m-2 s-1'
+     attname  = 'Flrl_rofsur_DOC'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_rofsur_DIC')
+     call seq_flds_add(x2r_fluxes,'Flrl_rofsur_DIC')
+     longname = 'DIC flux from land (liquid surface)'
+     stdname  = 'DIC_flux_into_runoff_surface'
+     units    = 'gC m-2 s-1'
+     attname  = 'Flrl_rofsur_DIC'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_rofsub_DOC')
+     call seq_flds_add(x2r_fluxes,'Flrl_rofsub_DOC')
+     longname = 'DOC flux from land (liquid subsurface)'
+     stdname  = 'DOC_flux_into_runoff_subsurface'
+     units    = 'gC m-2 s-1'
+     attname  = 'Flrl_rofsub_DOC'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_rofsub_DIC')
+     call seq_flds_add(x2r_fluxes,'Flrl_rofsub_DIC')
+     longname = 'DIC flux from land (liquid subsurface)'
+     stdname  = 'DIC_flux_into_runoff_subsurface'
+     units    = 'gC m-2 s-1'
+     attname  = 'Flrl_rofsub_DIC'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_Tqsur')
+     call seq_flds_add(x2r_fluxes,'Flrl_Tqsur')
+     longname = 'Temperature of surface runoff'
+     stdname  = 'Temperature_of_surface_runoff'
+     units    = 'Kelvin'
+     attname  = 'Flrl_Tqsur'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_Tqsub')
+     call seq_flds_add(x2r_fluxes,'Flrl_Tqsub')
+     longname = 'Temperature of subsurface runoff'
+     stdname  = 'Temperature_of_subsurface_runoff'
+     units    = 'Kelvin'
+     attname  = 'Flrl_Tqsub'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_forc_t')
+     call seq_flds_add(x2r_fluxes,'Flrl_forc_t')
+     longname = 'atmospheric temperature'
+     stdname  = 'atmospheric_temperature'
+     units    = 'Kelvin'
+     attname  = 'Flrl_forc_t'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_forc_vp')
+     call seq_flds_add(x2r_fluxes,'Flrl_forc_vp')
+     longname = 'atmospheric vapor pressure'
+     stdname  = 'atmospheric_vapor_pressure'
+     units    = 'Pa'
+     attname  = 'Flrl_forc_vp'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_forc_pbot')
+     call seq_flds_add(x2r_fluxes,'Flrl_forc_pbot')
+     longname = 'atmospheric pressure'
+     stdname  = 'atmospheric_pressure'
+     units    = 'Pa'
+     attname  = 'Flrl_forc_pbot'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_forc_wind')
+     call seq_flds_add(x2r_fluxes,'Flrl_forc_wind')
+     longname = 'atmospheric wind speed'
+     stdname  = 'atmospheric_wind_speed'
+     units    = 'm/s'
+     attname  = 'Flrl_forc_wind'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_forc_lwrad')
+     call seq_flds_add(x2r_fluxes,'Flrl_forc_lwrad')
+     longname = 'atmospheric downwrd IR longwave radiation'
+     stdname  = 'atmospheric_downwrd_IR_longwave_radiation'
+     units    = 'W/m**2'
+     attname  = 'Flrl_forc_lwrad'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_forc_solar')
+     call seq_flds_add(x2r_fluxes,'Flrl_forc_solar')
+     longname = 'incident solar radiation'
+     stdname  = 'incident_solar_radiation'
+     units    = 'W/m**2'
+     attname  = 'Flrl_forc_solar'
      call metadata_set(attname, longname, stdname, units)
 
      !-----------------------------

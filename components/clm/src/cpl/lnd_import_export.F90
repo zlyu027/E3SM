@@ -981,7 +981,7 @@ contains
 
   !===============================================================================
 
-  subroutine lnd_export( bounds, lnd2atm_vars, lnd2glc_vars, l2x)
+  subroutine lnd_export( bounds, lnd2atm_vars, atm2lnd_vars, lnd2glc_vars, l2x)
 
     !---------------------------------------------------------------------------
     ! !DESCRIPTION:
@@ -998,6 +998,7 @@ contains
     implicit none
     type(bounds_type) , intent(in)    :: bounds  ! bounds
     type(lnd2atm_type), intent(inout) :: lnd2atm_vars ! clm land to atmosphere exchange data type
+    type(atm2lnd_type), intent(inout) :: atm2lnd_vars ! clm atmosphere to land exchange data type
     type(lnd2glc_type), intent(inout) :: lnd2glc_vars ! clm land to atmosphere exchange data type
     real(r8)          , intent(out)   :: l2x(:,:)! land to coupler export state on land grid
     !
@@ -1076,6 +1077,16 @@ contains
        l2x(index_l2x_Flrl_rofsur_dic,i) = lnd2atm_vars%qflx_rofliq_qsur_dic_grc(g)
        l2x(index_l2x_Flrl_rofsub_doc,i) = lnd2atm_vars%qflx_rofliq_qsub_doc_grc(g)
        l2x(index_l2x_Flrl_rofsub_dic,i) = lnd2atm_vars%qflx_rofliq_qsub_dic_grc(g)
+
+       l2x(index_l2x_Flrl_Tqsur,i) = lnd2atm_vars%Tqsur_grc(g)
+       l2x(index_l2x_Flrl_Tqsub,i) = lnd2atm_vars%Tqsub_grc(g)
+       l2x(index_l2x_Flrl_forc_t,i) = atm2lnd_vars%forc_t_not_downscaled_grc(g)
+       l2x(index_l2x_Flrl_forc_vp,i) = atm2lnd_vars%forc_vp_grc(g)
+       l2x(index_l2x_Flrl_forc_pbot,i) = atm2lnd_vars%forc_pbot_not_downscaled_grc(g)
+       l2x(index_l2x_Flrl_forc_wind,i) = atm2lnd_vars%forc_wind_grc(g)
+       l2x(index_l2x_Flrl_forc_lwrad,i) = atm2lnd_vars%forc_lwrad_not_downscaled_grc(g)
+       l2x(index_l2x_Flrl_forc_solar,i) = atm2lnd_vars%forc_solar_grc(g)
+
        ! glc coupling
 
        if (create_glacier_mec_landunit) then

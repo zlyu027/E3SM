@@ -28,11 +28,20 @@ module rof_cpl_indices
   integer, public :: index_x2r_Flrl_rofsub = 0  ! lnd->rof liquid subsurface runoff from land
   integer, public :: index_x2r_Flrl_rofdto = 0  ! lnd->rof liquid direct to ocean runoff
   integer, public :: index_x2r_Flrl_rofi  = 0   ! lnd->rof ice runoff forcing from land
+  integer, public :: index_x2r_Flrl_Tqsur  = 0  ! lnd->rof Temperature of surface runoff
+  integer, public :: index_x2r_Flrl_Tqsub  = 0  ! lnd->rof Temperature of subsurface runoff
+  integer, public :: index_x2r_Flrl_forc_t  = 0 ! lnd->rof atm. temperature at the land grids
+  integer, public :: index_x2r_Flrl_forc_vp  = 0 ! lnd->rof atmospheric vapor pressure (Pa) at the land grids
+  integer, public :: index_x2r_Flrl_forc_pbot = 0! lnd->rof atm. pressure at the land grids
+  integer, public :: index_x2r_Flrl_forc_wind = 0! lnd->rof atm. wind speed at the land grids
+  integer, public :: index_x2r_Flrl_forc_lwrad= 0! lnd->rof downward longwave radiation at the land grids
+  integer, public :: index_x2r_Flrl_forc_solar= 0! lnd->rof incident radiation at the land grids
 
   integer, public :: nflds_x2r = 0
 
   !TODO - nt_rtm and rtm_tracers need to be removed and set by access to the index array
   integer, parameter, public :: nt_rtm = 2    ! number of tracers
+  integer, parameter, public :: nliq = 1, nfrz = 2
   character(len=3), parameter, public :: rtm_tracers(nt_rtm) =  (/'LIQ','ICE'/)
 
   ! roff to driver (part of land for now) (optional if ROF is off)
@@ -70,6 +79,9 @@ contains
     ! Author: Mariana Vertenstein
     !
     ! !LOCAL VARIABLES:
+    integer           :: num
+    character(len= 2) :: cnum
+    character(len=64) :: name
     type(mct_aVect)   :: avtmp      ! temporary av
     character(len=32) :: subname = 'rof_cpl_indices_set'  ! subroutine name
     !-----------------------------------------------------------------------
@@ -83,6 +95,14 @@ contains
     index_x2r_Flrl_rofsub = mct_avect_indexra(avtmp,'Flrl_rofsub')
     index_x2r_Flrl_rofdto = mct_avect_indexra(avtmp,'Flrl_rofdto',perrwith='quiet')
     index_x2r_Flrl_rofi   = mct_avect_indexra(avtmp,'Flrl_rofi')
+    index_x2r_Flrl_Tqsur  = mct_avect_indexra(avtmp,'Flrl_Tqsur')
+    index_x2r_Flrl_Tqsub  = mct_avect_indexra(avtmp,'Flrl_Tqsub')
+    index_x2r_Flrl_forc_t   = mct_avect_indexra(avtmp,'Flrl_forc_t')
+    index_x2r_Flrl_forc_vp  = mct_avect_indexra(avtmp,'Flrl_forc_vp')
+    index_x2r_Flrl_forc_pbot   = mct_avect_indexra(avtmp,'Flrl_forc_pbot')
+    index_x2r_Flrl_forc_wind   = mct_avect_indexra(avtmp,'Flrl_forc_wind')
+    index_x2r_Flrl_forc_lwrad  = mct_avect_indexra(avtmp,'Flrl_forc_lwrad')
+    index_x2r_Flrl_forc_solar  = mct_avect_indexra(avtmp,'Flrl_forc_solar')
 
     nflds_x2r = mct_avect_nRattr(avtmp)
 

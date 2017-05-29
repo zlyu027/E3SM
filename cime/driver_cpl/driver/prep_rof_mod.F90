@@ -264,6 +264,24 @@ contains
     integer, save :: index_x2r_Flrl_rofsub
     integer, save :: index_x2r_Flrl_rofi
     integer, save :: index_lfrac
+
+    integer, save :: index_l2x_Flrl_Tqsur
+    integer, save :: index_l2x_Flrl_Tqsub
+    integer, save :: index_l2x_Flrl_forc_t
+    integer, save :: index_l2x_Flrl_forc_vp
+    integer, save :: index_l2x_Flrl_forc_pbot
+    integer, save :: index_l2x_Flrl_forc_wind
+    integer, save :: index_l2x_Flrl_forc_lwrad
+    integer, save :: index_l2x_Flrl_forc_solar
+    integer, save :: index_x2r_Flrl_Tqsur
+    integer, save :: index_x2r_Flrl_Tqsub
+    integer, save :: index_x2r_Flrl_forc_t
+    integer, save :: index_x2r_Flrl_forc_vp
+    integer, save :: index_x2r_Flrl_forc_pbot
+    integer, save :: index_x2r_Flrl_forc_wind
+    integer, save :: index_x2r_Flrl_forc_lwrad
+    integer, save :: index_x2r_Flrl_forc_solar
+
     logical, save :: first_time = .true.
     real(r8)      :: lfrac
     integer       :: nflds,lsize
@@ -290,10 +308,10 @@ contains
        index_l2x_Flrl_rofsub_DOC= mct_aVect_indexRA(l2x_r,'Flrl_rofsub_DOC' )
        index_l2x_Flrl_rofsub_DIC= mct_aVect_indexRA(l2x_r,'Flrl_rofsub_DIC' )
 
-       index_x2r_Flrl_rofsur_DOC= mct_aVect_indexRA(l2x_r,'Flrl_rofsur_DOC' )
-       index_x2r_Flrl_rofsur_DIC= mct_aVect_indexRA(l2x_r,'Flrl_rofsur_DIC' )
-       index_x2r_Flrl_rofsub_DOC= mct_aVect_indexRA(l2x_r,'Flrl_rofsub_DOC' )
-       index_x2r_Flrl_rofsub_DIC= mct_aVect_indexRA(l2x_r,'Flrl_rofsub_DIC' )
+       index_x2r_Flrl_rofsur_DOC= mct_aVect_indexRA(x2r_r,'Flrl_rofsur_DOC' )
+       index_x2r_Flrl_rofsur_DIC= mct_aVect_indexRA(x2r_r,'Flrl_rofsur_DIC' )
+       index_x2r_Flrl_rofsub_DOC= mct_aVect_indexRA(x2r_r,'Flrl_rofsub_DOC' )
+       index_x2r_Flrl_rofsub_DIC= mct_aVect_indexRA(x2r_r,'Flrl_rofsub_DIC' )
 
        index_l2x_Flrl_rofsur = mct_aVect_indexRA(l2x_r,'Flrl_rofsur' )
        index_l2x_Flrl_rofgwl = mct_aVect_indexRA(l2x_r,'Flrl_rofgwl' )
@@ -305,6 +323,24 @@ contains
        index_x2r_Flrl_rofi   = mct_aVect_indexRA(x2r_r,'Flrl_rofi' )
        index_lfrac = mct_aVect_indexRA(fractions_r,"lfrac")
 
+       index_l2x_Flrl_Tqsur = mct_aVect_indexRA(l2x_r,'Flrl_Tqsur' )
+       index_l2x_Flrl_Tqsub = mct_aVect_indexRA(l2x_r,'Flrl_Tqsub' )
+       index_l2x_Flrl_forc_t = mct_aVect_indexRA(l2x_r,'Flrl_forc_t' )
+       index_l2x_Flrl_forc_vp = mct_aVect_indexRA(l2x_r,'Flrl_forc_vp' )
+       index_l2x_Flrl_forc_pbot = mct_aVect_indexRA(l2x_r,'Flrl_forc_pbot' )
+       index_l2x_Flrl_forc_wind = mct_aVect_indexRA(l2x_r,'Flrl_forc_wind' )
+       index_l2x_Flrl_forc_lwrad = mct_aVect_indexRA(l2x_r,'Flrl_forc_lwrad' )
+       index_l2x_Flrl_forc_solar = mct_aVect_indexRA(l2x_r,'Flrl_forc_solar' )
+       index_x2r_Flrl_Tqsur = mct_aVect_indexRA(x2r_r,'Flrl_Tqsur' )
+       index_x2r_Flrl_Tqsub = mct_aVect_indexRA(x2r_r,'Flrl_Tqsub' )
+       index_x2r_Flrl_forc_t = mct_aVect_indexRA(x2r_r,'Flrl_forc_t' )
+       index_x2r_Flrl_forc_vp = mct_aVect_indexRA(x2r_r,'Flrl_forc_vp' )
+       index_x2r_Flrl_forc_pbot = mct_aVect_indexRA(x2r_r,'Flrl_forc_pbot' )
+       index_x2r_Flrl_forc_wind = mct_aVect_indexRA(x2r_r,'Flrl_forc_wind' )
+       index_x2r_Flrl_forc_lwrad = mct_aVect_indexRA(x2r_r,'Flrl_forc_lwrad' )
+       index_x2r_Flrl_forc_solar = mct_aVect_indexRA(x2r_r,'Flrl_forc_solar' )
+	   
+	   
        mrgstr(index_x2r_Flrl_rofsur_DOC) = trim(mrgstr(index_x2r_Flrl_rofsur_DOC))//' = '// &
           'lfrac*l2x%Flrl_rofsur_DOC'
        mrgstr(index_x2r_Flrl_rofsur_DIC) = trim(mrgstr(index_x2r_Flrl_rofsur_DIC))//' = '// &
@@ -322,6 +358,23 @@ contains
           'lfrac*l2x%Flrl_rofsub'
        mrgstr(index_x2r_Flrl_rofi) = trim(mrgstr(index_x2r_Flrl_rofi))//' = '// &
           'lfrac*l2x%Flrl_rofi'
+ 
+       mrgstr(index_x2r_Flrl_Tqsur) = trim(mrgstr(index_x2r_Flrl_Tqsur))//' = '// &
+          'l2x%Flrl_Tqsur'
+       mrgstr(index_x2r_Flrl_Tqsur) = trim(mrgstr(index_x2r_Flrl_Tqsub))//' = '// &
+          'l2x%Flrl_Tqsub'
+       mrgstr(index_x2r_Flrl_forc_t) = trim(mrgstr(index_x2r_Flrl_forc_t))//' = '// &
+          'l2x%Flrl_forc_t'
+       mrgstr(index_x2r_Flrl_forc_vp) = trim(mrgstr(index_x2r_Flrl_forc_vp))//' = '// &
+          'l2x%Flrl_forc_vp'
+       mrgstr(index_x2r_Flrl_forc_pbot) = trim(mrgstr(index_x2r_Flrl_forc_pbot))//' = '// &
+          'l2x%Flrl_forc_pbot'
+       mrgstr(index_x2r_Flrl_forc_wind) = trim(mrgstr(index_x2r_Flrl_forc_wind))//' = '// &
+          'l2x%Flrl_forc_wind'
+       mrgstr(index_x2r_Flrl_forc_lwrad) = trim(mrgstr(index_x2r_Flrl_forc_lwrad))//' = '// &
+          'l2x%Flrl_forc_lwrad'
+       mrgstr(index_x2r_Flrl_forc_solar) = trim(mrgstr(index_x2r_Flrl_forc_solar))//' = '// &
+          'l2x%Flrl_forc_solar'
     end if
 
     do i = 1,lsize
@@ -329,12 +382,22 @@ contains
        x2r_r%rAttr(index_x2r_Flrl_rofsur,i) = l2x_r%rAttr(index_l2x_Flrl_rofsur,i) * lfrac
        x2r_r%rAttr(index_x2r_Flrl_rofgwl,i) = l2x_r%rAttr(index_l2x_Flrl_rofgwl,i) * lfrac
        x2r_r%rAttr(index_x2r_Flrl_rofsub,i) = l2x_r%rAttr(index_l2x_Flrl_rofsub,i) * lfrac
-       x2r_r%rAttr(index_x2r_Flrl_rofi,i) = l2x_r%rAttr(index_l2x_Flrl_rofi,i) * lfrac
+       x2r_r%rAttr(index_x2r_Flrl_rofi,i)   = l2x_r%rAttr(index_l2x_Flrl_rofi,i) * lfrac
 
        x2r_r%rAttr(index_x2r_Flrl_rofsur_DOC,i) = l2x_r%rAttr(index_l2x_Flrl_rofsur_DOC,i) * lfrac
        x2r_r%rAttr(index_x2r_Flrl_rofsur_DIC,i) = l2x_r%rAttr(index_l2x_Flrl_rofsur_DIC,i) * lfrac
        x2r_r%rAttr(index_x2r_Flrl_rofsub_DOC,i) = l2x_r%rAttr(index_l2x_Flrl_rofsub_DOC,i) * lfrac
        x2r_r%rAttr(index_x2r_Flrl_rofsub_DIC,i) = l2x_r%rAttr(index_l2x_Flrl_rofsub_DOC,i) * lfrac
+	   
+       x2r_r%rAttr(index_x2r_Flrl_Tqsur,i) = l2x_r%rAttr(index_l2x_Flrl_Tqsur,i)
+       x2r_r%rAttr(index_x2r_Flrl_Tqsub,i) = l2x_r%rAttr(index_l2x_Flrl_Tqsub,i)
+       x2r_r%rAttr(index_x2r_Flrl_forc_t,i) = l2x_r%rAttr(index_l2x_Flrl_forc_t,i)
+       x2r_r%rAttr(index_x2r_Flrl_forc_vp,i) = l2x_r%rAttr(index_l2x_Flrl_forc_vp,i)
+       x2r_r%rAttr(index_x2r_Flrl_forc_pbot,i) = l2x_r%rAttr(index_l2x_Flrl_forc_pbot,i)
+       x2r_r%rAttr(index_x2r_Flrl_forc_wind,i) = l2x_r%rAttr(index_l2x_Flrl_forc_wind,i)
+       x2r_r%rAttr(index_x2r_Flrl_forc_lwrad,i) = l2x_r%rAttr(index_l2x_Flrl_forc_lwrad,i)
+       x2r_r%rAttr(index_x2r_Flrl_forc_solar,i) = l2x_r%rAttr(index_l2x_Flrl_forc_solar,i)
+	   
     end do
 
     if (first_time) then

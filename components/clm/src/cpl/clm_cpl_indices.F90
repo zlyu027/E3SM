@@ -34,6 +34,15 @@ module clm_cpl_indices
   integer, public ::index_l2x_Flrl_rofsur_DIC ! lnd->rof DIC water flux in liquid surface runoff
   integer, public ::index_l2x_Flrl_rofsub_DIC ! lnd->rof DIC water flux in liquid subsurface runoff
 
+  integer, public ::index_l2x_Flrl_Tqsur      ! lnd->rof Temperature of surface runoff
+  integer, public ::index_l2x_Flrl_Tqsub      ! lnd->rof Temperature of subsurface runoff
+  integer, public ::index_l2x_Flrl_forc_t     ! lnd->rof atm. temperature at the land grids
+  integer, public ::index_l2x_Flrl_forc_vp    ! lnd->rof atmospheric vapor pressure (Pa)
+  integer, public ::index_l2x_Flrl_forc_pbot  ! lnd->rof atm. pressure at the land grids
+  integer, public ::index_l2x_Flrl_forc_wind  ! lnd->rof atm. wind speed at the land grids
+  integer, public ::index_l2x_Flrl_forc_lwrad ! lnd->rof downward longwave radiation at the land grids
+  integer, public ::index_l2x_Flrl_forc_solar ! lnd->rof incident radiation at the land grids
+  
   integer, public ::index_l2x_Sl_t            ! temperature
   integer, public ::index_l2x_Sl_tref         ! 2m reference temperature
   integer, public ::index_l2x_Sl_qref         ! 2m reference specific humidity
@@ -178,6 +187,14 @@ contains
     index_l2x_Flrl_rofsur_DIC=mct_avect_indexra(l2x,'Flrl_rofsur_DIC') ! lnd->rof DIC water flux in liquid surface runoff
     index_l2x_Flrl_rofsub_DIC=mct_avect_indexra(l2x,'Flrl_rofsub_DIC') ! lnd->rof DIC water flux in liquid subsurface runoff
 
+    index_l2x_Flrl_Tqsur    = mct_avect_indexra(l2x,'Flrl_Tqsur')
+    index_l2x_Flrl_Tqsub    = mct_avect_indexra(l2x,'Flrl_Tqsub')
+    index_l2x_Flrl_forc_t   = mct_avect_indexra(l2x,'Flrl_forc_t')
+    index_l2x_Flrl_forc_vp  = mct_avect_indexra(l2x,'Flrl_forc_vp')
+    index_l2x_Flrl_forc_pbot= mct_avect_indexra(l2x,'Flrl_forc_pbot')
+    index_l2x_Flrl_forc_wind= mct_avect_indexra(l2x,'Flrl_forc_wind')
+    index_l2x_Flrl_forc_lwrad= mct_avect_indexra(l2x,'Flrl_forc_lwrad')
+    index_l2x_Flrl_forc_solar= mct_avect_indexra(l2x,'Flrl_forc_solar')
 
     index_l2x_Sl_t          = mct_avect_indexra(l2x,'Sl_t')
     index_l2x_Sl_snowh      = mct_avect_indexra(l2x,'Sl_snowh')

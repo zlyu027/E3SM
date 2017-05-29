@@ -31,11 +31,12 @@ module RtmMod
                                max_tapes, max_namlen
   use RtmRestFile     , only : RtmRestTimeManager, RtmRestGetFile, RtmRestFileRead, &
                                RtmRestFileWrite, RtmRestFileName
-  use RunoffMod       , only : RunoffInit, rtmCTL, Tctl, Tunit, TRunoff, Tpara, &
+  use RunoffMod       , only : RunoffInit, rtmCTL, Tctl, Tunit, TRunoff, Tpara, Theat, &
                                gsmap_r, &
                                SMatP_dnstrm, avsrc_dnstrm, avdst_dnstrm, &
                                SMatP_direct, avsrc_direct, avdst_direct, &
-                               SMatP_eroutUp, avsrc_eroutUp, avdst_eroutUp
+                               sMatP_eroutUp, avsrc_eroutUp, avdst_eroutUp, &
+                               sMatP_HaroutUp, avsrc_HaroutUp, avdst_HaroutUp
   use MOSART_physics_mod, only : Euler
   use MOSART_physics_mod, only : updatestate_hillslope, updatestate_subnetwork, &
                                  updatestate_mainchannel
@@ -87,6 +88,10 @@ module RtmMod
   real(r8), save, pointer :: erout_prev(:,:) ! erout previous timestep (m3/s)
   real(r8), save, pointer :: eroutup_avg(:,:)! eroutup average over coupling period (m3/s)
   real(r8), save, pointer :: erlat_avg(:,:)  ! erlateral average over coupling period (m3/s)
+
+  real(r8), save, pointer :: Harout_prev(:) ! Harout previous timestep [W m^-2]
+  real(r8), save, pointer :: Haroutup_avg(:)! Haroutup average over coupling period [W m^-2]
+  real(r8), save, pointer :: Harlat_avg(:)  ! Harlateral average over coupling period [W m^-2]
 
 ! global MOSART grid
   real(r8),pointer :: rlatc(:)    ! latitude of 1d grid cell (deg)
@@ -932,6 +937,9 @@ contains
               erout_prev(rtmCTL%begr:rtmCTL%endr,nt_rtm), &
               eroutup_avg(rtmCTL%begr:rtmCTL%endr,nt_rtm), &
               erlat_avg(rtmCTL%begr:rtmCTL%endr,nt_rtm), &
+              Harout_prev(rtmCTL%begr:rtmCTL%endr), &
+              Haroutup_avg(rtmCTL%begr:rtmCTL%endr), &
+              Harlat_avg(rtmCTL%begr:rtmCTL%endr), &
               stat=ier)
     if (ier /= 0) then
        write(iulog,*) subname,' Allocation ERROR for flow'
@@ -941,6 +949,10 @@ contains
     erout_prev(:,:) = 0._r8
     eroutup_avg(:,:) = 0._r8
     erlat_avg(:,:) = 0._r8
+
+    Harout_prev(:) = 0._r8
+    Haroutup_avg(:) = 0._r8
+    Harlat_avg(:) = 0._r8
 
     !-------------------------------------------------------
     ! Allocate runoff datatype 
@@ -1465,6 +1477,9 @@ contains
     erout_prev = 0._r8
     eroutup_avg = 0._r8
     erlat_avg = 0._r8
+    Harout_prev = 0._r8
+    Haroutup_avg = 0._r8
+    Harlat_avg = 0._r8
     rtmCTL%runoff = 0._r8
     rtmCTL%direct = 0._r8
     rtmCTL%flood = 0._r8
@@ -1474,6 +1489,19 @@ contains
     rtmCTL%dvolrdtlnd = spval
     rtmCTL%dvolrdtocn = spval
 
+    rtmCTL%templand_Tqsur = spval
+    rtmCTL%templand_Tqsub = spval
+    rtmCTL%templand_Ttrib = spval
+    rtmCTL%templand_Tchanr = spval
+	do n = rtmCTL%begr,rtmCTL%endr
+	    if (rtmCTL%mask(n) == 1 .or. rtmCTL%mask(n) == 3) then
+			rtmCTL%templand_Tqsur(n) = 0._r8
+			rtmCTL%templand_Tqsub(n) = 0._r8
+			rtmCTL%templand_Ttrib(n) = 0._r8
+			rtmCTL%templand_Tchanr(n) = 0._r8
+		end if
+	end do
+	
     ! BUDGET 
     ! BUDGET terms 1-10 are for volumes (m3)
     ! BUDGET terms 11-30 are for flows (m3/s)
@@ -1765,6 +1793,18 @@ contains
        enddo
        enddo
 
+	   do n = rtmCTL%begr,rtmCTL%endr
+	       if (rtmCTL%mask(n) == 1 .or.  rtmCTL%mask(n) == 3) then
+               rtmCTL%templand_Tqsur(n) = rtmCTL%templand_Tqsur(n) + THeat%Tqsur(n)
+               rtmCTL%templand_Tqsub(n) = rtmCTL%templand_Tqsub(n) + THeat%Tqsub(n)
+               rtmCTL%templand_Ttrib(n) = rtmCTL%templand_Ttrib(n) + THeat%Tt_avg(n)
+               rtmCTL%templand_Tchanr(n) = rtmCTL%templand_Tchanr(n) + THeat%Tr_avg(n)
+               Harout_prev(n) = Harout_prev(n) + THeat%Harout_prev(n)
+               Haroutup_avg(n) = Haroutup_avg(n) + THeat%Haroutup_avg(n)
+               Harlat_avg(n) = Harlat_avg(n) + THeat%Harlat_avg(n)
+		   end if
+	   enddo
+	   
     enddo ! nsub
 
     !-----------------------------------
@@ -1775,6 +1815,9 @@ contains
     erout_prev  = erout_prev  / float(nsub)
     eroutup_avg = eroutup_avg / float(nsub)
     erlat_avg   = erlat_avg   / float(nsub)
+    Harout_prev  = Harout_prev  / float(nsub)
+    Haroutup_avg = Haroutup_avg / float(nsub)
+    Harlat_avg   = Harlat_avg   / float(nsub)
 
     !-----------------------------------
     ! update states when subsycling completed
@@ -1784,6 +1827,26 @@ contains
     rtmCTL%wt      = TRunoff%wt
     rtmCTL%wr      = TRunoff%wr
     rtmCTL%erout   = TRunoff%erout
+	rtmCTL%Tqsur   = THeat%Tqsur
+	rtmCTL%Tqsub   = THeat%Tqsub
+	rtmCTL%Tt      = THeat%Tt
+	rtmCTL%Tr      = THeat%Tr
+	rtmCTL%Ha_rout   = THeat%Ha_rout
+
+    do n = rtmCTL%begr,rtmCTL%endr
+	   !if(rtmCTL%mask(n) > 0 .and. THeat%Tqsur(n) < 1e10) then
+	   if(rtmCTL%mask(n) == 1 .or.  rtmCTL%mask(n) == 3) then
+		  rtmCTL%templand_Tqsur(n) = rtmCTL%templand_Tqsur(n) / float(nsub)
+		  rtmCTL%templand_Tqsub(n) = rtmCTL%templand_Tqsub(n) / float(nsub)
+		  rtmCTL%templand_Ttrib(n) = rtmCTL%templand_Ttrib(n) / float(nsub)
+		  rtmCTL%templand_Tchanr(n) = rtmCTL%templand_Tchanr(n) / float(nsub)
+	   else
+		  rtmCTL%templand_Tqsur(n) = spval
+		  rtmCTL%templand_Tqsub(n) = spval
+		  rtmCTL%templand_Ttrib(n) = spval
+		  rtmCTL%templand_Tchanr(n) = spval
+	   end if
+    end do
 
     do nt = 1,nt_rtm
     do nr = rtmCTL%begr,rtmCTL%endr
@@ -2429,6 +2492,110 @@ contains
      allocate (TPara%c_twid(begr:endr))
      TPara%c_twid = 1.0_r8
 
+     ! initialize heat states and fluxes                                                                   
+     allocate (THeat%forc_t(begr:endr))
+     THeat%forc_t = 273.15_r8
+     allocate (THeat%forc_pbot(begr:endr))
+     THeat%forc_pbot = 0._r8
+     allocate (THeat%forc_vp(begr:endr))
+     THeat%forc_vp = 0._r8
+     allocate (THeat%forc_wind(begr:endr))
+     THeat%forc_wind = 0._r8
+     allocate (THeat%forc_lwrad(begr:endr))
+     THeat%forc_lwrad = 0._r8
+     allocate (THeat%forc_solar(begr:endr))
+     THeat%forc_solar = 0._r8
+
+     allocate (THeat%Tqsur(begr:endr))
+     THeat%Tqsur = 273.15_r8
+     allocate (THeat%Tqsub(begr:endr))
+     THeat%Tqsub = 273.15_r8
+     
+     allocate (THeat%Tt(begr:endr))
+     THeat%Tt = 273.15_r8
+     !allocate (THeat%Ha_t(begr:endr))
+     !THeat%Ha_t = 0._r8
+     allocate (THeat%Ha_h2t(begr:endr))
+     THeat%Ha_h2t = 0._r8
+     allocate (THeat%Ha_t2r(begr:endr))
+     THeat%Ha_t2r = 0._r8
+     allocate (THeat%Ha_lateral(begr:endr))
+     THeat%Ha_lateral = 0._r8
+     allocate (THeat%Hs_t(begr:endr))
+     THeat%Hs_t = 0._r8
+     allocate (THeat%Hl_t(begr:endr))
+     THeat%Hl_t = 0._r8
+     allocate (THeat%He_t(begr:endr))
+     THeat%He_t = 0._r8
+     allocate (THeat%Hh_t(begr:endr))
+     THeat%Hh_t = 0._r8
+     allocate (THeat%Hc_t(begr:endr))
+     THeat%Hc_t = 0._r8
+     allocate (THeat%deltaH_t(begr:endr))
+     THeat%deltaH_t = 0._r8
+     allocate (THeat%deltaM_t(begr:endr))
+     THeat%deltaM_t = 0._r8
+     
+     allocate (THeat%Tr(begr:endr))
+     THeat%Tr = 273.15_r8
+     !allocate (THeat%Ha_r(begr:endr))
+     !THeat%Ha_r = 0._r8
+     allocate (THeat%Ha_rin(begr:endr))
+     THeat%Ha_rin = 0._r8
+     allocate (THeat%Ha_rout(begr:endr))
+     THeat%Ha_rout = 0._r8
+     allocate (THeat%Hs_r(begr:endr))
+     THeat%Hs_r = 0._r8
+     allocate (THeat%Hl_r(begr:endr))
+     THeat%Hl_r = 0._r8
+     allocate (THeat%He_r(begr:endr))
+     THeat%He_r = 0._r8
+     allocate (THeat%Hh_r(begr:endr))
+     THeat%Hh_r = 0._r8
+     allocate (THeat%Hc_r(begr:endr))
+     THeat%Hc_r = 0._r8
+     allocate (THeat%deltaH_r(begr:endr))
+     THeat%deltaH_r = 0._r8
+     allocate (THeat%deltaM_r(begr:endr))
+     THeat%deltaM_r = 0._r8
+
+     allocate (THeat%Harout_prev(begr:endr))
+     THeat%Harout_prev = 0._r8
+     
+     allocate (THeat%HaroutUp(begr:endr))
+     THeat%HaroutUp = 0._r8
+     
+     allocate (THeat%HaroutUp_avg(begr:endr))
+     THeat%HaroutUp_avg = 0._r8
+     
+     allocate (THeat%Harlat_avg(begr:endr))
+     THeat%Harlat_avg = 0._r8
+     
+      allocate (THeat%Tt_avg(begr:endr))
+     THeat%Tt_avg = 273.15_r8
+     
+     allocate (THeat%Tr_avg(begr:endr))
+     THeat%Tr_avg = 273.15_r8
+     	 
+     ! read the parameters for mosart-heat
+      if(endr >= begr) then
+      	!call check_ret(nf_open(frivinp_rtm, 0, ncid), 'Reading file: ' // frivinp_rtm)
+      	allocate(TPara%t_alpha(begr:endr))	
+     	TPara%t_alpha = 27.19_r8
+      	!call MOSART_read_dbl(ncid, 'alpha', TPara%t_alpha)
+      	allocate(TPara%t_beta(begr:endr))
+     	TPara%t_beta = 13.63_r8
+      	!call MOSART_read_dbl(ncid, 'beta', TPara%t_beta)
+      	allocate(TPara%t_gamma(begr:endr))
+     	TPara%t_gamma = 0.1576_r8
+      	!call MOSART_read_dbl(ncid, 'gamma', TPara%t_gamma)
+       	allocate(TPara%t_mu(begr:endr))
+     	TPara%t_mu = 0.5278_r8
+      	!call MOSART_read_dbl(ncid, 'mu', TPara%t_mu)
+         
+      	!call check_ret(nf_close(ncid), subname)
+      end if
+     
      call pio_freedecomp(ncid, iodesc_dbl)
      call pio_freedecomp(ncid, iodesc_int)
      call pio_closefile(ncid)
@@ -2493,6 +2660,26 @@ contains
         TUnit%hslpsqrt(iunit) = sqrt(Tunit%hslp(iunit))
      end do
 
+		do iunit=rtmCTL%begr,rtmCTL%endr
+		  do nn=rtmCTL%begr,rtmCTL%endr
+			  if(TUnit%dnID(iunit) == TUnit%ID0(nn)) then
+				  TUnit%indexDown(iunit) = nn
+			  end if
+		  end do
+		end do
+		  
+		  ! this part needs to modified for grid-based representation
+		do iunit=rtmCTL%begr,rtmCTL%endr
+		  do nn=rtmCTL%begr,rtmCTL%endr
+			  if(TUnit%dnID(iunit) == TUnit%ID0(nn)) then
+				  TUnit%nUp(nn) = TUnit%nUp(nn) + 1
+				  TUnit%iUp(nn,TUnit%nUp(nn)) = iunit
+			  end if
+		  end do
+		end do
+	 
+	 
+	 
      lsize = rtmCTL%lnumr
      gsize = rtmlon*rtmlat
 
@@ -2522,6 +2709,7 @@ contains
         enddo
 
         call mct_sMatP_Init(sMatP_eroutUp, sMat, gsMap_r, gsMap_r, 0, mpicom_rof, ROFID)
+        call mct_sMatP_Init(sMatP_HaroutUp, sMat, gsMap_r, gsMap_r, 0, mpicom_rof, ROFID)
 
      elseif (smat_option == 'Xonly' .or. smat_option == 'Yonly') then
         ! root initialization
@@ -2563,6 +2751,7 @@ contains
         call mct_avect_clean(avtmp)
 
         call mct_sMatP_Init(sMatP_eroutUp, sMat, gsMap_r, gsMap_r, smat_option, 0, mpicom_rof, ROFID)
+        call mct_sMatP_Init(sMatP_HaroutUp, sMat, gsMap_r, gsMap_r, smat_option, 0, mpicom_rof, ROFID)
 
      else
 
@@ -2579,10 +2768,18 @@ contains
      if (masterproc) write(iulog,*) trim(subname),' MOSART initialize avect ',trim(rList)
      call mct_aVect_init(avsrc_eroutUp,rList=rList,lsize=rtmCTL%lnumr)
      call mct_aVect_init(avdst_eroutUp,rList=rList,lsize=rtmCTL%lnumr)
-
+     call mct_aVect_init(avsrc_HaroutUp,rList=rList,lsize=rtmCTL%lnumr)
+     call mct_aVect_init(avdst_HaroutUp,rList=rList,lsize=rtmCTL%lnumr)
      lsize = mct_smat_gNumEl(sMatP_eroutUp%Matrix,mpicom_rof)
      if (masterproc) write(iulog,*) subname," Done initializing SmatP_eroutUp, nElements = ",lsize
 
+     !write(rList,'(a,i3.3)') 'tr',1
+     !if (masterproc) write(iulog,*) trim(subname),' MOSART initialize avect ',trim(rList)
+     !call mct_aVect_init(avsrc_HaroutUp,rList=rList,lsize=rtmCTL%lnumr)
+     !call mct_aVect_init(avdst_HaroutUp,rList=rList,lsize=rtmCTL%lnumr)
+     !lsize = mct_smat_gNumEl(sMatP_HaroutUp%Matrix,mpicom_rof)
+     !if (masterproc) write(iulog,*) subname," Done initializing SmatP_HaroutUp, nElements = ",lsize
+	 
      ! keep only sMatP
      call mct_sMat_clean(sMat)
 
@@ -2598,9 +2795,11 @@ contains
   ! initialize avdst to local area and add that to areatotal2
   cnt = 0
   call mct_avect_zero(avdst_eroutUp)
+  call mct_avect_zero(avdst_HaroutUp)
   do nr = rtmCTL%begr,rtmCTL%endr
      cnt = cnt + 1
      avdst_eroutUp%rAttr(1,cnt) = rtmCTL%area(nr)
+     avdst_HaroutUp%rAttr(1,cnt) = rtmCTL%area(nr)
      Tunit%areatotal2(nr) = avdst_eroutUp%rAttr(1,cnt)
   enddo
 
@@ -2614,14 +2813,20 @@ contains
      ! copy avdst to avsrc for next downstream step
      cnt = 0
      call mct_avect_zero(avsrc_eroutUp)
+     call mct_avect_zero(avsrc_HaroutUp)
      do nr = rtmCTL%begr,rtmCTL%endr
         cnt = cnt + 1
         avsrc_eroutUp%rAttr(1,cnt) = avdst_eroutUp%rAttr(1,cnt)
+        avsrc_HaroutUp%rAttr(1,cnt) = avdst_HaroutUp%rAttr(1,cnt)
      enddo
 
      call mct_avect_zero(avdst_eroutUp)
 
      call mct_sMat_avMult(avsrc_eroutUp, sMatP_eroutUp, avdst_eroutUp)
+
+     call mct_avect_zero(avdst_HaroutUp)
+
+     call mct_sMat_avMult(avsrc_HaroutUp, sMatP_HaroutUp, avdst_HaroutUp)
 
      ! add avdst to areatot and compute new global sum
      cnt = 0

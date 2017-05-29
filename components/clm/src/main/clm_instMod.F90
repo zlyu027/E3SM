@@ -103,6 +103,7 @@ module clm_instMod
   type(urbanparams_type)                              :: urbanparams_vars
   type(waterflux_type)                                :: waterflux_vars
   type(waterstate_type)                               :: waterstate_vars
+  type(soilhydrology_type)                            :: soilhydro_vars
   type(atm2lnd_type)                                  :: atm2lnd_vars
   type(glc2lnd_type)                                  :: glc2lnd_vars
   type(lnd2atm_type)                                  :: lnd2atm_vars

@@ -972,7 +972,24 @@ contains
              scale_c2l(c) = 1.0_r8
           end if
        end do
-    else
+    else if (c2l_scale_type == 'urbanh') then
+       do c = bounds%begc,bounds%endc
+          l = col%landunit(c) 
+          if (lun%urbpoi(l)) then
+             if (col%itype(c) == icol_sunwall) then
+                scale_c2l(c) = spval
+             else if (col%itype(c) == icol_shadewall) then
+                scale_c2l(c) = spval
+             else if (col%itype(c) == icol_road_perv .or. col%itype(c) == icol_road_imperv) then
+                scale_c2l(c) = spval
+             else if (col%itype(c) == icol_roof) then
+                scale_c2l(c) = spval
+             end if
+          else
+             scale_c2l(c) = 1.0_r8
+          end if
+       end do
+	else
        write(iulog,*)'c2l_1d error: scale type ',c2l_scale_type,' not supported'
        call endrun(msg=errMsg(__FILE__, __LINE__))
     end if
@@ -1069,6 +1086,23 @@ contains
                 scale_c2l(c) = 3.0 / (2.*lun%canyon_hwr(l) + 1.)
              else if (col%itype(c) == icol_roof) then
                 scale_c2l(c) = 1.0_r8
+             end if
+          else
+             scale_c2l(c) = 1.0_r8
+          end if
+       end do
+    else if (c2l_scale_type == 'urbanh') then
+       do c = bounds%begc,bounds%endc
+          l = col%landunit(c) 
+          if (lun%urbpoi(l)) then
+             if (col%itype(c) == icol_sunwall) then
+                scale_c2l(c) = spval
+             else if (col%itype(c) == icol_shadewall) then
+                scale_c2l(c) = spval
+             else if (col%itype(c) == icol_road_perv .or. col%itype(c) == icol_road_imperv) then
+                scale_c2l(c) = spval
+             else if (col%itype(c) == icol_roof) then
+                scale_c2l(c) = spval
              end if
           else
              scale_c2l(c) = 1.0_r8

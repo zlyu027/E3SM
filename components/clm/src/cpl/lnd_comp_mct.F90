@@ -42,7 +42,7 @@ contains
     use abortutils       , only : endrun
     use clm_time_manager , only : get_nstep, get_step_size, set_timemgr_init, set_nextsw_cday
     use clm_initializeMod, only : initialize1, initialize2, initialize3
-    use clm_instMod      , only : lnd2atm_vars, lnd2glc_vars
+    use clm_instMod      , only : lnd2atm_vars, atm2lnd_vars,lnd2glc_vars
     use clm_varctl       , only : finidat,single_column, clm_varctl_set, iulog, noland
     use clm_varctl       , only : inst_index, inst_suffix, inst_name
     use clm_varorb       , only : eccen, obliqr, lambm0, mvelpp
@@ -253,7 +253,7 @@ contains
     ! Create land export state 
 
     if (atm_present) then 
-      call lnd_export(bounds, lnd2atm_vars, lnd2glc_vars, l2x_l%rattr)
+      call lnd_export(bounds, lnd2atm_vars, atm2lnd_vars, lnd2glc_vars, l2x_l%rattr)
     endif
 
     ! Fill in infodata settings
@@ -468,7 +468,7 @@ contains
 
 #ifndef CPL_BYPASS       
        call t_startf ('lc_lnd_export')
-       call lnd_export(bounds, lnd2atm_vars, lnd2glc_vars, l2x_l%rattr)
+       call lnd_export(bounds, lnd2atm_vars, atm2lnd_vars, lnd2glc_vars, l2x_l%rattr)
        call t_stopf ('lc_lnd_export')
 #endif
 

@@ -387,7 +387,7 @@ contains
     call ESMF_ArrayGet(l2x, localDe=0, farrayPtr=fptr, rc=rc)
     if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-    call lnd_export(bounds, lnd2atm_vars, lnd2glc_vars, fptr)
+    call lnd_export(bounds, lnd2atm_vars, atm2lnd_vars, lnd2glc_vars, fptr)
 
     ! Set land modes
 
@@ -633,7 +633,7 @@ contains
        call ESMF_ArrayGet(l2x, localDe=0, farrayPtr=fptr, rc=rc)
        if (rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
 
-       call lnd_export(bounds, lnd2atm_vars, lnd2glc_vars, fptr)
+       call lnd_export(bounds, lnd2atm_vars, atm2lnd_vars, lnd2glc_vars, fptr)
        call t_stopf ('lc_lnd_export')
 
        ! Advance clm time step

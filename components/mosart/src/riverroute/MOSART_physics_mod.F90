@@ -14,10 +14,12 @@ MODULE MOSART_physics_mod
   use shr_const_mod , only : SHR_CONST_REARTH, SHR_CONST_PI
   use shr_sys_mod   , only : shr_sys_abort
   use RtmVar        , only : iulog, barrier_timers
-  use RunoffMod     , only : Tctl, TUnit, TRunoff, TPara, rtmCTL, &
-                             SMatP_eroutUp, avsrc_eroutUp, avdst_eroutUp
+  use RunoffMod     , only : Tctl, TUnit, TRunoff, TPara, rtmCTL, THeat, &
+                             sMatP_eroutUp, avsrc_eroutUp, avdst_eroutUp, &
+                             sMatP_HaroutUp, avsrc_HaroutUp, avdst_HaroutUp
+  use MOSART_heat_mod
   use RtmSpmd       , only : masterproc, mpicom_rof
-  use rof_cpl_indices, only : nt_rtm, rtm_tracers
+  use rof_cpl_indices, only : nt_rtm, rtm_tracers, nliq, nfrz
   use perf_mod, only: t_startf, t_stopf
   use mct_mod
 
@@ -25,7 +27,7 @@ MODULE MOSART_physics_mod
   private
 
   real(r8), parameter :: TINYVALUE = 1.0e-14_r8  ! double precision variable has a significance of about 16 decimal digits
-    integer  :: nt               ! loop indices
+  integer  :: nt               ! loop indices
   real(r8), parameter :: SLOPE1def = 0.1_r8        ! here give it a small value in order to avoid the abrupt change of hydraulic radidus etc.
   real(r8) :: sinatanSLOPE1defr   ! 1.0/sin(atan(slope1))
   public Euler
@@ -46,9 +48,12 @@ MODULE MOSART_physics_mod
   ! !DESCRIPTION: solve the ODEs with Euler algorithm
     implicit none    
     
-    integer :: iunit, m, k, unitUp, cnt, ier   !local index
-    real(r8) :: temp_erout, localDeltaT
+    integer :: iunit, m, k, unitUp, cnt, ier, dd   !local index
+    real(r8) :: temp_erout, localDeltaT, temp_haout, temp_Tt, temp_Tr, temp_T, temp_ha
     real(r8) :: negchan
+    real(r8) :: myTINYVALUE
+		
+    myTINYVALUE = 1.e-6
 
     !------------------
     ! hillslope
@@ -63,16 +68,22 @@ MODULE MOSART_physics_mod
           TRunoff%wh(iunit,nt) = TRunoff%wh(iunit,nt) + TRunoff%dwh(iunit,nt) * Tctl%DeltaT
           call UpdateState_hillslope(iunit,nt)
           TRunoff%etin(iunit,nt) = (-TRunoff%ehout(iunit,nt) + TRunoff%qsub(iunit,nt)) * TUnit%area(iunit) * TUnit%frac(iunit)
+		  call hillslopeHeat(iunit, Tctl%DeltaT)
        endif
     end do
     endif
     end do
     call t_stopf('mosartr_hillslope')
 
+    THeat%Tt_avg = 0._r8
+    THeat%Tr_avg = 0._r8
     TRunoff%flow = 0._r8
     TRunoff%erout_prev = 0._r8
     TRunoff%eroutup_avg = 0._r8
     TRunoff%erlat_avg = 0._r8
+    THeat%Harout_prev = 0._r8
+    THeat%Haroutup_avg = 0._r8
+    THeat%Harlat_avg = 0._r8
     negchan = 9999.0_r8
     do m=1,Tctl%DLevelH2R
 
@@ -81,6 +92,7 @@ MODULE MOSART_physics_mod
        if (TUnit%euler_calc(nt)) then
        do iunit=rtmCTL%begr,rtmCTL%endr
           TRunoff%erout_prev(iunit,nt) = TRunoff%erout_prev(iunit,nt) + TRunoff%erout(iunit,nt)
+          THeat%Harout_prev(iunit) = THeat%Harout_prev(iunit) + THeat%Ha_rout(iunit)
        end do
        endif
        end do
@@ -91,18 +103,50 @@ MODULE MOSART_physics_mod
 
        call t_startf('mosartr_subnetwork')    
        TRunoff%erlateral(:,:) = 0._r8
+       THeat%ha_lateral(:) = 0._r8
        do nt=1,nt_rtm
        if (TUnit%euler_calc(nt)) then
        do iunit=rtmCTL%begr,rtmCTL%endr
+          temp_Tt = 0._r8
           if(TUnit%mask(iunit) > 0) then
              localDeltaT = Tctl%DeltaT/Tctl%DLevelH2R/TUnit%numDT_t(iunit)
              do k=1,TUnit%numDT_t(iunit)
-                call subnetworkRouting(iunit,nt,localDeltaT)
-                TRunoff%wt(iunit,nt) = TRunoff%wt(iunit,nt) + TRunoff%dwt(iunit,nt) * localDeltaT
-                call UpdateState_subnetwork(iunit,nt)
-                TRunoff%erlateral(iunit,nt) = TRunoff%erlateral(iunit,nt)-TRunoff%etout(iunit,nt)
+                 call subnetworkRouting(iunit,nt,localDeltaT)
+                 TRunoff%wt(iunit,nt) = TRunoff%wt(iunit,nt) + TRunoff%dwt(iunit,nt) * localDeltaT
+                 call UpdateState_subnetwork(iunit,nt)
+                 TRunoff%erlateral(iunit,nt) = TRunoff%erlateral(iunit,nt)-TRunoff%etout(iunit,nt)
+                 if(TUnit%tlen(iunit) > myTINYVALUE) then
+                   	if(TRunoff%yt(iunit,nliq) >= 0.2_r8) then 
+                   		call subnetworkHeat(iunit,localDeltaT)
+                   		call subnetworkTemp(iunit)
+                   	elseif(TRunoff%yt(iunit,nliq) <= 0.05_r8) then
+                   		call subnetworkHeat_simple(iunit,localDeltaT)
+                   		THeat%Tt(iunit) = cr_S_curve(iunit,THeat%forc_t(iunit))
+                   	else
+                   		temp_T = 0._r8
+                   		temp_ha = 0._r8
+                   		do dd=1,4
+                   			call subnetworkHeat(iunit,localDeltaT/4._r8)
+                   			call subnetworkTemp(iunit)
+                   			temp_T = temp_T + THeat%Tt(iunit)
+                   			temp_ha = temp_ha + THeat%Ha_t2r(iunit)
+                   		end do
+                   		THeat%Tt(iunit) = temp_T/4._r8
+                   		THeat%Ha_t2r(iunit) = temp_ha/4._r8
+                   	end if
+                   	THeat%ha_lateral(iunit) = THeat%ha_lateral(iunit) - THeat%Ha_t2r(iunit)
+                   	temp_Tt = temp_Tt + THeat%Tt(iunit)
+                   else
+                   	call subnetworkHeat_simple(iunit,localDeltaT)
+                   	call subnetworkTemp_simple(iunit)
+                   	THeat%ha_lateral(iunit) = THeat%ha_lateral(iunit) - THeat%Ha_t2r(iunit)
+                   	temp_Tt = temp_Tt + THeat%Tt(iunit)
+                 end if
              end do ! numDT_t
              TRunoff%erlateral(iunit,nt) = TRunoff%erlateral(iunit,nt) / TUnit%numDT_t(iunit)
+             THeat%ha_lateral(iunit) = THeat%ha_lateral(iunit) / TUnit%numDT_t(iunit)
+             temp_Tt = temp_Tt / TUnit%numDT_t(iunit)
+             THeat%Tt_avg(iunit) = THeat%Tt_avg(iunit) + temp_Tt
           endif
        end do ! iunit
        endif  ! euler_calc
@@ -121,6 +165,7 @@ MODULE MOSART_physics_mod
 
        call t_startf('mosartr_SMeroutUp')    
        TRunoff%eroutUp = 0._r8
+       THeat%HaroutUp = 0._r8
 #ifdef NO_MCT
        do iunit=rtmCTL%begr,rtmCTL%endr
        do k=1,TUnit%nUp(iunit)
@@ -128,21 +173,28 @@ MODULE MOSART_physics_mod
           do nt=1,nt_rtm
              TRunoff%eroutUp(iunit,nt) = TRunoff%eroutUp(iunit,nt) + TRunoff%erout(unitUp,nt)
           end do
+          THeat%HaroutUp(iunit) = THeat%HaroutUp(iunit) + THeat%Ha_rout(unitUp)
        end do
        end do
 #else
        !--- copy erout into avsrc_eroutUp ---
        call mct_avect_zero(avsrc_eroutUp)
+       call mct_avect_zero(avsrc_HaroutUp)
        cnt = 0
        do iunit = rtmCTL%begr,rtmCTL%endr
           cnt = cnt + 1
           do nt = 1,nt_rtm
              avsrc_eroutUp%rAttr(nt,cnt) = TRunoff%erout(iunit,nt)
+			 avsrc_HaroutUp%rAttr(nt,cnt) = THeat%Ha_rout(iunit)
           enddo
+          !avsrc_HaroutUp%rAttr(1,cnt) = THeat%Ha_rout(iunit)
        enddo
+	   
        call mct_avect_zero(avdst_eroutUp)
+       call mct_avect_zero(avdst_HaroutUp)
 
        call mct_sMat_avMult(avsrc_eroutUp, sMatP_eroutUp, avdst_eroutUp)
+       call mct_sMat_avMult(avsrc_HaroutUp, sMatP_HaroutUp, avdst_HaroutUp)
 
        !--- add mapped eroutUp to TRunoff ---
        cnt = 0
@@ -151,12 +203,18 @@ MODULE MOSART_physics_mod
           do nt = 1,nt_rtm
              TRunoff%eroutUp(iunit,nt) = avdst_eroutUp%rAttr(nt,cnt)
           enddo
+          THeat%HaroutUp(iunit) = avdst_HaroutUp%rAttr(1,cnt)
        enddo
+	   
+	  !write(unit=1888,fmt="(4(e14.4))") TRunoff%eroutUp(12767,1), TRunoff%erout(12677,1), THeat%HaroutUp(12767), THeat%Ha_rout(12677)
 #endif
        call t_stopf('mosartr_SMeroutUp')    
 
        TRunoff%eroutup_avg = TRunoff%eroutup_avg + TRunoff%eroutUp
        TRunoff%erlat_avg   = TRunoff%erlat_avg   + TRunoff%erlateral
+
+       THeat%Haroutup_avg = THeat%Haroutup_avg + THeat%HaroutUp
+       THeat%Harlat_avg   = THeat%Harlat_avg   + THeat%Ha_lateral
 
        !------------------
        ! channel routing
@@ -169,6 +227,8 @@ MODULE MOSART_physics_mod
           if(TUnit%mask(iunit) > 0) then
              localDeltaT = Tctl%DeltaT/Tctl%DLevelH2R/TUnit%numDT_r(iunit)
              temp_erout = 0._r8
+             temp_haout = 0._r8
+             temp_Tr = 0._r8
              do k=1,TUnit%numDT_r(iunit)
                 call mainchannelRouting(iunit,nt,localDeltaT)    
                 TRunoff%wr(iunit,nt) = TRunoff%wr(iunit,nt) + TRunoff%dwr(iunit,nt) * localDeltaT
@@ -179,10 +239,43 @@ MODULE MOSART_physics_mod
 !                end if
                 call UpdateState_mainchannel(iunit,nt)
                 temp_erout = temp_erout + TRunoff%erout(iunit,nt) ! erout here might be inflow to some downstream subbasin, so treat it differently than erlateral
+				
+                if(TUnit%rlen(iunit) > myTINYVALUE) then
+                	if(TRunoff%yr(iunit,nliq) >= 0.2_r8) then
+                		call mainchannelHeat(iunit, localDeltaT)
+                		call mainchannelTemp(iunit)
+                	elseif(TRunoff%yr(iunit,nliq) <= 0.05_r8) then
+                		call mainchannelHeat_simple(iunit, localDeltaT)
+                		THeat%Tr(iunit) = cr_S_curve(iunit,THeat%forc_t(iunit))
+                	else
+                		temp_T = 0._r8
+                		temp_ha = 0._r8
+                		do dd=1,4
+                			call mainchannelHeat(iunit, localDeltaT/4._r8)
+                			call mainchannelTemp(iunit)
+                			temp_T = temp_T + THeat%Tr(iunit)
+                			temp_ha = temp_ha + THeat%ha_rout(iunit)
+                		end do
+                		THeat%Tr(iunit) = temp_T/4._r8
+                		THeat%ha_rout(iunit) = temp_ha/4._r8
+                	end if
+                	temp_haout = temp_haout + THeat%ha_rout(iunit)
+                	temp_Tr = temp_Tr + THeat%Tr(iunit)
+                else
+                	call mainchannelHeat_simple(iunit, localDeltaT)
+                	call mainchannelTemp_simple(iunit)
+                	temp_haout = temp_haout + THeat%ha_rout(iunit)
+                	temp_Tr = temp_Tr + THeat%Tr(iunit)
+                end if
+				
              end do
              temp_erout = temp_erout / TUnit%numDT_r(iunit)
              TRunoff%erout(iunit,nt) = temp_erout
              TRunoff%flow(iunit,nt) = TRunoff%flow(iunit,nt) - TRunoff%erout(iunit,nt)
+             temp_haout = temp_haout / TUnit%numDT_r(iunit)
+             THeat%ha_rout(iunit) = temp_haout
+             temp_Tr = temp_Tr / TUnit%numDT_r(iunit)
+             THeat%Tr_avg(iunit) = THeat%Tr_avg(iunit) + temp_Tr
           endif
        end do ! iunit
        endif  ! euler_calc
@@ -201,6 +294,11 @@ MODULE MOSART_physics_mod
     TRunoff%erout_prev = TRunoff%erout_prev / Tctl%DLevelH2R
     TRunoff%eroutup_avg = TRunoff%eroutup_avg / Tctl%DLevelH2R
     TRunoff%erlat_avg = TRunoff%erlat_avg / Tctl%DLevelH2R
+    THeat%Harout_prev = THeat%Harout_prev / Tctl%DLevelH2R
+    THeat%Haroutup_avg = THeat%Haroutup_avg / Tctl%DLevelH2R
+    THeat%Harlat_avg = THeat%Harlat_avg / Tctl%DLevelH2R
+    THeat%Tt_avg = THeat%Tt_avg / Tctl%DLevelH2R
+    THeat%Tr_avg = THeat%Tr_avg / Tctl%DLevelH2R
 
   end subroutine Euler
 

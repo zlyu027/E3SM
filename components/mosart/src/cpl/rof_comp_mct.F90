@@ -19,7 +19,7 @@ module rof_comp_mct
                                 seq_infodata_start_type_start, seq_infodata_start_type_cont,   &
                                 seq_infodata_start_type_brnch
   use seq_comm_mct     , only : seq_comm_suffix, seq_comm_inst, seq_comm_name
-  use RunoffMod        , only : rtmCTL, TRunoff
+  use RunoffMod        , only : rtmCTL, TRunoff, THeat
   use RtmVar           , only : rtmlon, rtmlat, ice_runoff, iulog, &
                                 nsrStartup, nsrContinue, nsrBranch, & 
                                 inst_index, inst_suffix, inst_name, RtmVarSet
@@ -33,7 +33,11 @@ module rof_comp_mct
                                 index_x2r_Flrl_rofdto, &
                                 index_r2x_Forr_rofl, index_r2x_Forr_rofi, &
                                 index_r2x_Flrr_flood, &
-                                index_r2x_Flrr_volr, index_r2x_Flrr_volrmch
+                                index_r2x_Flrr_volr, index_r2x_Flrr_volrmch, &
+								index_x2r_Flrl_Tqsur, index_x2r_Flrl_Tqsub, &
+								index_x2r_Flrl_forc_t, index_x2r_Flrl_forc_vp,  &
+								index_x2r_Flrl_forc_pbot, index_x2r_Flrl_forc_wind, &
+								index_x2r_Flrl_forc_lwrad, index_x2r_Flrl_forc_solar
   use mct_mod
   use ESMF
 !
@@ -550,6 +554,27 @@ contains
        rtmCTL%qsub(n,nfrz) = 0.0_r8
        rtmCTL%qgwl(n,nfrz) = 0.0_r8
        rtmCTL%qdto(n,nfrz) = 0.0_r8
+	   
+	   rtmCTL%Tqsur(n) = x2r_r%rAttr(index_x2r_Flrl_Tqsur,n2)
+	   rtmCTL%Tqsub(n) = x2r_r%rAttr(index_x2r_Flrl_Tqsub,n2)
+	   
+	   THeat%Tqsur(n) = rtmCTL%Tqsur(n)
+	   THeat%Tqsub(n) = rtmCTL%Tqsub(n)
+	   
+	   ! TODO: for some reason, there are some land grids receiving 0 temperature. Need to be addressed later.
+	   if(THeat%Tqsur(n) < 273.15_r8) then
+	       THeat%Tqsur(n) = 273.15_r8
+	   end if
+	   if(THeat%Tqsub(n) < 273.15_r8) then
+	       THeat%Tqsub(n) = 273.15_r8
+	   end if
+	   
+	   THeat%forc_t(n) = x2r_r%rAttr(index_x2r_Flrl_forc_t,n2)
+	   THeat%forc_vp(n) = x2r_r%rAttr(index_x2r_Flrl_forc_vp,n2)
+	   THeat%forc_pbot(n) = x2r_r%rAttr(index_x2r_Flrl_forc_pbot,n2)
+	   THeat%forc_wind(n) = x2r_r%rAttr(index_x2r_Flrl_forc_wind,n2)
+	   THeat%forc_lwrad(n) = x2r_r%rAttr(index_x2r_Flrl_forc_lwrad,n2)
+	   THeat%forc_solar(n) = x2r_r%rAttr(index_x2r_Flrl_forc_solar,n2)
 
     enddo
 

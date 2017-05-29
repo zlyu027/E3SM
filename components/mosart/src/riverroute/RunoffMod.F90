@@ -32,6 +32,10 @@ module RunoffMod
   type(mct_avect),public :: avsrc_eroutUp ! src avect for SM mult eroutUp calc
   type(mct_avect),public :: avdst_eroutUp ! dst avect for SM mult eroutUp calc
 
+  type(mct_sMatP),public :: sMatP_HaroutUp ! sparse matrix plus for HaroutUp calc
+  type(mct_avect),public :: avsrc_HaroutUp ! src avect for SM mult HaroutUp calc
+  type(mct_avect),public :: avdst_HaroutUp ! dst avect for SM mult HaroutUp calc
+  
   public :: runoff_flow
   type runoff_flow
      !    - local initialization
@@ -68,6 +72,11 @@ module RunoffMod
      real(r8), pointer :: wt(:,:)          ! MOSART sub-network water storage (m3)
      real(r8), pointer :: wr(:,:)          ! MOSART main channel water storage (m3)
      real(r8), pointer :: erout(:,:)       ! MOSART flow out of the main channel, instantaneous (m3/s)
+     real(r8), pointer :: Tqsur(:)         ! MOSART hillslope surface runoff water temperature (K)
+     real(r8), pointer :: Tqsub(:)         ! MOSART hillslope subsurface runoff water temperature (K)
+     real(r8), pointer :: Tt(:)            ! MOSART sub-network water temperature (K)
+     real(r8), pointer :: Tr(:)            ! MOSART main channel water temperature (K)
+     real(r8), pointer :: Ha_rout(:)       ! MOSART heat flux out of the main channel, instantaneous (W m^-2)
 
      ! inputs
      real(r8), pointer :: qsur(:,:)        ! coupler surface forcing [m3/s]
@@ -104,10 +113,23 @@ module RunoffMod
      real(r8), pointer :: qdto_nt1(:)
      real(r8), pointer :: qdto_nt2(:)
 
+     real(r8), pointer :: templand_Tqsur(:)
+     real(r8), pointer :: templand_Tqsub(:)
+     real(r8), pointer :: templand_Ttrib(:)
+     real(r8), pointer :: templand_Tchanr(:)
+	 
+     real(r8), pointer :: templand_Tqsur_nt1(:)
+     real(r8), pointer :: templand_Tqsub_nt1(:)
+     real(r8), pointer :: templand_Ttrib_nt1(:)
+     real(r8), pointer :: templand_Tchanr_nt1(:)
+     real(r8), pointer :: templand_Tqsur_nt2(:)
+     real(r8), pointer :: templand_Tqsub_nt2(:)
+     real(r8), pointer :: templand_Ttrib_nt2(:)
+     real(r8), pointer :: templand_Tchanr_nt2(:)
+	 
   end type runoff_flow
 
   
-  !== Hongyi
   ! constrol information 
   public :: Tcontrol
   type Tcontrol
@@ -261,22 +283,84 @@ module RunoffMod
      real(r8), pointer :: k3(:,:)
      real(r8), pointer :: k4(:,:)
   end type TstatusFlux
-  !== Hongyi
- 
+
+	! heat status and flux variables
+	!gulu
+	public :: TstatusFlux_heat
+	type TstatusFlux_heat
+		! overall
+		real(r8), pointer :: forc_t(:)      ! atmospheric temperature (Kelvin)
+		real(r8), pointer :: forc_pbot(:)   ! atmospheric pressure (Pa)
+		real(r8), pointer :: forc_vp(:)     ! atmospheric vapor pressure (Pa)
+		real(r8), pointer :: forc_wind(:)   ! atmospheric wind speed (m/s)
+		real(r8), pointer :: forc_lwrad(:)  ! downward infrared (longwave) radiation (W/m**2)
+		real(r8), pointer :: forc_solar(:)  ! atmospheric incident solar (shortwave) radiation (W/m**2)
+		
+		! hillsloope
+		!! states
+		real(r8), pointer :: Tqsur(:)       ! temperature of surface runoff, [K]
+		real(r8), pointer :: Tqsub(:)       ! temperature of subsurface runoff, [K]
+		real(r8), pointer :: Tqice(:)       ! temperature of ice flow, [K]
+		!! fluxes
+		
+		! subnetwork channel
+		!! states
+		real(r8), pointer :: Tt(:)	        ! temperature of subnetwork water, [K]
+		!! fluxes
+		!real(r8), pointer :: Ha_t(:)       ! advective heat flux through the subnetwork, [W m^-2]
+		real(r8), pointer :: Ha_h2t(:)      ! advective heat flux from hillslope into the subnetwork, [W m^-2]
+		real(r8), pointer :: Ha_t2r(:)      ! advective heat flux from subnetwork channel into the main channel, [W m^-2]
+		real(r8), pointer :: Ha_lateral(:)  ! average advective heat flux from subnetwork channel into the main channel, [W m^-2], corresponding to TRunoff%erlateral
+		real(r8), pointer :: Hs_t(:)        ! net solar short-wave radiation, [W m^-2]
+		real(r8), pointer :: Hl_t(:)        ! net solar long-wave radiation, [W m^-2]
+		real(r8), pointer :: He_t(:)        ! flux of latent heat, [W m^-2]
+		real(r8), pointer :: Hh_t(:)        ! flux of sensible heat, [W m^-2]
+		real(r8), pointer :: Hc_t(:)        ! conductive heat flux at the streambed, [W m^-2]
+		real(r8), pointer :: deltaH_t(:)    ! net heat exchange with surroundings, [J m^-2]
+		real(r8), pointer :: deltaM_t(:)    ! net heat change due to inflow, [J m^-2]
+
+		! main channel
+		!! states
+		real(r8), pointer :: Tr(:)	        ! temperature of main channel water, [K]
+		!! fluxes
+		!real(r8), pointer :: Ha_r(:)       ! advective heat flux through the main channel, [W m^-2]
+		real(r8), pointer :: Ha_rin(:)      ! advective heat flux from upstream into the main channel, [W m^-2]
+		real(r8), pointer :: Ha_rout(:)     ! advective heat flux to downstream channel, [W m^-2]
+        real(r8), pointer :: Harout_prev(:) ! outflow into downstream links from previous timestep, [W m^-2]
+        real(r8), pointer :: HaroutUp(:) ! outflow sum of upstream gridcells, instantaneous [W m^-2]
+        real(r8), pointer :: HaroutUp_avg(:) ! outflow sum of upstream gridcells, average [W m^-2]
+        real(r8), pointer :: Harlat_avg(:) ! erlateral average [W m^-2]
+		real(r8), pointer :: Hs_r(:)        ! net solar short-wave radiation, [W m^-2]
+		real(r8), pointer :: Hl_r(:)        ! net solar long-wave radiation, [W m^-2]
+		real(r8), pointer :: He_r(:)        ! flux of latent heat, [W m^-2]
+		real(r8), pointer :: Hh_r(:)        ! flux of sensible heat, [W m^-2]
+		real(r8), pointer :: Hc_r(:)        ! conductive heat flux at the streambed, [W m^-2]
+		real(r8), pointer :: deltaH_r(:)    ! net heat exchange with surroundings, [J m^-2]
+		real(r8), pointer :: deltaM_r(:)    ! net heat change due to inflow, [J m^-2]
+
+		real(r8), pointer :: Tt_avg(:)	    ! average temperature of subnetwork channel water, [K], for output purpose
+		real(r8), pointer :: Tr_avg(:)	    ! average temperature of main channel water, [K], for output purpose
+		
+	end type TstatusFlux_heat
+  
   ! parameters to be calibrated. Ideally, these parameters are supposed to be uniform for one region
   public :: Tparameter
   type Tparameter
      real(r8), pointer :: c_nr(:)       ! coefficient to adjust the manning's roughness of channels
      real(r8), pointer :: c_nh(:)       ! coefficient to adjust the manning's roughness of overland flow across hillslopes
      real(r8), pointer :: c_twid(:)     ! coefficient to adjust the width of sub-reach channel
+	 
+     real(r8), pointer :: t_alpha(:)    ! alpha parameter in air-water temperature relationship (S-curve)
+     real(r8), pointer :: t_beta(:)     ! beta parameter in air-water temperature relationship (S-curve)
+     real(r8), pointer :: t_gamma(:)    ! gamma parameter in air-water temperature relationship (S-curve)
+     real(r8), pointer :: t_mu(:)       ! mu parameter in air-water temperature relationship (S-curve)
   end type Tparameter 
 
-  !== Hongyi
   type (Tcontrol)    , public :: Tctl
   type (Tspatialunit), public :: TUnit
   type (TstatusFlux) , public :: TRunoff
+  type (TstatusFlux_heat)     ,   public :: THeat
   type (Tparameter)  , public :: TPara
-  !== Hongyi
 
   type (runoff_flow) , public :: rtmCTL
 
@@ -290,54 +374,71 @@ contains
 
     integer :: ier
 
-    allocate(rtmCTL%runoff(begr:endr,nt_rtm),     &
-             rtmCTL%dvolrdt(begr:endr,nt_rtm),    &
-             rtmCTL%runofflnd(begr:endr,nt_rtm),  &
-             rtmCTL%dvolrdtlnd(begr:endr,nt_rtm), &
-             rtmCTL%runoffocn(begr:endr,nt_rtm),  &
-             rtmCTL%dvolrdtocn(begr:endr,nt_rtm), &
-             rtmCTL%runofftot(begr:endr,nt_rtm),  &
-             rtmCTL%area(begr:endr),              &
-             rtmCTL%volr(begr:endr,nt_rtm),       &
-             rtmCTL%lonc(begr:endr),              &
-             rtmCTL%latc(begr:endr),              &
-             rtmCTL%dsig(begr:endr),              &
-             rtmCTL%outletg(begr:endr),           &
-             rtmCTL%runofflnd_nt1(begr:endr),     &
-             rtmCTL%runofflnd_nt2(begr:endr),     &
-             rtmCTL%runoffocn_nt1(begr:endr),     &
-             rtmCTL%runoffocn_nt2(begr:endr),     &
-             rtmCTL%runofftot_nt1(begr:endr),     &
-             rtmCTL%runofftot_nt2(begr:endr),     &
-             rtmCTL%runoffdir_nt1(begr:endr),     &
-             rtmCTL%runoffdir_nt2(begr:endr),     &
-             rtmCTL%volr_nt1(begr:endr),          &
-             rtmCTL%volr_nt2(begr:endr),          &
-             rtmCTL%dvolrdtlnd_nt1(begr:endr),    &
-             rtmCTL%dvolrdtlnd_nt2(begr:endr),    &
-             rtmCTL%dvolrdtocn_nt1(begr:endr),    &
-             rtmCTL%dvolrdtocn_nt2(begr:endr),    &
-             rtmCTL%qsur_nt1(begr:endr),          &
-             rtmCTL%qsur_nt2(begr:endr),          &
-             rtmCTL%qsub_nt1(begr:endr),          &
-             rtmCTL%qsub_nt2(begr:endr),          &
-             rtmCTL%qgwl_nt1(begr:endr),          &
-             rtmCTL%qgwl_nt2(begr:endr),          &
-             rtmCTL%qdto_nt1(begr:endr),          &
-             rtmCTL%qdto_nt2(begr:endr),          &
-             rtmCTL%mask(begr:endr),              &
-             rtmCTL%gindex(begr:endr),            &
-             rtmCTL%fthresh(begr:endr),           &
-             rtmCTL%flood(begr:endr),             &
-             rtmCTL%direct(begr:endr,nt_rtm),     &
-             rtmCTL%wh(begr:endr,nt_rtm),         &
-             rtmCTL%wt(begr:endr,nt_rtm),         &
-             rtmCTL%wr(begr:endr,nt_rtm),         &
-             rtmCTL%erout(begr:endr,nt_rtm),      &
-             rtmCTL%qsur(begr:endr,nt_rtm),       & 
-             rtmCTL%qsub(begr:endr,nt_rtm),       &
-             rtmCTL%qgwl(begr:endr,nt_rtm),       &
-             rtmCTL%qdto(begr:endr,nt_rtm),       &
+    allocate(rtmCTL%runoff(begr:endr,nt_rtm),         &
+             rtmCTL%dvolrdt(begr:endr,nt_rtm),        &
+             rtmCTL%runofflnd(begr:endr,nt_rtm),      &
+             rtmCTL%dvolrdtlnd(begr:endr,nt_rtm),     &
+             rtmCTL%runoffocn(begr:endr,nt_rtm),      &
+             rtmCTL%dvolrdtocn(begr:endr,nt_rtm),     &
+             rtmCTL%runofftot(begr:endr,nt_rtm),      &
+             rtmCTL%area(begr:endr),                  &
+             rtmCTL%volr(begr:endr,nt_rtm),           &
+             rtmCTL%lonc(begr:endr),                  &
+             rtmCTL%latc(begr:endr),                  &
+             rtmCTL%dsig(begr:endr),                  &
+             rtmCTL%outletg(begr:endr),               &
+             rtmCTL%runofflnd_nt1(begr:endr),         &
+             rtmCTL%runofflnd_nt2(begr:endr),         &
+             rtmCTL%runoffocn_nt1(begr:endr),         &
+             rtmCTL%runoffocn_nt2(begr:endr),         &
+             rtmCTL%runofftot_nt1(begr:endr),         &
+             rtmCTL%runofftot_nt2(begr:endr),         &
+             rtmCTL%runoffdir_nt1(begr:endr),         &
+             rtmCTL%runoffdir_nt2(begr:endr),         &
+             rtmCTL%volr_nt1(begr:endr),              &
+             rtmCTL%volr_nt2(begr:endr),              &
+             rtmCTL%dvolrdtlnd_nt1(begr:endr),        &
+             rtmCTL%dvolrdtlnd_nt2(begr:endr),        &
+             rtmCTL%dvolrdtocn_nt1(begr:endr),        &
+             rtmCTL%dvolrdtocn_nt2(begr:endr),        &
+             rtmCTL%qsur_nt1(begr:endr),              &
+             rtmCTL%qsur_nt2(begr:endr),              &
+             rtmCTL%qsub_nt1(begr:endr),              &
+             rtmCTL%qsub_nt2(begr:endr),              &
+             rtmCTL%qgwl_nt1(begr:endr),              &
+             rtmCTL%qgwl_nt2(begr:endr),              &
+             rtmCTL%qdto_nt1(begr:endr),              &
+             rtmCTL%qdto_nt2(begr:endr),              &
+             rtmCTL%mask(begr:endr),                  &
+             rtmCTL%gindex(begr:endr),                &
+             rtmCTL%fthresh(begr:endr),               &
+             rtmCTL%flood(begr:endr),                 &
+             rtmCTL%direct(begr:endr,nt_rtm),         &
+             rtmCTL%wh(begr:endr,nt_rtm),             &
+             rtmCTL%wt(begr:endr,nt_rtm),             &
+             rtmCTL%wr(begr:endr,nt_rtm),             &
+             rtmCTL%erout(begr:endr,nt_rtm),          &
+             rtmCTL%qsur(begr:endr,nt_rtm),           & 
+             rtmCTL%qsub(begr:endr,nt_rtm),           &
+             rtmCTL%qgwl(begr:endr,nt_rtm),           &
+             rtmCTL%qdto(begr:endr,nt_rtm),           &
+             rtmCTL%Tqsur(begr:endr),                 &
+             rtmCTL%Tqsub(begr:endr),                 &
+             rtmCTL%Tt(begr:endr),                    &
+             rtmCTL%Tr(begr:endr),                    &
+             rtmCTL%Ha_rout(begr:endr),                &
+             rtmCTL%templand_Tqsur(begr:endr),        &
+             rtmCTL%templand_Tqsub(begr:endr),        &
+             rtmCTL%templand_Ttrib(begr:endr),        &
+             rtmCTL%templand_Tchanr(begr:endr),       &
+             rtmCTL%templand_Tqsur_nt1(begr:endr),    &
+             rtmCTL%templand_Tqsub_nt1(begr:endr),    &
+             rtmCTL%templand_Ttrib_nt1(begr:endr),    &
+             rtmCTL%templand_Tchanr_nt1(begr:endr),   &
+             rtmCTL%templand_Tqsur_nt2(begr:endr),    &
+             rtmCTL%templand_Tqsub_nt2(begr:endr),    &
+             rtmCTL%templand_Ttrib_nt2(begr:endr),    &
+             rtmCTL%templand_Tchanr_nt2(begr:endr),   &
              stat=ier)
     if (ier /= 0) then
        write(iulog,*)'Rtmini ERROR allocation of runoff local arrays'
@@ -360,6 +461,11 @@ contains
     rtmCTL%qgwl(:,:)        = 0._r8
     rtmCTL%qdto(:,:)        = 0._r8
 
+    rtmCTL%templand_Tqsur(:)  = spval
+    rtmCTL%templand_Tqsub(:)  = spval
+    rtmCTL%templand_Ttrib(:)  = spval
+    rtmCTL%templand_Tchanr(:) = spval
+	
   end subroutine RunoffInit
 
 end module RunoffMod
