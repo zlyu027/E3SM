@@ -9,6 +9,7 @@ module dp_coupling
   use dof_mod,        only: UniquePoints, PutUniquePoints
   use dyn_comp,       only: dyn_export_t, dyn_import_t, TimeLevel
   use dyn_grid,       only: get_gcol_block_d
+  use pmgrid,         only: plev
   use element_mod,    only: element_t
   use kinds,          only: real_kind, int_kind
   use shr_kind_mod,   only: r8=>shr_kind_r8
@@ -299,7 +300,7 @@ CONTAINS
        
   end subroutine d_p_coupling
 
-  subroutine p_d_coupling(phys_state, phys_tend,  dyn_in)
+  subroutine p_d_coupling(phys_state, phys_tend,  dyn_in, tp2, fu, fv)
     use shr_vmath_mod, only: shr_vmath_log
     use cam_control_mod, only : adiabatic
     implicit none
@@ -308,6 +309,9 @@ CONTAINS
     type(physics_state), intent(inout), dimension(begchunk:endchunk) :: phys_state
     type(physics_tend),  intent(inout), dimension(begchunk:endchunk) :: phys_tend
     
+    real(r8), intent(out) :: tp2(nelemd, plev)
+    real(r8), intent(out) :: fu(nelemd, plev)
+    real(r8), intent(out) :: fv(nelemd, plev)
 
 ! !OUTPUT PARAMETERS:
     type(dyn_import_t),  intent(inout)   :: dyn_in
@@ -393,6 +397,10 @@ CONTAINS
                 cbuffer   (cpter(icol,ilyr))     = phys_tend(lchnk)%dtdt(icol,ilyr)
                 cbuffer   (cpter(icol,ilyr)+1)   = phys_tend(lchnk)%dudt(icol,ilyr)
                 cbuffer   (cpter(icol,ilyr)+2)   = phys_tend(lchnk)%dvdt(icol,ilyr)
+		
+		tp2(icol,ilyr) = phys_tend(lchnk)%dtdt(icol,ilyr)
+		fu(icol,ilyr) = phys_tend(lchnk)%dudt(icol,ilyr)
+		fv(icol,ilyr) = phys_tend(lchnk)%dvdt(icol,ilyr)
 
                 do m=1,pcnst
                    cbuffer(cpter(icol,ilyr)+2+m) = phys_state(lchnk)%q(icol,ilyr,m)

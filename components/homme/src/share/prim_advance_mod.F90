@@ -1048,6 +1048,7 @@ contains
   use physical_constants, only : cp, cpwater_vapor, Rgas, kappa
   use physics_mod, only : virtual_specific_heat, virtual_temperature
   use prim_si_mod, only : preq_vertadv, preq_omega_ps, preq_hydrostatic
+  use scamMod, only: wfldh, single_column_se
 
   use time_mod, only : tevolve
 
@@ -1217,14 +1218,18 @@ contains
         T_vadv=0
         v_vadv=0
      else
-        do k=1,nlev
+
+       if (single_column_se) then
+         eta_dot_dpdn(1,1,:)=wfldh(:)
+       else 
+         do k=1,nlev
            ! ==================================================
            ! add this term to PS equation so we exactly conserve dry mass
            ! ==================================================
            sdot_sum(:,:) = sdot_sum(:,:) + divdp(:,:,k)
            eta_dot_dpdn(:,:,k+1) = sdot_sum(:,:)
-        end do
-
+         end do
+       endif
 
         ! ===========================================================
         ! at this point, eta_dot_dpdn contains integral_etatop^eta[ divdp ]

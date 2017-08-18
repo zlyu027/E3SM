@@ -4219,6 +4219,24 @@ Turn off microphysics computation.
 Default: FALSE
 </entry>
 
+<entry id="single_column_se" type="logical" category="scm"
+       group="cam_inparm" valid_values="">
+Single column model for SE dy-core.
+Default: FALSE
+</entry>
+
+<entry id="scmlon_se" type="real" category="scam"
+       group="cam_inparm" valid_values="">
+Longitude value of single column for SE dy-core prototype.
+Default: none.
+</entry>
+
+<entry id="scmlat_se" type="real" category="scam"
+       group="cam_inparm" valid_values="">
+Latitude value of single column for SE dy-core prototype.
+Default: none.
+</entry>
+
 <!-- Solar Parameters -->
 
 <entry id="solar_const" type="real" category="solar"

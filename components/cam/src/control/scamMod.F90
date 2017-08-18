@@ -32,6 +32,8 @@ module scamMod
   real(r8), public ::  pressure_levels(plev)
   real(r8), public ::  scmlat   ! input namelist latitude for scam
   real(r8), public ::  scmlon   ! input namelist longitude for scam
+  real(r8), public ::  scmlat_se
+  real(r8), public ::  scmlon_se
 
   real(r8), allocatable, public :: scm_dgnum( : ),scm_std( : ),&
                                    scm_num( :), scm_div(:,:)
@@ -40,6 +42,7 @@ module scamMod
   integer, parameter :: max_path_len = 128
 
   logical, public ::  single_column         ! Using IOP file or not
+  logical, public ::  single_column_se
   logical, public ::  use_iop               ! Using IOP file or not
   logical, public ::  use_analysis
   logical, public ::  use_saveinit
@@ -187,14 +190,18 @@ module scamMod
 
 
 subroutine scam_default_opts( scmlat_out,scmlon_out,iopfile_out, &
-	single_column_out,scm_iop_srf_prop_out, scm_relaxation_out, &
+	single_column_out, single_column_se_out, &
+	scmlat_se_out, scmlon_se_out, &
+	scm_iop_srf_prop_out, scm_relaxation_out, &
 	scm_relaxation_low_out, scm_relaxation_high_out, &
         scm_diurnal_avg_out, scm_crm_mode_out, scm_observed_aero_out, &
 	swrad_off_out, lwrad_off_out, precip_off_out, scm_clubb_iop_name_out)
 !-----------------------------------------------------------------------
    real(r8), intent(out), optional :: scmlat_out,scmlon_out
+   real(r8), intent(out), optional :: scmlat_se_out,scmlon_se_out
    character*(max_path_len), intent(out), optional ::  iopfile_out
    logical, intent(out), optional ::  single_column_out
+   logical, intent(out), optional ::  single_column_se_out
    logical, intent(out), optional ::  scm_iop_srf_prop_out
    logical, intent(out), optional ::  scm_relaxation_out
    logical, intent(out), optional ::  scm_diurnal_avg_out
@@ -209,8 +216,11 @@ subroutine scam_default_opts( scmlat_out,scmlon_out,iopfile_out, &
 
    if ( present(scmlat_out) )           scmlat_out     = -999._r8
    if ( present(scmlon_out) )           scmlon_out     = -999._r8
+   if ( present(scmlon_se_out) )        scmlon_se_out  = -999._r8
+   if ( present(scmlat_se_out) )        scmlat_se_out  = -999._r8
    if ( present(iopfile_out) )          iopfile_out    = ''
    if ( present(single_column_out) )    single_column_out  = .false.
+   if ( present(single_column_se_out) ) single_column_se_out = .false. 
    if ( present(scm_iop_srf_prop_out) )scm_iop_srf_prop_out  = .false.
    if ( present(scm_relaxation_out) )   scm_relaxation_out  = .false.
    if ( present(scm_relaxation_low_out) ) scm_relaxation_low_out = 1050.0_r8
@@ -226,14 +236,17 @@ subroutine scam_default_opts( scmlat_out,scmlon_out,iopfile_out, &
 end subroutine scam_default_opts
 
 subroutine scam_setopts( scmlat_in, scmlon_in,iopfile_in,single_column_in, &
+                         single_column_se_in, scmlat_se_in, scmlon_se_in, &
                          scm_iop_srf_prop_in, scm_relaxation_in, &
 			 scm_relaxation_low_in, scm_relaxation_high_in, &
                          scm_diurnal_avg_in, scm_crm_mode_in, scm_observed_aero_in, &
 			 swrad_off_in, lwrad_off_in, precip_off_in, scm_clubb_iop_name_in)
 !-----------------------------------------------------------------------
   real(r8), intent(in), optional       :: scmlon_in, scmlat_in
+  real(r8), intent(in), optional       :: scmlon_se_in, scmlat_se_in
   character*(max_path_len), intent(in), optional :: iopfile_in
   logical, intent(in), optional        :: single_column_in
+  logical, intent(in), optional        :: single_column_se_in
   logical, intent(in), optional        :: scm_iop_srf_prop_in
   logical, intent(in), optional        :: scm_relaxation_in
   logical, intent(in), optional        :: scm_diurnal_avg_in
@@ -252,6 +265,10 @@ subroutine scam_setopts( scmlat_in, scmlon_in,iopfile_in,single_column_in, &
   if (present (single_column_in ) ) then 
      single_column=single_column_in
   endif
+  
+  if (present (single_column_se_in ) ) then 
+     single_column_se=single_column_se_in
+  endif  
 
   if (present (scm_iop_srf_prop_in)) then
      scm_iop_srf_prop=scm_iop_srf_prop_in
@@ -299,6 +316,14 @@ subroutine scam_setopts( scmlat_in, scmlon_in,iopfile_in,single_column_in, &
 
   if (present (iopfile_in)) then
      iopfile=trim(iopfile_in)
+  endif
+  
+  if (present (scmlat_se_in)) then
+     scmlat_se=scmlat_se_in
+  endif
+  
+  if (present (scmlon_se_in)) then
+     scmlon_se=scmlon_se_in
   endif
 
   if( single_column) then

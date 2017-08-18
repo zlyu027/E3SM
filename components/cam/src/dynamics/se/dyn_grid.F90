@@ -79,8 +79,8 @@ module dyn_grid
   real(r8), public, pointer :: w(:) => null()        ! weights
 
   !! Local lat/lon arrays
-  real(r8), pointer :: pelat_deg(:) => null()  ! pe-local latitudes (degrees)
-  real(r8), pointer :: pelon_deg(:) => null()  ! pe-local longitudes (degrees)
+  real(r8), public, pointer :: pelat_deg(:) => null()  ! pe-local latitudes (degrees)
+  real(r8), public, pointer :: pelon_deg(:) => null()  ! pe-local longitudes (degrees)
   real(r8), pointer :: pearea(:) => null()  ! pe-local areas
   integer(iMap), pointer :: pemap(:) => null()  ! pe-local map for PIO decomp
 
@@ -459,6 +459,8 @@ end function get_block_owner_d
     use element_mod,    only: index_t
     use dof_mod,        only: UniqueCoords, UniquePoints
     use physconst,      only: pi
+    use scamMod,        only: scmlat_se, scmlon_se, single_column_se
+!    use runtime_opts,   only: single_column_se, scmlat_se, scmlon_se
 
     ! Input variable
     integer,                     intent(in)  :: NumUniqueCols
@@ -501,6 +503,8 @@ end function get_block_owner_d
       allocate(pearea(np*np*nelemd))
       allocate(pemap(np*np*nelemd))
       pemap = 0
+      
+      if (.not. single_column_se) then
       ! Now, fill in the appropriate values
       ii = 1
       do ie = 1, nelemd
@@ -517,6 +521,18 @@ end function get_block_owner_d
 !        bb = bb + nuniq
       end do
       local_coords_initialized = .true.
+      
+      else 
+      
+        do ie = 1, np
+          pearea(ie) = 2.0/np
+	  pemap(ie) = fdofp_local(1,ie) ! +PAB, check to make sure this is right?
+	  pelat_deg(ie) = scmlat_se
+	  pelon_deg(ie) = mod((scmlon_se+360._r8),360._r8)
+        end do      
+      
+      endif
+      
     else if (ngcols_d /= NumUniqueCols) then
       call endrun('set_horiz_grid_cnt_d: NumUniqueCols /= ngcols_d')
     end if

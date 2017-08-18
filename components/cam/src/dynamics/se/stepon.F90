@@ -24,6 +24,8 @@ module stepon
    use quadrature_mod, only: gauss, gausslobatto, quadrature_t
    use edgetype_mod,       only: EdgeBuffer_t
    use edge_mod,       only: initEdgeBuffer, FreeEdgeBuffer, edgeVpack, edgeVunpack
+   use iop,            only: readiopdata, setiopupdate
+   use scamMod,        only: use_iop, doiopupdate, single_column_se
    use parallel_mod,   only : par
 
    implicit none
@@ -38,6 +40,10 @@ module stepon
   public stepon_run2    ! run method phase 2
   public stepon_run3    ! run method phase 3
   public stepon_final  ! Finalization
+  
+  real(r8), allocatable, public :: tp2(:,:) ! temp tendency
+  real(r8), allocatable, public :: fu(:,:)  ! u wind tendency
+  real(r8), allocatable, public :: fv(:,:)  ! v wind tendency
 
 !----------------------------------------------------------------------
 !
@@ -143,6 +149,9 @@ subroutine stepon_init(dyn_in, dyn_out )
      call add_default(trim(cnst_name(m))//'&IC',0, 'I')
   end do
 
+  allocate(tp2(nelemd,nlev))
+  allocate(fu(nelemd,nlev))
+  allocate(fv(nelemd,nlev))
 
 end subroutine stepon_init
 
@@ -222,7 +231,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
    ! copy from phys structures -> dynamics structures
    call t_barrierf('sync_p_d_coupling', mpicom)
    call t_startf('p_d_coupling')
-   call p_d_coupling(phys_state, phys_tend,  dyn_in)
+   call p_d_coupling(phys_state, phys_tend,  dyn_in, tp2, fu, fv)
    call t_stopf('p_d_coupling')
 
    if(iam >= par%nprocs) return
@@ -508,10 +517,24 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
    type (dyn_import_t), intent(inout) :: dyn_in  ! Dynamics import container
    type (dyn_export_t), intent(inout) :: dyn_out ! Dynamics export container
    integer :: rc
+   
+   if (single_column_se) then
+
+     ! Determine whether it is time for an IOP update;
+     ! doiopupdate set to true if model time step > next available IOP
+     if (use_iop) then
+        call setiopupdate
+     end if
+     
+     ! Update IOP properties e.g. omega, divT, divQ
+     
+     if (doiopupdate) call readiopdata(dyn_out)
+   
+   endif   
 
    call t_barrierf('sync_dyn_run', mpicom)
    call t_startf ('dyn_run')
-   call dyn_run(dyn_out,rc)	
+   call dyn_run(dyn_out,rc,tp2,fu,fv)	
    call t_stopf  ('dyn_run')
 
 end subroutine stepon_run3

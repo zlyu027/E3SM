@@ -20,6 +20,7 @@ module inidat
   use spmd_utils,   only: iam, masterproc
   use cam_control_mod, only : ideal_phys, aqua_planet, pertlim, seed_custom, seed_clock, new_random
   use random_xgc, only: init_ranx, ranx
+  use scamMod, only: single_column
   implicit none
   private
   public read_inidat
@@ -320,6 +321,7 @@ contains
       nullify(gcid)
     end if
 
+!+  PAB, need to determine which latitude and longitude to read in
     fieldname = 'PS'
     tmp(:,1,:) = 0.0_r8
     call infld(fieldname, ncid_ini, 'ncol',      &

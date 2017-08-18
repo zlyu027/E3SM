@@ -653,7 +653,8 @@ contains
    
    
 
-subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)
+subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
+           tp2,fu,fv)
 ! 
 !  called at the end of a timestep, before timelevel update.  Solution known at
 !  dynamics:     nm1,  n0,  np1.  
@@ -686,12 +687,16 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)
     use physical_constants, only : Cp, cpwater_vapor
     use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
     use prim_si_mod, only : preq_hydrostatic
+    use scamMod, only: single_column_se
+    use dyn_grid, only: pelat_deg
+    use time_mod, only: tstep
 
     integer :: t1,t2,n,nets,nete
     type (element_t)     , intent(inout), target :: elem(:)
     type (hvcoord_t)                  :: hvcoord
     type (TimeLevel_t), intent(in)       :: tl
     logical :: t_before_advance
+    real(kind=real_kind), intent(inout), dimension(nelemd,nlev) :: tp2, fu, fv
 
     integer :: ie,k,i,j,nm_f
     real (kind=real_kind), dimension(np,np,nlev)  :: dpt1,dpt2   ! delta pressure
@@ -700,7 +705,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)
     real (kind=real_kind), dimension(np,np,nlev)  :: sumlk, suml2k
     real (kind=real_kind), dimension(np,np,nlev)  :: p,T_v,phi
     real (kind=real_kind) :: cp_star1,cp_star2,qval_t1,qval_t2
-    real (kind=real_kind) :: Qt
+    real (kind=real_kind) :: Qt,dt
     logical :: wet
 
 
@@ -806,6 +811,20 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)
              end do
           end do
        end do
+       
+!      if (single_column) then
+!        dt=tstep*qsplit
+!        call forecast(pelat_deg,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
+!	              elem(ie)%state%ps_v(1,1,t2),elem(ie)%state%v(1,1,1,:,t2),&
+!		      elem(ie)%state%v(1,1,1,:,t2),elem(ie)%state%v(1,1,1,:,t1),& 
+!		      elem(ie)%state%v(1,1,2,:,t2),elem(ie)%state%v(1,1,2,:,t2),&
+!		      elem(ie)%state%v(1,1,2,:,t1),elem(ie)%state%T(1,1,:,t2),&
+!		      elem(ie)%state%T(1,1,:,t2),elem(ie)%state%T(1,1,:,t1),&
+!		      !elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),&
+!		      elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:),dt,tp2(1,:),fu(1,:),fv(1,:),&
+                      !elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),p(1,1,:),1.0,elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),1)
+!! +PAB: really usure about some of the inputs above
+!      endif        
 
     enddo
     

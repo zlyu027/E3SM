@@ -621,9 +621,9 @@ if ($ideal_or_adia_or_aqua) {
 # Single column mode
 my $scam = $cfg->get('scam');
 if ($scam) {
-    add_default($nl, 'single_column', 'val'=>'.true.');
-    my $scmlat = $nl->get_value('scmlat');
-    my $scmlon = $nl->get_value('scmlon');
+add_default($nl, 'single_column', 'val'=>'.true.');
+my $scmlat = $nl->get_value('scmlat');
+my $scmlon = $nl->get_value('scmlon');
     unless (defined $scmlat and defined $scmlon) {
 	die "$ProgName - ERROR: In SCAM mode both scmlat and scmlon namelist variables must be set. \n";
     }
