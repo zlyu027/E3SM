@@ -11,12 +11,18 @@ module control_mod
 
   integer, public, parameter :: MAX_STRING_LEN=240
   integer, public, parameter :: MAX_FILE_LEN=240
+  integer, public, parameter :: MAX_CHARS = 128
   character(len=MAX_STRING_LEN)    , public :: integration    ! time integration (explicit, or full imp)
+  
+  character(len=MAX_CHARS), public :: iopfile_se
 
 ! none of this is used anymore:
   logical, public  :: use_semi_lagrange_transport   = .false.
   logical, public  :: use_semi_lagrange_transport_local_conservation   = .false.
-
+  logical, public  :: single_column_se = .false.
+  
+  real (kind=real_kind), public :: scmlat_se = -999.99
+  real (kind=real_kind), public :: scmlon_se = -999.99
 
 !shallow water advection tests:
 !kmass points to a level with density.  other levels contain test tracers

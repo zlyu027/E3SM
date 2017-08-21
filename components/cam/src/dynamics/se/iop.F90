@@ -24,6 +24,7 @@ module iop
   use cam_logfile,  only: iulog
   use phys_control, only: phys_getopts
   use dimensions_mod, only: nelemd
+  use control_mod, only: single_column_se, scmlat_se, scmlon_se, iopfile_se
 !  use eul_control_mod,only: eul_nsplit
 !
 ! !PUBLIC TYPES:
@@ -143,7 +144,7 @@ contains
 !     
 !     Open IOP dataset
 !     
-  call handle_ncerr( nf90_open (iopfile, 0, ncid),&
+  call handle_ncerr( nf90_open (iopfile_se, 0, ncid),&
        'readiopdata.F90', __LINE__)
 
 !
@@ -349,7 +350,7 @@ endif !scm_observed_aero
    endif
 
 
-   call shr_scam_GetCloseLatLon(ncid,scmlat,scmlon,closelat,closelon,closelatidx,closelonidx)
+   call shr_scam_GetCloseLatLon(ncid,scmlat_se,scmlon_se,closelat,closelon,closelatidx,closelonidx)
 
    lonid = 0
    latid = 0
@@ -442,11 +443,11 @@ endif !scm_observed_aero
    endif
 
    if ( use_camiop ) then
-     call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx,'t', have_tsair, &
+     call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,'t', have_tsair, &
           tsair(1), fill_ends, &
           dplevs, nlev,elem(1)%state%ps_v(1,1,3),tobs, status )
    else
-     call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx,'T', have_tsair, &
+     call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,'T', have_tsair, &
           tsair(1), fill_ends, &
           dplevs, nlev,elem(1)%state%ps_v(1,1,3),tobs, status )
    endif
@@ -500,7 +501,7 @@ endif !scm_observed_aero
      qobs(:)= elem(1)%state%Q(1,1,:,1)
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx,  'q', have_srf, &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,  'q', have_srf, &
       srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), qobs, status )
    if ( status .ne. nf90_noerr ) then
@@ -522,7 +523,7 @@ endif !scm_observed_aero
       endif
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx,  'cld', .false., &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,  'cld', .false., &
       dummy, fill_ends, dplevs, nlev,elem(1)%state%ps_v(1,1,3), cldobs, status )
    if ( status .ne. nf90_noerr ) then
       have_cld = .false.
@@ -530,7 +531,7 @@ endif !scm_observed_aero
       have_cld = .true.
    endif
    
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx,  'clwp', .false., &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,  'clwp', .false., &
       dummy, fill_ends, dplevs, nlev,elem(1)%state%ps_v(1,1,3), clwpobs, status )
    if ( status .ne. nf90_noerr ) then
       have_clwp = .false.
@@ -549,7 +550,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
         'divq', have_srf, srf(1), fill_ends, &
         dplevs, nlev,elem(1)%state%ps_v(1,1,3), divq(:,1), status )
    if ( status .ne. nf90_noerr ) then
@@ -569,7 +570,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'vertdivq', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'vertdivq', &
         have_srf, srf(1), fill_ends, &
         dplevs, nlev,elem(1)%state%ps_v(1,1,3), vertdivq(:,1), status )
    if ( status .ne. nf90_noerr ) then
@@ -592,7 +593,7 @@ endif !scm_observed_aero
 !
    do m = 1, pcnst
 
-      call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, trim(cnst_name(m))//'_dten', &
+      call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, trim(cnst_name(m))//'_dten', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), divq3d(:,m), status )
    if ( status .ne. nf90_noerr ) then
@@ -602,7 +603,7 @@ endif !scm_observed_aero
       have_cnst(m) = .true.
    endif
 
-      call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, trim(cnst_name(m))//'_dqfx', &
+      call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, trim(cnst_name(m))//'_dqfx', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), coldata, status )
        if ( STATUS .NE. NF90_NOERR ) then
@@ -611,7 +612,7 @@ endif !scm_observed_aero
          dqfxcam(1,:,m)=coldata(:)
       endif
 
-      call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, trim(cnst_name(m))//'_alph', &
+      call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, trim(cnst_name(m))//'_alph', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), tmpdata, status )
       if ( status .ne. nf90_noerr ) then
@@ -628,7 +629,7 @@ endif !scm_observed_aero
    call cnst_get_ind('NUMLIQ', inumliq, abort=.false.)
    if ( inumliq > 0 ) then
       have_srf = .false.
-      call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'NUMLIQ', &
+      call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'NUMLIQ', &
          have_srf, srf(1), fill_ends, &
          dplevs, nlev,elem(1)%state%ps_v(1,1,3), numliqobs, status )
       if ( status .ne. nf90_noerr ) then
@@ -647,7 +648,7 @@ endif !scm_observed_aero
    call cnst_get_ind('CLDLIQ', icldliq)
 
    have_srf = .false.
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'CLDLIQ', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'CLDLIQ', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), cldliqobs, status )
    if ( status .ne. nf90_noerr ) then
@@ -664,7 +665,7 @@ endif !scm_observed_aero
 
    call cnst_get_ind('CLDICE', icldice)
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'CLDICE', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'CLDICE', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), cldiceobs, status )
    if ( status .ne. nf90_noerr ) then
@@ -683,7 +684,7 @@ endif !scm_observed_aero
    if ( inumice > 0 ) then
       have_srf = .false.
 
-      call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'NUMICE', &
+      call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'NUMICE', &
          have_srf, srf(1), fill_ends, &
          dplevs, nlev,elem(1)%state%ps_v(1,1,3), numiceobs, status )
       if ( status .ne. nf90_noerr ) then
@@ -710,7 +711,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'divu', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'divu', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), divu, status )
    if ( status .ne. nf90_noerr ) then
@@ -729,7 +730,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'divv', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'divv', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), divv, status )
    if ( status .ne. nf90_noerr ) then
@@ -748,7 +749,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'divT', have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), divt, status )
    if ( status .ne. nf90_noerr ) then
@@ -768,7 +769,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'vertdivT', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'vertdivT', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), vertdivt, status )
    if ( status .ne. nf90_noerr ) then
@@ -788,7 +789,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'divT3d', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'divT3d', &
       have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), divt3d, status )
    if ( status .ne. nf90_noerr ) then
@@ -808,7 +809,7 @@ endif !scm_observed_aero
       ptend= srf(1)
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'omega', .true., ptend, fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), wfld, status )
    if ( status .ne. nf90_noerr ) then
@@ -847,7 +848,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'u', have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), uobs, status )
    if ( status .ne. nf90_noerr ) then
@@ -869,7 +870,7 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'v', have_srf, srf(1), fill_ends, &
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), vobs, status )
    if ( status .ne. nf90_noerr ) then
@@ -893,7 +894,7 @@ endif !scm_observed_aero
       have_prec = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'Q1', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'Q1', &
       .false., dummy, fill_ends, & ! datasets don't contain Q1 at surface
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), q1obs, status )
    if ( status .ne. nf90_noerr ) then
@@ -902,7 +903,7 @@ endif !scm_observed_aero
       have_q1 = .true.
    endif
 
-   call getinterpncdata( ncid, scmlat, scmlon, ioptimeidx, 'Q2', &
+   call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'Q2', &
       .false., dummy, fill_ends, & ! datasets don't contain Q2 at surface
       dplevs, nlev,elem(1)%state%ps_v(1,1,3), q1obs, status )
    if ( status .ne. nf90_noerr ) then
@@ -1042,7 +1043,7 @@ subroutine setiopupdate
 !     
 !     Open  IOP dataset
 !     
-      STATUS = NF90_OPEN( iopfile, NF90_NOWRITE, NCID )
+      STATUS = NF90_OPEN( iopfile_se, NF90_NOWRITE, NCID )
 !     
 !     Read time (tsec) variable 
 !     

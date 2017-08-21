@@ -25,7 +25,8 @@ module stepon
    use edgetype_mod,       only: EdgeBuffer_t
    use edge_mod,       only: initEdgeBuffer, FreeEdgeBuffer, edgeVpack, edgeVunpack
    use iop,            only: readiopdata, setiopupdate
-   use scamMod,        only: use_iop, doiopupdate, single_column_se
+   use scamMod,        only: use_iop, doiopupdate
+   use control_mod,    only: single_column_se
    use parallel_mod,   only : par
 
    implicit none

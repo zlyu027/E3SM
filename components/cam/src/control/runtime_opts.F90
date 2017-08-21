@@ -163,7 +163,6 @@ logical :: use_rad_dt_cosz  ! if true, uses the radiation dt for all cosz calcul
 ! SCM Options
 logical  :: single_column
 real(r8) :: scmlat,scmlon
-real(r8) :: scmlat_se,scmlon_se
 real(r8) :: scm_relaxation_low
 real(r8) :: scm_relaxation_high
 integer, parameter :: max_chars = 128
@@ -177,7 +176,6 @@ logical  :: scm_observed_aero
 logical  :: swrad_off
 logical  :: lwrad_off
 logical  :: precip_off
-logical  :: single_column_se
 
 contains
 
@@ -332,8 +330,7 @@ contains
   namelist /cam_inparm/ iopfile,scm_iop_srf_prop,scm_relaxation, &
                         scm_relaxation_low, scm_relaxation_high, &
                         scm_diurnal_avg,scm_crm_mode,scm_clubb_iop_name, &
-			scm_observed_aero,swrad_off,lwrad_off, precip_off, &
-			single_column_se, scmlon_se, scmlat_se
+			scm_observed_aero,swrad_off,lwrad_off, precip_off
 
 ! 
 !-----------------------------------------------------------------------
@@ -373,11 +370,9 @@ contains
       spectralflux_out = spectralflux,&
       use_rad_dt_cosz_out = use_rad_dt_cosz )
 
-   if (present(single_column_in) .or. single_column_se) then
+   if (present(single_column_in)) then
       call scam_default_opts(scmlat_out=scmlat,scmlon_out=scmlon, &
         single_column_out=single_column, &
-	single_column_se_out=single_column_se, &
-	scmlat_se_out=scmlat_se, scmlon_se_out=scmlon_se, &
         scm_iop_srf_prop_out=scm_iop_srf_prop,&
         scm_relaxation_out=scm_relaxation, &
 	scm_relaxation_low_out=scm_relaxation_low, &
@@ -457,20 +452,17 @@ contains
 ! 
 ! Set runtime options for single column mode
 !
-   if ((present(single_column_in) .and. present(scmlon_in) .and. present(scmlat_in)) .or. &
-       single_column_se) then 
+   if (present(single_column_in) .and. present(scmlon_in) .and. present(scmlat_in)) then 
       if (single_column_in) then
          single_column = single_column_in
          scmlon = scmlon_in
          scmlat = scmlat_in
          call scam_setopts( scmlat_in=scmlat,scmlon_in=scmlon, &
                             iopfile_in=iopfile,single_column_in=single_column,&
-			    single_column_se_in=single_column_se, &
-			    scmlat_se_in=scmlat_in,scmlon_se_in=scmlon_in, &
                             scm_iop_srf_prop_in=scm_iop_srf_prop,&
                             scm_relaxation_in=scm_relaxation, &
 			    scm_relaxation_low_in=scm_relaxation_low, &
-			    scm_relaxation_high_in=scm_relaxation_high, &		
+			    scm_relaxation_high_in=scm_relaxation_high, &			    
                             scm_diurnal_avg_in=scm_diurnal_avg, &
                             scm_crm_mode_in=scm_crm_mode, &
 			    scm_observed_aero_in=scm_observed_aero, &

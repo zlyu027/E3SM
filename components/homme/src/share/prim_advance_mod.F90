@@ -8,7 +8,7 @@
 !
 module prim_advance_mod
 
-  use control_mod,    only: qsplit,rsplit, use_moisture
+  use control_mod,    only: qsplit,rsplit, use_moisture, single_column_se
   use derivative_mod, only: derivative_t
   use dimensions_mod, only: np, nlev, nlevp, nelemd, qsize, max_corner_elem
   use edgetype_mod,   only: EdgeDescriptor_t, EdgeBuffer_t
@@ -1048,7 +1048,7 @@ contains
   use physical_constants, only : cp, cpwater_vapor, Rgas, kappa
   use physics_mod, only : virtual_specific_heat, virtual_temperature
   use prim_si_mod, only : preq_vertadv, preq_omega_ps, preq_hydrostatic
-  use scamMod, only: wfldh, single_column_se
+  use scamMod, only: wfldh
 
   use time_mod, only : tevolve
 

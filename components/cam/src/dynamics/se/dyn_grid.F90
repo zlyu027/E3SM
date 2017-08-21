@@ -459,7 +459,7 @@ end function get_block_owner_d
     use element_mod,    only: index_t
     use dof_mod,        only: UniqueCoords, UniquePoints
     use physconst,      only: pi
-    use scamMod,        only: scmlat_se, scmlon_se, single_column_se
+    use control_mod,    only: single_column_se, scmlat_se, scmlon_se
 !    use runtime_opts,   only: single_column_se, scmlat_se, scmlon_se
 
     ! Input variable

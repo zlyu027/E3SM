@@ -681,13 +681,12 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
 !
     use kinds, only : real_kind
     use dimensions_mod, only : np, np, nlev
-    use control_mod, only : use_cpstar
+    use control_mod, only : use_cpstar, single_column_se
     use hybvcoord_mod, only : hvcoord_t
     use element_mod, only : element_t
     use physical_constants, only : Cp, cpwater_vapor
     use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
     use prim_si_mod, only : preq_hydrostatic
-    use scamMod, only: single_column_se
     use dyn_grid, only: pelat_deg
     use time_mod, only: tstep
 
