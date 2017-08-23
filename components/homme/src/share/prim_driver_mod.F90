@@ -853,14 +853,17 @@ contains
     !       tl%nm1   tracers:  t    dynamics:  t+(qsplit-1)*dt
     !       tl%n0    time t + dt_q
 
-    use control_mod,        only: statefreq, ftype, qsplit, rsplit, disable_diagnostics
+    use control_mod,        only: statefreq, ftype, qsplit, rsplit, disable_diagnostics, &
+                                  single_column_se
     use hybvcoord_mod,      only: hvcoord_t
     use parallel_mod,       only: abortmp
     use prim_advance_mod,   only: applycamforcing, applycamforcing_dynamics
-    use prim_state_mod,     only: prim_printstate, prim_diag_scalars, prim_energy_halftimes
+    use prim_state_mod,     only: prim_printstate, prim_diag_scalars, prim_energy_halftimes, &
+    				  prim_apply_forcing
     use vertremap_mod,      only: vertical_remap
     use reduction_mod,      only: parallelmax
-    use time_mod,           only: TimeLevel_t, timelevel_update, timelevel_qdp, nsplit
+    use time_mod,           only: TimeLevel_t, timelevel_update, timelevel_qdp, nsplit, tstep
+    use dyn_grid,           only: pelat_deg, pelon_deg
 
 #if USE_OPENACC
     use openacc_utils_mod,  only: copy_qdp_h2d, copy_qdp_d2h
@@ -878,7 +881,7 @@ contains
 
     real(kind=real_kind) :: dp, dt_q, dt_remap
     real(kind=real_kind) :: dp_np1(np,np)
-    integer :: ie,i,j,k,n,q,t
+    integer :: ie,i,j,k,n,q,t,scm_dum
     integer :: n0_qdp,np1_qdp,r,nstep_end
     logical :: compute_diagnostics, compute_energy
 
@@ -1057,6 +1060,12 @@ contains
     if (compute_diagnostics) then
        call prim_printstate(elem, tl, hybrid,hvcoord,nets,nete)
     end if
+    
+    if (single_column_se) then
+       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
+           tp2,fu,fv)
+    end if
+    
   end subroutine prim_run_subcycle
 
 

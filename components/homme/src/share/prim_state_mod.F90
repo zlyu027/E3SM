@@ -31,6 +31,7 @@ private
   public :: prim_printstate
   public :: prim_printstate_init
   public :: prim_energy_halftimes
+  public :: prim_apply_forcing
   public :: prim_diag_scalars
 
 contains
@@ -651,7 +652,85 @@ contains
   call t_stopf('prim_printstate')
   end subroutine prim_printstate
    
-   
+subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
+           tp2,fu,fv)
+! 
+    use kinds, only : real_kind
+    use dimensions_mod, only : np, np, nlev
+    use control_mod, only : use_cpstar, single_column_se
+    use hybvcoord_mod, only : hvcoord_t
+    use element_mod, only : element_t
+    use physical_constants, only : Cp, cpwater_vapor
+    use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
+    use prim_si_mod, only : preq_hydrostatic
+    use dyn_grid, only: pelat_deg, pelon_deg
+    use time_mod, only: tstep
+
+    integer :: t1,t2,n,nets,nete
+    type (element_t)     , intent(inout), target :: elem(:)
+    type (hvcoord_t)                  :: hvcoord
+    type (TimeLevel_t), intent(in)       :: tl
+    logical :: t_before_advance
+    real(kind=real_kind), intent(inout), dimension(nelemd,nlev) :: tp2, fu, fv
+
+    integer :: ie,k,i,j,nm_f
+    real (kind=real_kind), dimension(np,np,nlev)  :: dpt1,dpt2   ! delta pressure
+    real (kind=real_kind), dimension(np,np)  :: E
+    real (kind=real_kind), dimension(np,np)  :: suml,suml2,v1,v2
+    real (kind=real_kind), dimension(np,np,nlev)  :: sumlk, suml2k
+    real (kind=real_kind), dimension(np,np,nlev)  :: p,T_v,phi
+    real (kind=real_kind) :: cp_star1,cp_star2,qval_t1,qval_t2
+    real (kind=real_kind) :: Qt,dt
+    logical :: wet
+
+
+    integer:: t2_qdp, t1_qdp   ! the time pointers for Qdp are not the same
+
+    nm_f = 1
+    if (t_before_advance) then
+       t1=tl%nm1
+       t2=tl%n0
+       call TimeLevel_Qdp( tl, qsplit, t2_qdp, t1_qdp) !get n0 level into t2_qdp 
+    else
+       t1=tl%n0
+       t2=tl%np1
+       call TimeLevel_Qdp(tl, qsplit, t1_qdp, t2_qdp) !get np1 into t2_qdp
+    endif
+
+    !   IE   Cp*dpdn*T  + (Cpv-Cp) Qdpdn*T
+    !        Cp*dpdn(n)*T(n+1) + (Cpv-Cp) Qdpdn(n)*T(n+1)
+    !        [Cp + (Cpv-Cp) Q(n)] *dpdn(n)*T(n+1) 
+    do ie=nets,nete
+
+#if (defined COLUMN_OPENMP)
+!$omp parallel do private(k)
+#endif
+       do k=1,nlev
+          dpt1(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
+               ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem(ie)%state%ps_v(:,:,t1)
+          dpt2(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
+               ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem(ie)%state%ps_v(:,:,t2)
+       enddo
+ 
+      if (single_column_se) then
+        dt=tstep*qsplit 
+        if (ie .eq. nets) then
+          call forecast(pelat_deg,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
+	              elem(ie)%state%ps_v(1,1,t2),elem(ie)%state%v(1,1,1,:,t2),&
+		      elem(ie)%state%v(1,1,1,:,t2),elem(ie)%state%v(1,1,1,:,t1),& 
+		      elem(ie)%state%v(1,1,2,:,t2),elem(ie)%state%v(1,1,2,:,t2),&
+		      elem(ie)%state%v(1,1,2,:,t1),elem(ie)%state%T(1,1,:,t2),&
+		      elem(ie)%state%T(1,1,:,t2),elem(ie)%state%T(1,1,:,t1),&
+		      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),&
+		      elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:),dt,tp2(1,:),fu(1,:),fv(1,:),&
+                      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),p(1,1,:),1.0,elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),1)
+!! +PAB: really unsure about some of the inputs above
+        endif
+      endif        
+
+    enddo
+    
+end subroutine prim_apply_forcing   
 
 subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
            tp2,fu,fv)
@@ -721,7 +800,6 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
        call TimeLevel_Qdp(tl, qsplit, t1_qdp, t2_qdp) !get np1 into t2_qdp
     endif
 
-    write(*,*) 'PREPRECUM'
     !   IE   Cp*dpdn*T  + (Cpv-Cp) Qdpdn*T
     !        Cp*dpdn(n)*T(n+1) + (Cpv-Cp) Qdpdn(n)*T(n+1)
     !        [Cp + (Cpv-Cp) Q(n)] *dpdn(n)*T(n+1) 

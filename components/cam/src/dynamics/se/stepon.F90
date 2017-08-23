@@ -523,16 +523,13 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
 
      ! Determine whether it is time for an IOP update;
      ! doiopupdate set to true if model time step > next available IOP
-     write(*,*) 'use_iop ', use_iop
      if (use_iop) then
-       write(*,*) 'FUCKASS'
        call setiopupdate
      end if
      
      ! Update IOP properties e.g. omega, divT, divQ
      
      if (doiopupdate) then
-       write(*,*) 'EATASS'
        call readiopdata(dyn_out)
      endif   
 
