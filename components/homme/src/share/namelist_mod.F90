@@ -673,7 +673,7 @@ module namelist_mod
     call MPI_bcast(single_column_se,1,MPIlogical_t,par%root,par%comm,ierr)
     call MPI_bcast(scmlat_se,1,MPIreal_t,par%root,par%comm,ierr)
     call MPI_bcast(scmlon_se,1,MPIreal_t,par%root,par%comm,ierr)
-    call MPI_bcast(iopfile_se,1,MAX_CHARS,MPIChar_t,par%root,par%comm,ierr)
+    call MPI_bcast(iopfile_se,MAX_CHARS,MPIChar_t,par%root,par%comm,ierr)
     call MPI_bcast(rsplit,1,MPIinteger_t ,par%root,par%comm,ierr)
     call MPI_bcast(rk_stage_user,1,MPIinteger_t ,par%root,par%comm,ierr)
     call MPI_bcast(LFTfreq,1,MPIinteger_t ,par%root,par%comm,ierr)

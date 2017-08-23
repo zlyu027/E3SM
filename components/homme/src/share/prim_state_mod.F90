@@ -687,7 +687,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     use physical_constants, only : Cp, cpwater_vapor
     use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
     use prim_si_mod, only : preq_hydrostatic
-    use dyn_grid, only: pelat_deg
+    use dyn_grid, only: pelat_deg, pelon_deg
     use time_mod, only: tstep
 
     integer :: t1,t2,n,nets,nete
@@ -721,6 +721,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
        call TimeLevel_Qdp(tl, qsplit, t1_qdp, t2_qdp) !get np1 into t2_qdp
     endif
 
+    write(*,*) 'PREPRECUM'
     !   IE   Cp*dpdn*T  + (Cpv-Cp) Qdpdn*T
     !        Cp*dpdn(n)*T(n+1) + (Cpv-Cp) Qdpdn(n)*T(n+1)
     !        [Cp + (Cpv-Cp) Q(n)] *dpdn(n)*T(n+1) 
@@ -810,20 +811,24 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
              end do
           end do
        end do
-       
-!      if (single_column) then
-!        dt=tstep*qsplit
-!        call forecast(pelat_deg,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
-!	              elem(ie)%state%ps_v(1,1,t2),elem(ie)%state%v(1,1,1,:,t2),&
-!		      elem(ie)%state%v(1,1,1,:,t2),elem(ie)%state%v(1,1,1,:,t1),& 
-!		      elem(ie)%state%v(1,1,2,:,t2),elem(ie)%state%v(1,1,2,:,t2),&
-!		      elem(ie)%state%v(1,1,2,:,t1),elem(ie)%state%T(1,1,:,t2),&
-!		      elem(ie)%state%T(1,1,:,t2),elem(ie)%state%T(1,1,:,t1),&
-!		      !elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),&
-!		      elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:),dt,tp2(1,:),fu(1,:),fv(1,:),&
-                      !elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),p(1,1,:),1.0,elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),1)
-!! +PAB: really usure about some of the inputs above
-!      endif        
+ 
+!       write(*,*) 'pelat_deg', pelat_deg
+!       write(*,*) 'pelon_deg', pelon_deg
+      if (single_column_se) then
+        dt=tstep*qsplit 
+        if (ie .eq. nets) then
+          call forecast(pelat_deg,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
+	              elem(ie)%state%ps_v(1,1,t2),elem(ie)%state%v(1,1,1,:,t2),&
+		      elem(ie)%state%v(1,1,1,:,t2),elem(ie)%state%v(1,1,1,:,t1),& 
+		      elem(ie)%state%v(1,1,2,:,t2),elem(ie)%state%v(1,1,2,:,t2),&
+		      elem(ie)%state%v(1,1,2,:,t1),elem(ie)%state%T(1,1,:,t2),&
+		      elem(ie)%state%T(1,1,:,t2),elem(ie)%state%T(1,1,:,t1),&
+		      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),&
+		      elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:),dt,tp2(1,:),fu(1,:),fv(1,:),&
+                      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),p(1,1,:),1.0,elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),1)
+!! +PAB: really unsure about some of the inputs above
+        endif
+      endif        
 
     enddo
     

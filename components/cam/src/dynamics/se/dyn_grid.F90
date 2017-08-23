@@ -85,6 +85,8 @@ module dyn_grid
   integer(iMap), pointer :: pemap(:) => null()  ! pe-local map for PIO decomp
 
 
+  real(r8), public :: pelat_deg_se, pelon_deg_se, pearea_se, pemap_se
+
 !========================================================================
 contains
 !========================================================================
@@ -504,34 +506,32 @@ end function get_block_owner_d
       allocate(pemap(np*np*nelemd))
       pemap = 0
       
-      if (.not. single_column_se) then
+!      if (.not. single_column_se) then
       ! Now, fill in the appropriate values
-      ii = 1
-      do ie = 1, nelemd
-        areaw = 1.0_r8 / elem(ie)%rspheremp(:,:)         
-        pearea(ii:ii+npsq-1) = reshape(areaw, (/ np*np /))
-        pemap(ii:ii+npsq-1) = fdofp_local(:,ie)
-        do j = 1, np
-          do i = 1, np
-            pelat_deg(ii) = elem(ie)%spherep(i, j)%lat * rad2deg
-            pelon_deg(ii) = elem(ie)%spherep(i, j)%lon * rad2deg
-            ii = ii + 1
-          end do
+    ii = 1
+    do ie = 1, nelemd
+      areaw = 1.0_r8 / elem(ie)%rspheremp(:,:)         
+      pearea(ii:ii+npsq-1) = reshape(areaw, (/ np*np /))
+      pemap(ii:ii+npsq-1) = fdofp_local(:,ie)
+      do j = 1, np
+        do i = 1, np
+          pelat_deg(ii) = elem(ie)%spherep(i, j)%lat * rad2deg
+          pelon_deg(ii) = elem(ie)%spherep(i, j)%lon * rad2deg
+          ii = ii + 1
         end do
-!        bb = bb + nuniq
       end do
-      local_coords_initialized = .true.
+!        bb = bb + nuniq
+    end do
+    local_coords_initialized = .true.
       
-      else 
+!      else 
       
-        do ie = 1, np
-          pearea(ie) = 2.0/np
-	  pemap(ie) = fdofp_local(1,ie) ! +PAB, check to make sure this is right?
-	  pelat_deg(ie) = scmlat_se
-	  pelon_deg(ie) = mod((scmlon_se+360._r8),360._r8)
-        end do      
+    pearea_se = 2.0/np
+    pemap_se = fdofp_local(1,ie) ! +PAB, check to make sure this is right?
+    pelat_deg_se = scmlat_se
+    pelon_deg_se = mod((scmlon_se+360._r8),360._r8)      
       
-      endif
+!      endif
       
     else if (ngcols_d /= NumUniqueCols) then
       call endrun('set_horiz_grid_cnt_d: NumUniqueCols /= ngcols_d')

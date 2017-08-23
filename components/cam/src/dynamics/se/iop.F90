@@ -133,8 +133,8 @@ contains
 
    integer :: tl_f
 
-   allocate(clat(nelemd))
-   allocate(latdeg(nelemd))
+   allocate(clat(1))
+   allocate(latdeg(1))
 
    fill_ends= .false.
 
@@ -824,6 +824,7 @@ endif !scm_observed_aero
    else
       have_omega = .true.
    endif
+   
    call plevs0(1    ,plon   ,plev    ,elem(1)%state%ps_v(1,1,3)   ,pint,pmid ,pdel)
    call shr_sys_flush( iulog )
 !
