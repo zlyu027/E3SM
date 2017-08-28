@@ -663,10 +663,11 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     use physical_constants, only : Cp, cpwater_vapor
     use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
     use prim_si_mod, only : preq_hydrostatic
-    use dyn_grid, only: pelat_deg, pelon_deg
+    use dyn_grid, only: pelat_deg, pelon_deg,pelat_deg_se
     use time_mod, only: tstep
+    use constituents, only: pcnst
 
-    integer :: t1,t2,n,nets,nete
+    integer :: t1,t2,n,nets,nete,pp
     type (element_t)     , intent(inout), target :: elem(:)
     type (hvcoord_t)                  :: hvcoord
     type (TimeLevel_t), intent(in)       :: tl
@@ -681,6 +682,7 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     real (kind=real_kind), dimension(np,np,nlev)  :: p,T_v,phi
     real (kind=real_kind) :: cp_star1,cp_star2,qval_t1,qval_t2
     real (kind=real_kind) :: Qt,dt
+    real (kind=real_kind), dimension(nlev,pcnst) :: stateQin1, stateQin2
     logical :: wet
 
 
@@ -711,19 +713,55 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
           dpt2(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
                ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem(ie)%state%ps_v(:,:,t2)
        enddo
+
+      do k=1,nlev
+        p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*elem(ie)%state%ps_v(:,:,t2)
+      end do
  
       if (single_column_se) then
         dt=tstep*qsplit 
         if (ie .eq. nets) then
-          call forecast(pelat_deg,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
+          ! PAB first indicee is lat
+          
+!          write(iulog,*) 'STATEPSVT1 ', elem(ie)%state%ps_v(1,1,t1)
+!          write(iulog,*) 'STATEPSVT2 ',elem(ie)%state%ps_v(1,1,t2)
+!          write(iulog,*) 'STATEVT1 ',elem(ie)%state%v(1,1,1,:,t1)
+!          write(iulog,*) 'STATEVT2 ',elem(ie)%state%v(1,1,1,:,t2)
+!          write(iulog,*) 'STATEUT1 ',elem(ie)%state%v(1,1,2,:,t1)
+!          write(iulog,*) 'STATEUT2 ',elem(ie)%state%v(1,1,2,:,t2)
+!          write(iulog,*) 'STATETT1 ',elem(ie)%state%T(1,1,:,t1)
+!          write(iulog,*) 'STATETT2 ',elem(ie)%state%T(1,1,:,t2)
+!          write(iulog,*) 'STATEQdpT2 ',elem(ie)%state%Qdp(1,1,:,1,t2_qdp)
+!          write(iulog,*) 'DPT2 ',dpt2(1,1,:)
+!          write(iulog,*) 'STATEQdpT1 ',elem(ie)%state%Qdp(1,1,:,1,t1_qdp)
+!          write(iulog,*) 'DPT1 ',dpt1(1,1,:)
+!          write(iulog,*) 'dt ',dt
+!          write(iulog,*) 'tp2 ',tp2(1,:)
+!          write(iulog,*) 'fu ',fu(1,:)
+!          write(iulog,*) 'fv ',fv(1,:)
+!          write(iulog,*) 'p ',p(1,1,:)
+!          write(iulog,*) 'QTEST ',elem(ie)%state%Q(1,1,:,t1)
+!          write(iulog,*) 'QTEST 1 ',elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:)
+!          write(iulog,*) 'QTEST 2 ',elem(ie)%state%Qdp(1,1,:,2,t1_qdp)/dpt1(1,1,:)
+         
+          do pp=1,pcnst
+            stateQin1(:,pp) = elem(ie)%state%Qdp(1,1,:,pp,t1_qdp)/dpt1(1,1,:)
+            stateQin2(:,pp) = elem(ie)%state%Qdp(1,1,:,pp,t2_qdp)/dpt2(1,1,:)  
+          enddo
+
+          call forecast(1,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
 	              elem(ie)%state%ps_v(1,1,t2),elem(ie)%state%v(1,1,1,:,t2),&
 		      elem(ie)%state%v(1,1,1,:,t2),elem(ie)%state%v(1,1,1,:,t1),& 
 		      elem(ie)%state%v(1,1,2,:,t2),elem(ie)%state%v(1,1,2,:,t2),&
 		      elem(ie)%state%v(1,1,2,:,t1),elem(ie)%state%T(1,1,:,t2),&
 		      elem(ie)%state%T(1,1,:,t2),elem(ie)%state%T(1,1,:,t1),&
-		      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),&
-		      elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:),dt,tp2(1,:),fu(1,:),fv(1,:),&
-                      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),p(1,1,:),1.0,elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),1)
+		      stateQin2,stateQin2,stateQin1,dt,tp2(1,:),fu(1,:),fv(1,:),&
+                      stateQin2,p(1,1,:),1.0,stateQin2,1)
+
+         do pp=1,pcnst
+           elem(ie)%state%Qdp(1,1,:,pp,t2_qdp)=stateQin2(:,pp)*dpt2(1,1,:)
+         enddo
+
 !! +PAB: really unsure about some of the inputs above
         endif
       endif        

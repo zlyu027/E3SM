@@ -95,6 +95,7 @@ subroutine cam_init( cam_out, cam_in, mpicom_atm, &
    use cam_history,      only: intht, init_masterlinkedlist
    use history_scam,     only: scm_intht
    use scamMod,          only: single_column
+   use control_mod,      only: single_column_se
    use cam_pio_utils,    only: init_pio_subsystem
    use cam_instance,     only: inst_suffix
 

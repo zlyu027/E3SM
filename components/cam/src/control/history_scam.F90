@@ -50,7 +50,7 @@ CONTAINS
 !
 ! Call addfld to add each field to the Master Field List.
 !
-      call addfld ('TDIFF',(/ 'lev' /),    'A','K','difference from observed temp', gridname='gauss_grid')
+      call addfld ('TDIFF',(/ 'lev' /),    'A','K','difference from observed temp',gridname='gauss_grid')
 
       call addfld ('TOBS',(/ 'lev' /),    'A','K','observed temp', gridname='gauss_grid')
       call addfld ('QDIFF',(/ 'lev' /),    'A','kg/kg','difference from observed water',gridname='gauss_grid')

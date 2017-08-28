@@ -621,23 +621,23 @@ end if
 !
 !  outfld calls moved from linemsbc
 !
-   call outfld('TOBS',tobs,plon,lat)
-   call outfld('QOBS',qobs,plon,lat)
-   call outfld('TDIFF',tdiff,plon,lat)
-   call outfld('QDIFF',qdiff,plon,lat)
-   if( use_iop ) then
-      call outfld('DIVQ',divq,plon,lat)
-      call outfld('DIVT',divt,plon,lat)
-      call outfld('DIVQ3D',divq3d,plon,lat)
-      call outfld('DIVT3D',divt3d,plon,lat)
-!!$      call outfld('DIVU',divu,plon,lat)
-!!$      call outfld('DIVV',divv,plon,lat)
-      call outfld('PRECOBS',precobs,plon,lat )
-      call outfld('LHFLXOBS',lhflxobs,plon,lat )
-      call outfld('SHFLXOBS',shflxobs,plon,lat )
-!!$      call outfld('Q1OBS',q1obs,plon,lat )
-!!$      call outfld('Q2OBS',q2obs,plon,lat )
-   endif
+!   call outfld('TOBS',tobs,plon,lat)
+!   call outfld('QOBS',qobs,plon,lat)
+!   call outfld('TDIFF',tdiff,plon,lat)
+!   call outfld('QDIFF',qdiff,plon,lat)
+!   if( use_iop ) then
+!      call outfld('DIVQ',divq,plon,lat)
+!      call outfld('DIVT',divt,plon,lat)
+!      call outfld('DIVQ3D',divq3d,plon,lat)
+!      call outfld('DIVT3D',divt3d,plon,lat)
+!!!$      call outfld('DIVU',divu,plon,lat)
+!!!$      call outfld('DIVV',divv,plon,lat)
+!      call outfld('PRECOBS',precobs,plon,lat )
+!      call outfld('LHFLXOBS',lhflxobs,plon,lat )
+!      call outfld('SHFLXOBS',shflxobs,plon,lat )
+!!!$      call outfld('Q1OBS',q1obs,plon,lat )
+!!!$      call outfld('Q2OBS',q2obs,plon,lat )
+!   endif
 
 !
 ! Diagnose pressure arrays needed by DIFCOR
@@ -664,7 +664,10 @@ end if
 !
 ! Calculate SLT moisture and constituent integrals
 !
-   hcwavaw = 0.5_r8*cwava*w(lat)
+   write(iulog,*) 'LATHERE ', lat
+   write(iulog,*) 'WHERE ', w
+   write(iulog,*) 'CWAVA ', cwava
+!   hcwavaw = 0.5_r8*cwava*w(lat)
    do m=1,pcnst
       hw2al(m) = 0._r8
       hw2bl(m) = 0._r8
@@ -690,17 +693,17 @@ end if
       end do
    end do
 
-   call qmassd (cwava, etamid, w(lat), qminus, qfcst, &
-                pdela, hw3al, nlon)
+!   call qmassd (cwava, etamid, w(lat), qminus, qfcst, &
+!                pdela, hw3al, nlon)
 
-   call qmassd (cwava, etamid, w(lat), qminus, qfcst, &
-                pdelb, hw3bl, nlon)
+!   call qmassd (cwava, etamid, w(lat), qminus, qfcst, &
+!                pdelb, hw3bl, nlon)
 
-   if (pcnst.gt.1) then
-      call xqmass (cwava, etamid, w(lat), qminus, qfcst, &
-                   qminus, qfcst, pdela, pdelb, hwxal, &
-                   hwxbl, nlon)
-   end if
+!   if (pcnst.gt.1) then
+!      call xqmass (cwava, etamid, w(lat), qminus, qfcst, &
+!                   qminus, qfcst, pdela, pdelb, hwxal, &
+!                   hwxbl, nlon)
+!   end if
 
    return
 end subroutine forecast

@@ -528,6 +528,7 @@ end function get_block_owner_d
       
     pearea_se = 2.0/np
     pemap_se = fdofp_local(1,ie) ! +PAB, check to make sure this is right?
+    write(*,*) 'SCMLATSE', scmlat_se 
     pelat_deg_se = scmlat_se
     pelon_deg_se = mod((scmlon_se+360._r8),360._r8)      
       

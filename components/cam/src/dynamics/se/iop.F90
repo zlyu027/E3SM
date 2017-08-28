@@ -349,7 +349,8 @@ endif !scm_observed_aero
       end do
    endif
 
-
+   write(*,*) 'SCMLATSEHERE', scmlat_se
+   write(*,*) 'SCMLONSEHERE', scmlon_se
    call shr_scam_GetCloseLatLon(ncid,scmlat_se,scmlon_se,closelat,closelon,closelatidx,closelonidx)
 
    lonid = 0
