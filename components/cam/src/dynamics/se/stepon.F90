@@ -42,9 +42,9 @@ module stepon
   public stepon_run3    ! run method phase 3
   public stepon_final  ! Finalization
   
-  real(r8), allocatable, public :: tp2(:,:) ! temp tendency
-  real(r8), allocatable, public :: fu(:,:)  ! u wind tendency
-  real(r8), allocatable, public :: fv(:,:)  ! v wind tendency
+  real(r8), allocatable, public :: tp2(:,:,:) ! temp tendency
+  real(r8), allocatable, public :: fu(:,:,:)  ! u wind tendency
+  real(r8), allocatable, public :: fv(:,:,:)  ! v wind tendency
 
 !----------------------------------------------------------------------
 !
@@ -150,9 +150,9 @@ subroutine stepon_init(dyn_in, dyn_out )
      call add_default(trim(cnst_name(m))//'&IC',0, 'I')
   end do
 
-  allocate(tp2(nelemd,nlev))
-  allocate(fu(nelemd,nlev))
-  allocate(fv(nelemd,nlev))
+  allocate(tp2(npsq,nlev,nelemd))
+  allocate(fu(npsq,nlev,nelemd))
+  allocate(fv(npsq,nlev,nelemd))
 
 end subroutine stepon_init
 

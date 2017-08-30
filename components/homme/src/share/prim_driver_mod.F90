@@ -12,7 +12,7 @@ module prim_driver_mod
 
   use cg_mod,           only: cg_t
   use derivative_mod,   only: derivative_t, derivinit
-  use dimensions_mod,   only: np, nlev, nlevp, nelem, nelemd, nelemdmax, GlobalUniqueCols, qsize
+  use dimensions_mod,   only: np, nlev, nlevp, nelem, nelemd, nelemdmax, GlobalUniqueCols, qsize, npsq
   use element_mod,      only: element_t, allocate_element_desc, setup_element_pointers
   use element_state,    only: timelevels
   use hybrid_mod,       only: hybrid_t
@@ -877,7 +877,7 @@ contains
     real(kind=real_kind), intent(in)    :: dt                           ! "timestep dependent" timestep
     type (TimeLevel_t),   intent(inout) :: tl
     integer,              intent(in)    :: nsubstep                     ! nsubstep = 1 .. nsplit
-    real(kind=real_kind), intent(inout) :: tp2(nelemd,nlev), fu(nelemd,nlev), fv(nelemd,nlev)
+    real(kind=real_kind), intent(inout) :: tp2(npsq,nlev,nelemd), fu(npsq,nlev,nelemd), fv(npsq,nlev,nelemd)
 
     real(kind=real_kind) :: dp, dt_q, dt_remap
     real(kind=real_kind) :: dp_np1(np,np)
@@ -920,6 +920,9 @@ contains
     !   ftype= 0: apply all forcing here
     !   ftype=-1: do not apply forcing
 
+!    write(iulog,*) 'FTYPE ', ftype
+    ! FTYPE Is 2
+
     call TimeLevel_Qdp(tl, qsplit, n0_qdp)
 
     if (ftype==0) then
@@ -932,6 +935,7 @@ contains
       call ApplyCAMForcing_dynamics(elem, hvcoord,tl%n0,dt_remap,nets,nete)
       call t_stopf("ApplyCAMForcing_dynamics")
     endif
+
 #else
     ! Apply HOMME test case forcing
     call apply_test_forcing(elem,hybrid,hvcoord,tl%n0,n0_qdp,dt_remap,nets,nete)
@@ -1045,6 +1049,11 @@ contains
       call t_stopf("prim_energy_halftimes")
     endif
 
+    if (single_column_se) then
+      call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
+          tp2,fu,fv)
+    end if
+
     ! =================================
     ! update dynamics time level pointers
     ! =================================
@@ -1061,10 +1070,10 @@ contains
        call prim_printstate(elem, tl, hybrid,hvcoord,nets,nete)
     end if
     
-    if (single_column_se) then
-       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
-           tp2,fu,fv)
-    end if
+!    if (single_column_se) then
+!       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
+!           tp2,fu,fv)
+!    end if
     
   end subroutine prim_run_subcycle
 

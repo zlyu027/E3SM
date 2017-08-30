@@ -362,7 +362,7 @@ CONTAINS
     ! !USES:
     use parallel_mod,     only : par
     use prim_driver_mod,  only: prim_run_subcycle
-    use dimensions_mod,   only : nlev, nelemd
+    use dimensions_mod,   only : npsq, nlev, nelemd
     use time_mod,         only: tstep
     use hybrid_mod,       only: hybrid_create
 !    use perf_mod, only : t_startf, t_stopf
@@ -371,7 +371,7 @@ CONTAINS
 
     type (dyn_export_t), intent(inout)       :: dyn_state   !  container
     type(hybrid_t) :: hybrid
-    real(r8), intent(inout) :: tp2(nelemd,nlev), fu(nelemd,nlev), fv(nelemd,nlev)
+    real(r8), intent(inout) :: tp2(npsq,nlev,nelemd), fu(npsq,nlev,nelemd), fv(npsq,nlev,nelemd)
 
     integer, intent(out)               :: rc      ! Return code
     integer ::  n

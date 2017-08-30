@@ -277,6 +277,7 @@ contains
     ! ==================================
     ! Take timestep
     ! ==================================
+    write(iulog,*) 'FUCKINGMETHOD', method
 
     dt_vis = dt
     if (method==0) then
@@ -1220,7 +1221,11 @@ contains
      else
 
        if (single_column_se) then
-         eta_dot_dpdn(1,1,:)=wfldh(:)
+         do j=1,np
+           do i=1,np
+             eta_dot_dpdn(i,j,:)=wfldh(:)
+           enddo
+         enddo
        else 
          do k=1,nlev
            ! ==================================================

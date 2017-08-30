@@ -195,6 +195,8 @@ subroutine forecast(lat, psm1, psm2,ps, &
 
    wfldint(plevp) = 0.0_r8
 
+!   t2(:) = 1.0
+
    if (use_3dfrc .and. use_iop) then
 
 !  Complete a very simple forecast using supplied 3-dimensional forcing
@@ -559,6 +561,8 @@ end if
    u3(:)=ufcst(:)
    v3(:)=vfcst(:)
 
+!   write(iulog,*) 'TFORECAST ', t3(:)
+!   write(iulog,*) 'TFORCING ', t2(:)
 !
    if (scm_relaxation) then
 !

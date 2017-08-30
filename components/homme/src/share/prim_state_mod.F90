@@ -656,14 +656,14 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
            tp2,fu,fv)
 ! 
     use kinds, only : real_kind
-    use dimensions_mod, only : np, np, nlev
+    use dimensions_mod, only : np, np, nlev, npsq
     use control_mod, only : use_cpstar, single_column_se
     use hybvcoord_mod, only : hvcoord_t
     use element_mod, only : element_t
     use physical_constants, only : Cp, cpwater_vapor
     use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
     use prim_si_mod, only : preq_hydrostatic
-    use dyn_grid, only: pelat_deg, pelon_deg,pelat_deg_se
+    use dyn_grid, only: pelat_deg, pelon_deg,pelat_deg_se,pelon_deg_se
     use time_mod, only: tstep
     use constituents, only: pcnst
 
@@ -671,8 +671,8 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     type (element_t)     , intent(inout), target :: elem(:)
     type (hvcoord_t)                  :: hvcoord
     type (TimeLevel_t), intent(in)       :: tl
-    logical :: t_before_advance
-    real(kind=real_kind), intent(inout), dimension(nelemd,nlev) :: tp2, fu, fv
+    logical :: t_before_advance, do_column_scm
+    real(kind=real_kind), intent(inout), dimension(npsq,nlev,nelemd) :: tp2, fu, fv
 
     integer :: ie,k,i,j,nm_f
     real (kind=real_kind), dimension(np,np,nlev)  :: dpt1,dpt2   ! delta pressure
@@ -685,8 +685,8 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     real (kind=real_kind), dimension(nlev,pcnst) :: stateQin1, stateQin2
     logical :: wet
 
-
     integer:: t2_qdp, t1_qdp   ! the time pointers for Qdp are not the same
+    integer:: icount
 
     nm_f = 1
     if (t_before_advance) then
@@ -717,10 +717,22 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
       do k=1,nlev
         p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*elem(ie)%state%ps_v(:,:,t2)
       end do
+
+!      write(iulog,*) 'PELAT', pelat_deg
+!      write(iulog,*) 'PELON', pelon_deg
+!      write(iulog,*) 'PELAT_scm', pelat_deg_se
+!      write(iulog,*) 'PELON_scm', pelon_deg_se
+
+!      do_column_scm = .false.
+!      if (pelat_deg(ie)+0.5 > pelat_deg_se .and. pelat_deg(ie)-0.5 < pelat_deg_se) then
+!        if (pelon_deg(ie)+0.5 > pelon_deg_se .and. pelon_deg(ie)-0.5 < pelon_deg_se) then
+!          write(iulog,*) 'FUCKINGHERE', pelat_deg(ie), pelon_deg(ie), pelat_deg_se, pelon_deg_se 
+!        endif
+!      endif
  
       if (single_column_se) then
         dt=tstep*qsplit 
-        if (ie .eq. nets) then
+!        if (ie .eq. nets) then
           ! PAB first indicee is lat
           
 !          write(iulog,*) 'STATEPSVT1 ', elem(ie)%state%ps_v(1,1,t1)
@@ -743,27 +755,37 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
 !          write(iulog,*) 'QTEST ',elem(ie)%state%Q(1,1,:,t1)
 !          write(iulog,*) 'QTEST 1 ',elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:)
 !          write(iulog,*) 'QTEST 2 ',elem(ie)%state%Qdp(1,1,:,2,t1_qdp)/dpt1(1,1,:)
+
+        icount=0
+        do i=1,np
+          do j=1,np
          
-          do pp=1,pcnst
-            stateQin1(:,pp) = elem(ie)%state%Qdp(1,1,:,pp,t1_qdp)/dpt1(1,1,:)
-            stateQin2(:,pp) = elem(ie)%state%Qdp(1,1,:,pp,t2_qdp)/dpt2(1,1,:)  
+            do pp=1,pcnst
+              stateQin1(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t1_qdp)/dpt1(i,j,:)
+              stateQin2(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)/dpt2(j,j,:)  
+            enddo
+
+            call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t1),&
+	              elem(ie)%state%ps_v(i,j,t2),elem(ie)%state%v(i,j,1,:,t2),&
+		      elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
+		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t2),&
+		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t1),&
+		      elem(ie)%state%T(i,j,:,t1),elem(ie)%state%T(i,j,:,t2),&
+		      stateQin2,stateQin2,stateQin1,dt,tp2(icount,:,ie),fu(icount,:,ie),fv(icount,:,ie),&
+                      stateQin2,p(i,j,:),1.0,stateQin2,1)
+
+!            write(*,*) 'TDIFFFUCK', elem(ie)%state%T(i,j,:,t2)-elem(ie)%state%T(i,j,:,t1)
+
+            do pp=1,pcnst
+              elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)=stateQin2(:,pp)*dpt2(i,j,:)
+            enddo
+
+            icount=icount+1
           enddo
-
-          call forecast(1,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
-	              elem(ie)%state%ps_v(1,1,t2),elem(ie)%state%v(1,1,1,:,t2),&
-		      elem(ie)%state%v(1,1,1,:,t2),elem(ie)%state%v(1,1,1,:,t1),& 
-		      elem(ie)%state%v(1,1,2,:,t2),elem(ie)%state%v(1,1,2,:,t2),&
-		      elem(ie)%state%v(1,1,2,:,t1),elem(ie)%state%T(1,1,:,t2),&
-		      elem(ie)%state%T(1,1,:,t2),elem(ie)%state%T(1,1,:,t1),&
-		      stateQin2,stateQin2,stateQin1,dt,tp2(1,:),fu(1,:),fv(1,:),&
-                      stateQin2,p(1,1,:),1.0,stateQin2,1)
-
-         do pp=1,pcnst
-           elem(ie)%state%Qdp(1,1,:,pp,t2_qdp)=stateQin2(:,pp)*dpt2(1,1,:)
-         enddo
+        enddo
 
 !! +PAB: really unsure about some of the inputs above
-        endif
+!        endif
       endif        
 
     enddo
