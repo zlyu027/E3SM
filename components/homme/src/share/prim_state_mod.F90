@@ -767,12 +767,12 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
 
             call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t1),&
 	              elem(ie)%state%ps_v(i,j,t2),elem(ie)%state%v(i,j,1,:,t2),&
-		      elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
-		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t2),&
-		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t1),&
-		      elem(ie)%state%T(i,j,:,t1),elem(ie)%state%T(i,j,:,t2),&
-		      stateQin2,stateQin2,stateQin1,dt,tp2(icount,:,ie),fu(icount,:,ie),fv(icount,:,ie),&
-                      stateQin2,p(i,j,:),1.0,stateQin2,1)
+		      elem(ie)%state%v(i,j,1,:,t1),elem(ie)%state%v(i,j,1,:,t1),& 
+		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t1),&
+		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t2),&
+		      elem(ie)%state%T(i,j,:,t1),elem(ie)%state%T(i,j,:,t1),&
+		      stateQin2,stateQin1,stateQin1,dt,tp2(icount,:,ie),fu(icount,:,ie),fv(icount,:,ie),&
+                      stateQin2,p(i,j,:),1.0,stateQin1,1)
 
 !            write(*,*) 'TDIFFFUCK', elem(ie)%state%T(i,j,:,t2)-elem(ie)%state%T(i,j,:,t1)
 

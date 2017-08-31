@@ -198,6 +198,9 @@ subroutine forecast(lat, psm1, psm2,ps, &
 !  Complete a very simple forecast using supplied 3-dimensional forcing
 !  by the large scale.  Obviates the need for any kind of vertical 
 !  advection calculation.  Skip to diagnostic estimates of vertical term.
+!      tfcst(:) = t3m2(:)
+!      qfcst(1,:,:) = qminus(1,:,:)
+
       i=1
       do k=1,plev
          tfcst(k) = t3m2(k) + ztodt*t2(k) + ztodt*divt3d(k)
@@ -558,7 +561,7 @@ end if
    v3(:)=vfcst(:)
 
 !
-   if (scm_relaxation) then
+!   if (scm_relaxation) then
 !
 !    THIS IS WHERE WE RELAX THE SOLUTION IF REQUESTED
 !    The relaxation can be thought of as a part of the "adjustment" physics
@@ -585,8 +588,8 @@ end if
 !
 !     set relaxation time to constant here if desired
 !
-           if (pmidm1(k) .le. scm_relaxation_low*100._r8 .and. &
-	     pmidm1(k) .ge. scm_relaxation_high*100._r8) then 
+!           if (pmidm1(k) .le. scm_relaxation_low*100._r8 .and. &
+!	     pmidm1(k) .ge. scm_relaxation_high*100._r8) then 
 
              rtau(k)   = 10800._r8          ! 3-hr adj. time scale
              rtau(k)   = max(ztodt,rtau(k))
@@ -596,14 +599,15 @@ end if
              t3(k)     = t3(k)   + relaxt(k)*ztodt
              q3(k,1)   = q3(k,1) + relaxq(k)*ztodt
 	   
-	   endif
+!	   endif
          end do
 !
          call outfld('TRELAX',relaxt,plon,lat )
          call outfld('QRELAX',relaxq,plon,lat )
          call outfld('TAURELAX',rtau,plon,lat )
 !      end if
-   end if
+!   end if
+   write(*,*) 'TFCST ', t3(:) 
 !     
 !  evaluate the difference in state information from observed
 !
