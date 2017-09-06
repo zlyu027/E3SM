@@ -18,6 +18,7 @@ module stepon
   use time_manager,     only: is_first_step, get_step_size
   use iop,              only: setiopupdate, readiopdata
   use scamMod,          only: use_iop,doiopupdate,use_pert_frc,wfld,wfldh,single_column
+  use control_mod,      only: single_column_se
   use perf_mod
 
   implicit none
@@ -250,7 +251,7 @@ subroutine stepon_run3( ztodt, cam_out, phys_state, dyn_in, dyn_out )
   type(dyn_export_t) :: dyn_out                      ! included for compatibility
   real(r8) :: dt_dyn0,dt_dyn 
   integer :: stage
-  if (single_column) then
+  if (single_column_se) then
      
      ! Determine whether it is time for an IOP update;
      ! doiopupdate set to true if model time step > next available IOP

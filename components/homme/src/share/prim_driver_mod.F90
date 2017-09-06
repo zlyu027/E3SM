@@ -936,6 +936,11 @@ contains
       call t_stopf("ApplyCAMForcing_dynamics")
     endif
 
+    if (single_column_se) then
+      call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
+             tp2,fu,fv)
+    end if
+
 #else
     ! Apply HOMME test case forcing
     call apply_test_forcing(elem,hybrid,hvcoord,tl%n0,n0_qdp,dt_remap,nets,nete)
@@ -987,6 +992,7 @@ contains
     ! defer final timelevel update until after remap and diagnostics
 
 #if (USE_OPENACC)
+
     call TimeLevel_Qdp( tl, qsplit, n0_qdp, np1_qdp)
     call t_startf("copy_qdp_h2d")
     call copy_qdp_d2h( elem , np1_qdp )
@@ -1098,7 +1104,7 @@ contains
   !
   !
     use control_mod,        only: statefreq, integration, ftype, qsplit, nu_p, rsplit
-    use control_mod,        only: use_semi_lagrange_transport
+    use control_mod,        only: use_semi_lagrange_transport, single_column_se
     use hybvcoord_mod,      only : hvcoord_t
     use parallel_mod,       only: abortmp
     use prim_advance_mod,   only: prim_advance_exp
@@ -1175,6 +1181,8 @@ contains
     ! For rsplit=0: 
     !   if tracer scheme needs v on lagrangian levels it has to vertically interpolate
     !   if tracer scheme needs dp3d, it needs to derive it from ps_v
+
+!    if (.not. single_column_se) then
     call t_startf("prim_step_advec")
     if (qsize > 0) then
       call t_startf("PAT_remap")
@@ -1182,6 +1190,7 @@ contains
       call t_stopf("PAT_remap")
     end if
     call t_stopf("prim_step_advec")
+!    endif
 
   end subroutine prim_step
 

@@ -620,6 +620,10 @@ end if
 !
             t3(k)     = t3(k)   + relaxt(k)*ztodt
             q3(k,1)   = q3(k,1) + relaxq(k)*ztodt
+
+            t3(k)     = tobs(k)
+            q3(k,1)   = qobs(k)
+
          end do
 !
 !         call outfld('TRELAX',relaxt,plon,lat )

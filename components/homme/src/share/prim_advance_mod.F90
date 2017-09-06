@@ -277,8 +277,7 @@ contains
     ! ==================================
     ! Take timestep
     ! ==================================
-    write(iulog,*) 'FUCKINGMETHOD', method
-
+    
     dt_vis = dt
     if (method==0) then
        ! regular LF step
