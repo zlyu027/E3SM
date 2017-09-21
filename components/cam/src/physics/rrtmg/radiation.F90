@@ -26,6 +26,7 @@ use cam_control_mod, only: lambm0, obliqr, mvelpp, eccen
 use scamMod,         only: scm_crm_mode, single_column,have_cld,cldobs,&
                            have_clwp,clwpobs,have_tg,tground,swrad_off,&
                            lwrad_off
+use control_mod,     only: swrad_off_se, lwrad_off_se
 use perf_mod,        only: t_startf, t_stopf
 use cam_logfile,     only: iulog
 
@@ -883,7 +884,7 @@ end function radiation_nextsw_cday
     call get_rlon_all_p(lchnk, ncol, clon)
     call zenith (calday, clat, clon, coszrs, ncol, dt_avg)
     
-    if (swrad_off) then
+    if (swrad_off_se) then
        coszrs(:)=0._r8 ! coszrs is only output for zenith
     endif    
 
@@ -1234,7 +1235,7 @@ end function radiation_nextsw_cday
                        lu,           ld)
                   call t_stopf ('rad_rrtmg_lw')
 
-                  if (lwrad_off) then
+                  if (lwrad_off_se) then
                      qrl(:,:) = 0._r8
                      qrlc(:,:) = 0._r8
                      flns(:) = 0._r8

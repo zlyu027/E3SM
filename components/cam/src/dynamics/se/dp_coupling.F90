@@ -275,14 +275,14 @@ CONTAINS
     call t_stopf('derived_phys')
 
 !$omp parallel do private (lchnk, ncols, ilyr, icol)
-    do lchnk=begchunk,endchunk
-       ncols=get_ncols_p(lchnk)
-       do ilyr=1,pver
-          do icol=1,ncols
-             phys_state(lchnk)%omega(icol,ilyr)=phys_state(lchnk)%omega(icol,ilyr)*phys_state(lchnk)%pmid(icol,ilyr)
-          end do
-       end do
-    end do
+!    do lchnk=begchunk,endchunk
+!       ncols=get_ncols_p(lchnk)
+!       do ilyr=1,pver
+!          do icol=1,ncols
+!             phys_state(lchnk)%omega(icol,ilyr)=phys_state(lchnk)%omega(icol,ilyr)*phys_state(lchnk)%pmid(icol,ilyr)
+!          end do
+!       end do
+!    end do
 
 
    if (write_inithist() ) then

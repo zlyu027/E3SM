@@ -5855,6 +5855,36 @@ Single column model for SE dy-core.
 Default: FALSE
 </entry>
 
+<entry id="scm_iop_srf_prop_se" type="logical" category="scm"
+       group="ctl_nl" valid_values="">
+Single column model for SE dy-core.
+Default: FALSE
+</entry>
+
+<entry id="scm_relaxation_se" type="logical" category="scm"
+       group="ctl_nl" valid_values="">
+Single column model for SE dy-core.
+Default: FALSE
+</entry>
+
+<entry id="swrad_off_se" type="logical" category="scm"
+       group="ctl_nl" valid_values="">
+Single column model for SE dy-core.
+Default: FALSE
+</entry>
+
+<entry id="lwrad_off_se" type="logical" category="scm"
+       group="ctl_nl" valid_values="">
+Single column model for SE dy-core.
+Default: FALSE
+</entry>
+
+<entry id="precip_off_se" type="logical" category="scm"
+       group="ctl_nl" valid_values="">
+Single column model for SE dy-core.
+Default: FALSE
+</entry>
+
 <entry id="scmlon_se" type="real" category="scam"
        group="ctl_nl" valid_values="">
 Longitude value of single column for SE dy-core prototype.

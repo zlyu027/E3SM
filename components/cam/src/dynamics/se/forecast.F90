@@ -30,6 +30,7 @@ subroutine forecast(lat, psm1, psm2,ps, &
    use dyn_grid,       only: w !+PAB, but this probably isn't right, null
 !   use eul_control_mod
    use cam_logfile,    only: iulog
+   use control_mod,    only: scm_relaxation_se
 !-----------------------------------------------------------------------
    implicit none
 !-----------------------------------------------------------------------
@@ -196,7 +197,7 @@ subroutine forecast(lat, psm1, psm2,ps, &
 
    wfldint(plevp) = 0.0_r8
 
-!   t2(:) = 1.0
+   t2(:) = 0.0
 
    if (use_3dfrc .and. use_iop) then
 
@@ -480,6 +481,10 @@ end if
    if (is_first_step()) then
      t2(:) = 0.0
    endif
+   
+!   t2(:) = 0.0
+!   fu(:) = 0.0
+!   fv(:) = 0.0
 
 !   tfcst(:) = t3m2(:)
 !   qfcst(1,:,:) = q3m2(:,:)
@@ -586,7 +591,7 @@ end if
    u3(:)=ufcst(:)
    v3(:)=vfcst(:)
 
-!   if (scm_relaxation) then
+   if (scm_relaxation_se) then
 !
 !    THIS IS WHERE WE RELAX THE SOLUTION IF REQUESTED
 !    The relaxation can be thought of as a part of the "adjustment" physics
@@ -630,7 +635,7 @@ end if
 !         call outfld('QRELAX',relaxq,plon,lat )
 !         call outfld('TAURELAX',rtau,plon,lat )
 !      end if
-!   end if
+   end if
 
 !   write(iulog,*) 'TFCST ', t3(:)
 !   write(iulog,*) 'QFCST ', q3(:,1)

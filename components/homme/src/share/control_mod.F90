@@ -20,6 +20,11 @@ module control_mod
   logical, public  :: use_semi_lagrange_transport   = .false.
   logical, public  :: use_semi_lagrange_transport_local_conservation   = .false.
   logical, public  :: single_column_se = .false.
+  logical, public  :: scm_iop_srf_prop_se = .false. 
+  logical, public  :: scm_relaxation_se = .false.
+  logical, public  :: swrad_off_se = .false.
+  logical, public  :: lwrad_off_se = .false.
+  logical, public  :: precip_off_se = .false.
   
   real (kind=real_kind), public :: scmlat_se = -999.99
   real (kind=real_kind), public :: scmlon_se = -999.99

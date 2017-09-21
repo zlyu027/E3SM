@@ -1219,13 +1219,13 @@ contains
         v_vadv=0
      else
 
-       if (single_column_se) then
-         do j=1,np
-           do i=1,np
-             eta_dot_dpdn(i,j,:)=wfldh(:)
-           enddo
-         enddo
-       else 
+!       if (single_column_se) then
+!         do j=1,np
+!           do i=1,np
+!             eta_dot_dpdn(i,j,:)=wfldh(:)
+!           enddo
+!         enddo
+!       else 
          do k=1,nlev
            ! ==================================================
            ! add this term to PS equation so we exactly conserve dry mass
@@ -1233,7 +1233,7 @@ contains
            sdot_sum(:,:) = sdot_sum(:,:) + divdp(:,:,k)
            eta_dot_dpdn(:,:,k+1) = sdot_sum(:,:)
          end do
-       endif
+!       endif
 
         ! ===========================================================
         ! at this point, eta_dot_dpdn contains integral_etatop^eta[ divdp ]

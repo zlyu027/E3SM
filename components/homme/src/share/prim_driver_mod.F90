@@ -879,6 +879,8 @@ contains
     integer,              intent(in)    :: nsubstep                     ! nsubstep = 1 .. nsplit
     real(kind=real_kind), intent(inout) :: tp2(npsq,nlev,nelemd), fu(npsq,nlev,nelemd), fv(npsq,nlev,nelemd)
 
+!    type (element_t) :: elem_copy(:)
+
     real(kind=real_kind) :: dp, dt_q, dt_remap
     real(kind=real_kind) :: dp_np1(np,np)
     integer :: ie,i,j,k,n,q,t,scm_dum
@@ -925,6 +927,10 @@ contains
 
     call TimeLevel_Qdp(tl, qsplit, n0_qdp)
 
+    if (single_column_se) then
+      go to 1000
+    end if
+
     if (ftype==0) then
       call t_startf("ApplyCAMForcing")
       call ApplyCAMForcing(elem, hvcoord,tl%n0,n0_qdp, dt_remap,nets,nete)
@@ -936,10 +942,12 @@ contains
       call t_stopf("ApplyCAMForcing_dynamics")
     endif
 
-    if (single_column_se) then
-      call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
-             tp2,fu,fv)
-    end if
+
+!    if (single_column_se) then
+!      call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
+!             tp2,fu,fv)	 
+!      go to 1000    
+!    end if
 
 #else
     ! Apply HOMME test case forcing
@@ -1055,9 +1063,13 @@ contains
       call t_stopf("prim_energy_halftimes")
     endif
 
+1000 continue
+   
     if (single_column_se) then
+      call TimeLevel_update(tl,"leapfrog")
       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
           tp2,fu,fv)
+!      write(*,*) 'OMEGAinPRIM ', elem(1)%derived%omega_p(1,1,:)
     end if
 
     ! =================================

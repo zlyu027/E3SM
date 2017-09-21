@@ -99,7 +99,7 @@ contains
    integer time_dimID, lev_dimID,lev_varID,mod_dimID,&
            mod_varID,sps_varID,sps_dimID
    integer tsec_varID, bdate_varID,varid
-   integer i,j
+   integer i,j, ie
    integer nlev, nmod, nsps
    integer total_levs
 
@@ -467,9 +467,11 @@ endif !scm_observed_aero
    else
       have_t = .true.
       if (.not.use_camiop .and. get_nstep() .eq. 0) then
-         do i=1, PLEV
-            elem(1)%state%T(1,1,i,3)=tobs(i)  !     set t to tobs at first time step
-         end do
+         do ie=1,nelemd
+	   do i=1, PLEV
+             elem(ie)%state%T(:,:,i,:)=tobs(i)  !     set t to tobs at first time step
+           end do
+	 end do
       endif
    endif
 
@@ -516,8 +518,10 @@ endif !scm_observed_aero
       endif
    else
       if (.not. use_camiop .and. get_nstep() .eq. 0) then
-         do i=1, PLEV
-            elem(1)%state%Q(1,1,i,1)=qobs(i)
+         do ie=1,nelemd
+	   do i=1, PLEV
+             elem(ie)%state%Q(:,:,i,1)=qobs(i)
+	   end do
 !	    q3(1,i,1,1,n3)=qobs(i)
          end do
          have_q = .true.
@@ -826,6 +830,14 @@ endif !scm_observed_aero
       have_omega = .true.
    endif
    
+!   write (*,*) 'WFLD ', wfld(:)
+   
+   do ie=1,nelemd
+     do i=1, PLEV
+       elem(ie)%derived%omega_p(:,:,i)=wfld(i)  !     set t to tobs at first time step
+     end do
+   end do
+   
    call plevs0(1    ,plon   ,plev    ,elem(1)%state%ps_v(1,1,3)   ,pint,pmid ,pdel)
    call shr_sys_flush( iulog )
 !
@@ -858,9 +870,11 @@ endif !scm_observed_aero
    else
       have_u = .true.
       if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
-         do i=1, PLEV
-            elem(1)%state%v(1,1,1,:,3) = uobs(i)  !     set u to uobs at first time step
-         end do
+         do ie=1,nelemd
+	   do i=1, PLEV
+             elem(ie)%state%v(:,:,1,i,:) = uobs(i)  !     set u to uobs at first time step
+           end do
+	 end do
       endif
    endif
 
@@ -880,9 +894,11 @@ endif !scm_observed_aero
    else
       have_v = .true.
       if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
-         do i=1, PLEV
-            elem(1)%state%v(1,1,2,:,3) = vobs(i)  !     set u to uobs at first time step
-         end do
+         do ie=1,nelemd
+	   do i=1, PLEV
+             elem(ie)%state%v(:,:,2,i,:) = vobs(i)  !     set u to uobs at first time step
+           end do
+	 end do
       endif
    endif
    call shr_sys_flush( iulog )

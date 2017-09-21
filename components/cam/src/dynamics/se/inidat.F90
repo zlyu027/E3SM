@@ -58,6 +58,7 @@ contains
     use cam_history_support, only: max_fieldname_len
     use cam_grid_support,    only: cam_grid_get_local_size, cam_grid_get_gcid
     use cam_map_utils,       only: iMap
+    use iop,                 only: readiopdata, setiopupdate
     implicit none
     type(file_desc_t),intent(inout) :: ncid_ini, ncid_topo
     type (dyn_import_t), target, intent(inout) :: dyn_in   ! dynamics import
@@ -372,6 +373,12 @@ contains
           end do
        end do
     end do
+    
+    if (single_column_se) then
+      write(*,*) 'DID INITIAL SCM'
+      call setiopupdate()
+      call readiopdata(dyn_in)
+    endif
     
     ! once we've read all the fields we do a boundary exchange to 
     ! update the redundent columns in the dynamics

@@ -1813,6 +1813,7 @@ subroutine tphysbc (ztodt,               &
     use subcol,          only: subcol_gen, subcol_ptend_avg
     use subcol_utils,    only: subcol_ptend_copy, is_subcol_on
     use phys_control,    only: use_qqflx_fixer, use_mass_borrower
+    use scamMod,         only: wfld
 
     implicit none
 
@@ -1989,6 +1990,8 @@ subroutine tphysbc (ztodt,               &
     
     !-----------------------------------------------------------------------
     call t_startf('bc_init')
+    
+!    write(*,*) 'OMEGAinTPHYSBC', state%omega(1,:)
 
     zero = 0._r8
     zero_tracers(:,:) = 0._r8
@@ -1996,6 +1999,10 @@ subroutine tphysbc (ztodt,               &
 
     lchnk = state%lchnk
     ncol  = state%ncol
+    
+!    do k=1,pver
+!      state%omega(:ncol,k)=wfld(k)
+!    enddo
 
     rtdt = 1._r8/ztodt
 
@@ -2321,6 +2328,8 @@ end if
        prec_pcw_macmic = 0._r8
        snow_pcw_macmic = 0._r8
 
+!       write(*,*) 'STATEQbeforeCLUBB', state%q(1,:,1)
+
        do macmic_it = 1, cld_macmic_num_steps
 
           if (micro_do_icesupersat) then 
@@ -2503,6 +2512,8 @@ end if
        snow_str(:ncol) = snow_pcw(:ncol) + snow_sed(:ncol)
 
      end if ! l_st_mic
+     
+!     write(*,*) 'STATEQafterCLUBB', state%q(1,:,1)
 
 if (l_tracer_aero) then
 

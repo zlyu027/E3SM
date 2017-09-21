@@ -666,6 +666,7 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     use dyn_grid, only: pelat_deg, pelon_deg,pelat_deg_se,pelon_deg_se
     use time_mod, only: tstep
     use constituents, only: pcnst
+    use time_manager, only: get_nstep
 
     integer :: t1,t2,n,nets,nete,pp
     type (element_t)     , intent(inout), target :: elem(:)
@@ -682,7 +683,7 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     real (kind=real_kind), dimension(np,np,nlev)  :: p,T_v,phi
     real (kind=real_kind) :: cp_star1,cp_star2,qval_t1,qval_t2
     real (kind=real_kind) :: Qt,dt
-    real (kind=real_kind), dimension(nlev,pcnst) :: stateQin1, stateQin2
+    real (kind=real_kind), dimension(nlev,pcnst) :: stateQin1, stateQin2, stateQin_qfcst
     logical :: wet
 
     integer:: t2_qdp, t1_qdp   ! the time pointers for Qdp are not the same
@@ -752,30 +753,50 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
 !          write(iulog,*) 'fu ',fu(1,:)
 !          write(iulog,*) 'fv ',fv(1,:)
 !          write(iulog,*) 'p ',p(1,1,:)
-!          write(iulog,*) 'QTEST ',elem(ie)%state%Q(1,1,:,t1)
+!          write(iulog,*) 'QTEST ',elem(ie)%state%Q(1,1,:,1)
 !          write(iulog,*) 'QTEST 1 ',elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:)
 !          write(iulog,*) 'QTEST 2 ',elem(ie)%state%Qdp(1,1,:,2,t1_qdp)/dpt1(1,1,:)
+
+!        endif
 
         icount=0
         do i=1,np
           do j=1,np
+ 
+!            if (get_nstep() .eq. 0) then
+!	      if (i .eq. 1 .and. j .eq. 1) write(*,*) 'DIDfirstSTEP ', elem(ie)%state%Q(i,j,:,1)
+!	      elem(ie)%state%Qdp(i,j,:,pp,t1_qdp) = elem(ie)%state%Q(i,j,:,1)*dpt1(i,j,:)
+!	      elem(ie)%state%Qdp(i,j,:,pp,t2_qdp) = elem(ie)%state%Q(i,j,:,1)*dpt2(i,j,:)
+!	    endif
          
+!	    stateQin1(:,1) = elem(ie)%state%Q(i,j,:,1)
+!	    stateQin2(:,1) = stateQin1(:,1)
             do pp=1,pcnst
               stateQin1(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t1_qdp)/dpt1(i,j,:)
-              stateQin2(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)/dpt2(j,j,:)  
+              stateQin2(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)/dpt2(i,j,:)  
             enddo
+	    
+	    stateQin_qfcst(:,:) = stateQin2(:,:)
+	    
+	    if (get_nstep() .eq. 0) then
+	      stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
+              write(*,*) 'stateQin_qfcst ', stateQin_qfcst(:,1)
+	    endif
+	    
+!	    if (i .eq. 1 .and. j .eq. 1) write(*,*) 'STATEQinBEFORE ',stateQin2(:,1)
 
             call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t1),&
-	              elem(ie)%state%ps_v(i,j,t2),elem(ie)%state%v(i,j,1,:,t2),&
+	              elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%v(i,j,1,:,t2),&
 		      elem(ie)%state%v(i,j,1,:,t1),elem(ie)%state%v(i,j,1,:,t1),& 
 		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t1),&
 		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t2),&
 		      elem(ie)%state%T(i,j,:,t1),elem(ie)%state%T(i,j,:,t1),&
-		      stateQin2,stateQin1,stateQin1,dt,tp2(icount,:,ie),fu(icount,:,ie),fv(icount,:,ie),&
-                      stateQin2,p(i,j,:),1.0,stateQin1,1)
+		      stateQin2,stateQin1,stateQin1,dt,elem(ie)%derived%fT(i,j,:,t1),fu(icount,:,ie),fv(icount,:,ie),&
+                      stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)
 
-!            write(*,*) 'TDIFFFUCK', elem(ie)%state%T(i,j,:,t2)-elem(ie)%state%T(i,j,:,t1)
+!            if (i .eq. 1 .and. j .eq. 1) write(*,*) 'STATEQinAFTER', stateQin2(:,1)
 
+            elem(ie)%state%Q(i,j,:,1) = stateQin2(:,1)
             do pp=1,pcnst
               elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)=stateQin2(:,pp)*dpt2(i,j,:)
             enddo
