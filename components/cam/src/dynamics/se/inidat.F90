@@ -375,11 +375,24 @@ contains
     end do
     
     if (single_column_se) then
-      write(*,*) 'DID INITIAL SCM'
+!      write(*,*) 'DID INITIAL SCM'
       call setiopupdate()
-      call readiopdata(dyn_in)
+      call readiopdata(elem)
     endif
     
+    do ie = 1, nelemd
+      do k = 1, nlev
+        do j = 1, np
+	  do i = 1, np
+	    if (elem(ie)%state%T(i,j,k,1) .gt. 500._r8) then
+              write(*,*) 'INITGREATERTHAN1 ', ie, elem(ie)%state%T(i,j,k,1), i, j, k
+	    endif
+	  enddo
+	enddo
+      enddo    
+    enddo
+
+    if (.not. single_column_se) then    
     ! once we've read all the fields we do a boundary exchange to 
     ! update the redundent columns in the dynamics
     if(iam < par%nprocs) then
@@ -412,6 +425,20 @@ contains
        kptr=kptr+nlev
        call edgeVunpack(edge, elem(ie)%state%Q(:,:,:,:),nlev*pcnst,kptr,ie)
     end do
+    
+    endif
+    
+    do ie = 1, nelemd
+      do k = 1, nlev
+        do j = 1, np
+	  do i = 1, np
+	    if (elem(ie)%state%T(i,j,k,1) .gt. 500._r8) then
+              write(*,*) 'INITGREATERTHAN2 ', ie, elem(ie)%state%T(i,j,k,1), i, j, k
+	    endif
+	  enddo
+	enddo
+      enddo    
+    enddo
 
 !$omp parallel do private(ie, t, m_cnst)
     do ie=1,nelemd
@@ -419,12 +446,15 @@ contains
           elem(ie)%state%ps_v(:,:,t)=elem(ie)%state%ps_v(:,:,1)
           elem(ie)%state%v(:,:,:,:,t)=elem(ie)%state%v(:,:,:,:,1)
           elem(ie)%state%T(:,:,:,t)=elem(ie)%state%T(:,:,:,1)
+	  
        end do
     end do
 
+    if (.not. single_column_se) then
     if(iam < par%nprocs) then
        call FreeEdgeBuffer(edge)
     end if
+    endif
 
     !
     ! This subroutine is used to create nc_topo files, if requested

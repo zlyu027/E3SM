@@ -70,7 +70,6 @@ subroutine scan2run (ztodt, cwava, etamid,t2      ,fu      ,fv    )
 #endif
    use physconst,    only: cpair
    use scamMod,      only: fixmascam,alphacam,betacam,use_iop, single_column
-   use control_mod,  only: single_column_se
    use pspect,       only: pnmax
    use tfilt_massfix, only: tfilt_massfixrun
    use massfix,      only: hw1,hw2,hw3,alpha
@@ -170,7 +169,7 @@ subroutine scan2run (ztodt, cwava, etamid,t2      ,fu      ,fv    )
 
 !
 !-----------------------------------------------------------------------
-   if (.not. single_column_se) then
+   if (.not. single_column) then
 
       call t_startf ('grcalc')
 

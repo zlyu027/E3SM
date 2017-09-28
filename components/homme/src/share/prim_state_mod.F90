@@ -733,31 +733,6 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
  
       if (single_column_se) then
         dt=tstep*qsplit 
-!        if (ie .eq. nets) then
-          ! PAB first indicee is lat
-          
-!          write(iulog,*) 'STATEPSVT1 ', elem(ie)%state%ps_v(1,1,t1)
-!          write(iulog,*) 'STATEPSVT2 ',elem(ie)%state%ps_v(1,1,t2)
-!          write(iulog,*) 'STATEVT1 ',elem(ie)%state%v(1,1,1,:,t1)
-!          write(iulog,*) 'STATEVT2 ',elem(ie)%state%v(1,1,1,:,t2)
-!          write(iulog,*) 'STATEUT1 ',elem(ie)%state%v(1,1,2,:,t1)
-!          write(iulog,*) 'STATEUT2 ',elem(ie)%state%v(1,1,2,:,t2)
-!          write(iulog,*) 'STATETT1 ',elem(ie)%state%T(1,1,:,t1)
-!          write(iulog,*) 'STATETT2 ',elem(ie)%state%T(1,1,:,t2)
-!          write(iulog,*) 'STATEQdpT2 ',elem(ie)%state%Qdp(1,1,:,1,t2_qdp)
-!          write(iulog,*) 'DPT2 ',dpt2(1,1,:)
-!          write(iulog,*) 'STATEQdpT1 ',elem(ie)%state%Qdp(1,1,:,1,t1_qdp)
-!          write(iulog,*) 'DPT1 ',dpt1(1,1,:)
-!          write(iulog,*) 'dt ',dt
-!          write(iulog,*) 'tp2 ',tp2(1,:)
-!          write(iulog,*) 'fu ',fu(1,:)
-!          write(iulog,*) 'fv ',fv(1,:)
-!          write(iulog,*) 'p ',p(1,1,:)
-!          write(iulog,*) 'QTEST ',elem(ie)%state%Q(1,1,:,1)
-!          write(iulog,*) 'QTEST 1 ',elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:)
-!          write(iulog,*) 'QTEST 2 ',elem(ie)%state%Qdp(1,1,:,2,t1_qdp)/dpt1(1,1,:)
-
-!        endif
 
         icount=0
         do i=1,np
@@ -776,27 +751,28 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
               stateQin2(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)/dpt2(i,j,:)  
             enddo
 	    
-	    stateQin_qfcst(:,:) = stateQin2(:,:)
-	    
-	    if (get_nstep() .eq. 0) then
-	      stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
-              write(*,*) 'stateQin_qfcst ', stateQin_qfcst(:,1)
-	    endif
-	    
-!	    if (i .eq. 1 .and. j .eq. 1) write(*,*) 'STATEQinBEFORE ',stateQin2(:,1)
+!	    stateQin_qfcst(:,:) = stateQin2(:,:)
+            stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
 
-            call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t1),&
-	              elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%v(i,j,1,:,t2),&
-		      elem(ie)%state%v(i,j,1,:,t1),elem(ie)%state%v(i,j,1,:,t1),& 
-		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t1),&
+!            call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t1),&
+!	              elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%v(i,j,1,:,t2),&
+!		      elem(ie)%state%v(i,j,1,:,t1),elem(ie)%state%v(i,j,1,:,t1),& 
+!		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t1),&
+!		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t2),&
+!		      elem(ie)%state%T(i,j,:,t1),elem(ie)%state%T(i,j,:,t1),&
+!		      !stateQin2,stateQin1,stateQin1,dt,elem(ie)%derived%fT(i,j,:,t1),fu(icount,:,ie),fv(icount,:,ie),&
+!                      stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)
+		      
+            call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t2),&
+	              elem(ie)%state%ps_v(i,j,t2),elem(ie)%state%v(i,j,1,:,t2),&
+		      elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
+		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t2),&
 		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t2),&
-		      elem(ie)%state%T(i,j,:,t1),elem(ie)%state%T(i,j,:,t1),&
+		      elem(ie)%state%T(i,j,:,t2),elem(ie)%state%T(i,j,:,t1),&
 		      stateQin2,stateQin1,stateQin1,dt,elem(ie)%derived%fT(i,j,:,t1),fu(icount,:,ie),fv(icount,:,ie),&
-                      stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)
+                      stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)		      
 
-!            if (i .eq. 1 .and. j .eq. 1) write(*,*) 'STATEQinAFTER', stateQin2(:,1)
-
-            elem(ie)%state%Q(i,j,:,1) = stateQin2(:,1)
+            elem(ie)%state%Q(i,j,:,:) = stateQin2(:,:)
             do pp=1,pcnst
               elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)=stateQin2(:,pp)*dpt2(i,j,:)
             enddo

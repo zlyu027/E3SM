@@ -1066,7 +1066,7 @@ contains
 1000 continue
    
     if (single_column_se) then
-      call TimeLevel_update(tl,"leapfrog")
+!      call TimeLevel_update(tl,"leapfrog")
       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
           tp2,fu,fv)
 !      write(*,*) 'OMEGAinPRIM ', elem(1)%derived%omega_p(1,1,:)

@@ -180,6 +180,10 @@ subroutine forecast(lat, psm1, psm2,ps, &
       l_uvphys   = .false.
    end if
 
+!   do k=1,plev
+!     if (t3m2(k) .gt. 500._r8) write(iulog,*) 'T3M2 greater than 500 ', t3m2(k)
+!     if (tfcst(k) .gt. 500._r8) write(iulog,*) 'TFCST greater than 500 ', tfcst(k)
+!   end do
 	
 !
    call plevs0(nlon    ,plon   ,plev    ,psm1   ,pintm1  ,pmidm1 ,pdelm1)
@@ -198,6 +202,8 @@ subroutine forecast(lat, psm1, psm2,ps, &
    wfldint(plevp) = 0.0_r8
 
    t2(:) = 0.0
+   fu(:) = 0.0
+   fv(:) = 0.0
 
    if (use_3dfrc .and. use_iop) then
 
@@ -497,7 +503,7 @@ end if
    do k=1,plev
       tfcst(k) = tfcst(k) + ztodt*wfld(k)*t3m1(k)*rair/(cpair*pmidm1(k)) &
          + ztodt*(t2(k) + divt(k))
-      if (tfcst(k) .gt. 1000. .and. t2(k) .gt. 1000.) then
+      if (tfcst(k) .gt. 500.) then
         write(*,*) 'EXTREME ', tfcst(k), t3m2(k), ztodt, wfld(k), t3m1(k), t2(k), divt(k), k
       endif
       do m=1,pcnst

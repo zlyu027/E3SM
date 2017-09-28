@@ -914,6 +914,7 @@ end subroutine clubb_init_cnst
    use cam_abortutils, only: endrun
    use wv_saturation,  only: qsat
    use micro_mg_cam,   only: micro_mg_version
+   use control_mod,    only: single_column_se
       
 #ifdef CLUBB_SGS
    use hb_diff,                   only: pblintd
@@ -1440,6 +1441,10 @@ end subroutine clubb_init_cnst
        um(i,k)      = state1%u(i,k)
        vm(i,k)      = state1%v(i,k)
        thlm(i,k)    = state1%t(i,k)*exner_clubb(i,k)-(latvap/cpair)*state1%q(i,k,ixcldliq)
+       
+!       if (state1%t(i,k) .gt. 500._r8) then
+!         write(*,*) 'GREATERTHAN500beforeCLUBB ',state1%t(i,k)
+!       endif
 
        if (clubb_do_adv) then
           if (macmic_it .eq. 1) then 
@@ -1604,7 +1609,7 @@ end subroutine clubb_init_cnst
       ! global simulations                                !
       ! ------------------------------------------------- !
 
-      if (single_column) then
+      if (single_column_se) then
 
         !  Initialize zo if variable ustar is used
 
@@ -1644,6 +1649,7 @@ end subroutine clubb_init_cnst
              ustar  = diag_ustar(zt_g(2),bflx22,ubar,zo)      
         endif
     
+        ustar = 0.28_r8
         !  Compute the surface momentum fluxes, if this is a SCAM simulation       
         upwp_sfc = -um(i,pver)*ustar**2/ubar
         vpwp_sfc = -vm(i,pver)*ustar**2/ubar
@@ -2156,6 +2162,11 @@ end subroutine clubb_init_cnst
    call t_startf('ice_cloud_detrain_diag')
    do k=1,pver
       do i=1,ncol
+      
+!         if (state1%t(i,k) .gt. 500._r8) then
+!           write(*,*) 'GREATERTHAN500afterCLUBB ',state1%t(i,k)
+!         endif
+      
          if( state1%t(i,k) > clubb_tk1 ) then
             dum1 = 0.0_r8
          elseif ( state1%t(i,k) < clubb_tk2 ) then

@@ -23,7 +23,7 @@ module iop
   use wrap_nf
   use cam_logfile,  only: iulog
   use phys_control, only: phys_getopts
-  use dimensions_mod, only: nelemd
+  use dimensions_mod, only: nelemd, np
   use control_mod, only: single_column_se, scmlat_se, scmlon_se, iopfile_se
 !  use eul_control_mod,only: eul_nsplit
 !
@@ -37,8 +37,8 @@ module iop
   real(r8), allocatable, target :: divq3dsav(:,:,:,:)
   real(r8), allocatable, target :: divt3dsav(:,:,:)       
   real(r8), allocatable, target :: betasav(:)
-  real(r8), allocatable, target :: clat(:)
-  real(r8), allocatable, target :: latdeg(:)
+!  real(r8), allocatable, target :: clat(:)
+!  real(r8), allocatable, target :: latdeg(:)
   integer :: closelatidx,closelonidx,latid,lonid,levid,timeid
 
   real(r8):: closelat,closelon
@@ -52,7 +52,7 @@ module iop
 !  public :: scam_use_iop_srf
 ! !PUBLIC DATA:
   public betasav, &
-         dqfx3sav, divq3dsav, divt3dsav,t2sav,clat,latdeg
+         dqfx3sav, divq3dsav, divt3dsav,t2sav!,clat,latdeg
 
 !
 ! !REVISION HISTORY:
@@ -64,7 +64,7 @@ module iop
 !----------------------------------------------------------------------- 
 
 contains
-  subroutine readiopdata(dyn_out)
+  subroutine readiopdata(elem)
 
 !-----------------------------------------------------------------------
 !     
@@ -88,6 +88,7 @@ contains
         use error_messages, only : handle_ncerr
         use netcdf
         use dyn_comp, only: TimeLevel, dyn_export_t
+	use shr_const_mod, only : SHR_CONST_PI
 !-----------------------------------------------------------------------
    implicit none
 #if ( defined RS6000 )
@@ -123,23 +124,26 @@ contains
    real(r8) weight
    real(r8) tmpdata(1)
    real(r8) coldata(plev)
+   real(r8) ps_surf, thelat, thelon, the_clat
    integer strt4(4),cnt4(4)
    integer t1f
    character(len=16) :: lowername
+   real(r8), parameter :: rad2deg = 180.0_r8/SHR_CONST_PI
 
-   type(dyn_export_t), intent(inout) :: dyn_out
+!   type(dyn_export_t), intent(inout) :: dyn_out
 
-   type(element_t), pointer :: elem(:) ! pointer to dyn_out element array
+!   type(element_t), pointer :: elem(:) ! pointer to dyn_out element array
+   type(element_t), intent(inout) :: elem(:)
 
    integer :: tl_f
 
-   allocate(clat(1))
-   allocate(latdeg(1))
+!   allocate(clat(1))
+!   allocate(latdeg(1))
 
-   fill_ends= .false.
+   fill_ends= .true.
 
    t1f = Timelevel%n0
-   elem => dyn_out%elem
+!   elem => dyn_out%elem
 
 !     
 !     Open IOP dataset
@@ -384,10 +388,9 @@ endif !scm_observed_aero
       endif
    else
       !+ PAB, check the time levels for all variables
-      status = nf90_get_var(ncid, varid, elem(1)%state%ps_v(1,1,3), strt4)
+      status = nf90_get_var(ncid, varid, ps_surf, strt4)
       have_ps = .true.
    endif
-
 
 !  for reproducing CAM output don't do interpolation.
 !  the most expedient way of doing this is to set      
@@ -406,11 +409,11 @@ endif !scm_observed_aero
 !
 
    total_levs = nlev+1
-   dplevs(nlev+1) = elem(1)%state%ps_v(1,1,3)/100 ! ps is expressed in pascals
+   dplevs(nlev+1) = ps_surf/100 ! ps is expressed in pascals
    do i= nlev, 1, -1
-      if ( dplevs(i) .GT. elem(1)%state%ps_v(1,1,3)/100.0_r8) then
+      if ( dplevs(i) .GT. ps_surf/100.0_r8) then
          total_levs = i
-         dplevs(i) = elem(1)%state%ps_v(1,1,3)/100
+         dplevs(i) = ps_surf/100
       end if
    end do
    if (.not. use_camiop ) then
@@ -437,20 +440,20 @@ endif !scm_observed_aero
 !      with capital T defined in cam
 !
 
-   if ( get_nstep() .le. 1  ) then
-     tobs(:)=elem(1)%state%T(1,1,:,3)
-   else
-     tobs(:)=elem(1)%state%T(1,1,:,3)
-   endif
+!   if ( get_nstep() .le. 1  ) then
+!     tobs(:)=elem(1)%state%T(1,1,:,1)
+!   else
+!     tobs(:)=elem(1)%state%T(1,1,:,3)
+!   endif
 
    if ( use_camiop ) then
      call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,'t', have_tsair, &
           tsair(1), fill_ends, &
-          dplevs, nlev,elem(1)%state%ps_v(1,1,3),tobs, status )
+          dplevs, nlev,ps_surf,tobs, status )
    else
      call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,'T', have_tsair, &
           tsair(1), fill_ends, &
-          dplevs, nlev,elem(1)%state%ps_v(1,1,3),tobs, status )
+          dplevs, nlev,ps_surf,tobs, status )
    endif
    if ( status .ne. nf90_noerr ) then
       have_t = .false.
@@ -466,14 +469,9 @@ endif !scm_observed_aero
 !     
    else
       have_t = .true.
-      if (.not.use_camiop .and. get_nstep() .eq. 0) then
-         do ie=1,nelemd
-	   do i=1, PLEV
-             elem(ie)%state%T(:,:,i,:)=tobs(i)  !     set t to tobs at first time step
-           end do
-	 end do
-      endif
    endif
+   
+   write(*,*) 'TOBSHERE ', tobs(:)
 
    status = nf90_inq_varid( ncid, 'Tg', varid   )
    if (status .ne. nf90_noerr) then
@@ -498,15 +496,15 @@ endif !scm_observed_aero
       have_srf = .true.
    endif
 !
-   if ( get_nstep() .le. 1  ) then
-     qobs(:)= elem(1)%state%Q(1,1,:,1)
-   else
-     qobs(:)= elem(1)%state%Q(1,1,:,1)
-   endif
+!   if ( get_nstep() .le. 1  ) then
+!     qobs(:)= elem(1)%state%Q(1,1,:,1)
+!   else
+!     qobs(:)= elem(1)%state%Q(1,1,:,1)
+!   endif
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,  'q', have_srf, &
       srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), qobs, status )
+      dplevs, nlev,ps_surf, qobs, status )
    if ( status .ne. nf90_noerr ) then
       have_q = .false.
       write(iulog,*)'Could not find variable q'
@@ -517,19 +515,12 @@ endif !scm_observed_aero
          write(iulog,*) 'Using values from Analysis Dataset'
       endif
    else
-      if (.not. use_camiop .and. get_nstep() .eq. 0) then
-         do ie=1,nelemd
-	   do i=1, PLEV
-             elem(ie)%state%Q(:,:,i,1)=qobs(i)
-	   end do
-!	    q3(1,i,1,1,n3)=qobs(i)
-         end do
-         have_q = .true.
-      endif
+      have_q=.true.
+      
    endif
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,  'cld', .false., &
-      dummy, fill_ends, dplevs, nlev,elem(1)%state%ps_v(1,1,3), cldobs, status )
+      dummy, fill_ends, dplevs, nlev,ps_surf, cldobs, status )
    if ( status .ne. nf90_noerr ) then
       have_cld = .false.
    else
@@ -537,7 +528,7 @@ endif !scm_observed_aero
    endif
    
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx,  'clwp', .false., &
-      dummy, fill_ends, dplevs, nlev,elem(1)%state%ps_v(1,1,3), clwpobs, status )
+      dummy, fill_ends, dplevs, nlev,ps_surf, clwpobs, status )
    if ( status .ne. nf90_noerr ) then
       have_clwp = .false.
    else
@@ -557,7 +548,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
         'divq', have_srf, srf(1), fill_ends, &
-        dplevs, nlev,elem(1)%state%ps_v(1,1,3), divq(:,1), status )
+        dplevs, nlev,ps_surf, divq(:,1), status )
    if ( status .ne. nf90_noerr ) then
       have_divq = .false.
    else
@@ -577,7 +568,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'vertdivq', &
         have_srf, srf(1), fill_ends, &
-        dplevs, nlev,elem(1)%state%ps_v(1,1,3), vertdivq(:,1), status )
+        dplevs, nlev,ps_surf, vertdivq(:,1), status )
    if ( status .ne. nf90_noerr ) then
       have_vertdivq = .false.
    else
@@ -600,7 +591,7 @@ endif !scm_observed_aero
 
       call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, trim(cnst_name(m))//'_dten', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), divq3d(:,m), status )
+      dplevs, nlev,ps_surf, divq3d(:,m), status )
    if ( status .ne. nf90_noerr ) then
       have_cnst(m) = .false.
       divq3d(1:,m)=0._r8
@@ -610,7 +601,7 @@ endif !scm_observed_aero
 
       call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, trim(cnst_name(m))//'_dqfx', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), coldata, status )
+      dplevs, nlev,ps_surf, coldata, status )
        if ( STATUS .NE. NF90_NOERR ) then
          dqfxcam=0._r8
       else
@@ -619,7 +610,7 @@ endif !scm_observed_aero
 
       call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, trim(cnst_name(m))//'_alph', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), tmpdata, status )
+      dplevs, nlev,ps_surf, tmpdata, status )
       if ( status .ne. nf90_noerr ) then
 !         have_cnst(m) = .false.
          alphacam(m)=0._r8
@@ -636,7 +627,7 @@ endif !scm_observed_aero
       have_srf = .false.
       call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'NUMLIQ', &
          have_srf, srf(1), fill_ends, &
-         dplevs, nlev,elem(1)%state%ps_v(1,1,3), numliqobs, status )
+         dplevs, nlev,ps_surf, numliqobs, status )
       if ( status .ne. nf90_noerr ) then
          have_numliq = .false.
       else
@@ -655,7 +646,7 @@ endif !scm_observed_aero
    have_srf = .false.
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'CLDLIQ', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), cldliqobs, status )
+      dplevs, nlev,ps_surf, cldliqobs, status )
    if ( status .ne. nf90_noerr ) then
       have_cldliq = .false.
    else
@@ -672,7 +663,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'CLDICE', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), cldiceobs, status )
+      dplevs, nlev,ps_surf, cldiceobs, status )
    if ( status .ne. nf90_noerr ) then
       have_cldice = .false.
    else
@@ -691,7 +682,7 @@ endif !scm_observed_aero
 
       call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'NUMICE', &
          have_srf, srf(1), fill_ends, &
-         dplevs, nlev,elem(1)%state%ps_v(1,1,3), numiceobs, status )
+         dplevs, nlev,ps_surf, numiceobs, status )
       if ( status .ne. nf90_noerr ) then
          have_numice = .false.
       else
@@ -718,7 +709,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'divu', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), divu, status )
+      dplevs, nlev,ps_surf, divu, status )
    if ( status .ne. nf90_noerr ) then
       have_divu = .false.
    else
@@ -737,7 +728,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'divv', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), divv, status )
+      dplevs, nlev,ps_surf, divv, status )
    if ( status .ne. nf90_noerr ) then
       have_divv = .false.
    else
@@ -756,7 +747,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'divT', have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), divt, status )
+      dplevs, nlev,ps_surf, divt, status )
    if ( status .ne. nf90_noerr ) then
       have_divt = .false.
    else
@@ -776,7 +767,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'vertdivT', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), vertdivt, status )
+      dplevs, nlev,ps_surf, vertdivt, status )
    if ( status .ne. nf90_noerr ) then
       have_vertdivt = .false.
    else
@@ -796,7 +787,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'divT3d', &
       have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), divt3d, status )
+      dplevs, nlev,ps_surf, divt3d, status )
    if ( status .ne. nf90_noerr ) then
       have_divt3d = .false.
    else
@@ -816,7 +807,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'omega', .true., ptend, fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), wfld, status )
+      dplevs, nlev,ps_surf, wfld, status )
    if ( status .ne. nf90_noerr ) then
       have_omega = .false.
       write(iulog,*)'Could not find variable omega'
@@ -838,7 +829,7 @@ endif !scm_observed_aero
      end do
    end do
    
-   call plevs0(1    ,plon   ,plev    ,elem(1)%state%ps_v(1,1,3)   ,pint,pmid ,pdel)
+   call plevs0(1    ,plon   ,plev    ,ps_surf   ,pint,pmid ,pdel)
    call shr_sys_flush( iulog )
 !
 ! Build interface vector for the specified omega profile
@@ -864,18 +855,11 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'u', have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), uobs, status )
+      dplevs, nlev,ps_surf, uobs, status )
    if ( status .ne. nf90_noerr ) then
       have_u = .false.
    else
       have_u = .true.
-      if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
-         do ie=1,nelemd
-	   do i=1, PLEV
-             elem(ie)%state%v(:,:,1,i,:) = uobs(i)  !     set u to uobs at first time step
-           end do
-	 end do
-      endif
    endif
 
    status = nf90_inq_varid( ncid, 'vsrf', varid   )
@@ -888,18 +872,11 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, &
       'v', have_srf, srf(1), fill_ends, &
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), vobs, status )
+      dplevs, nlev,ps_surf, vobs, status )
    if ( status .ne. nf90_noerr ) then
       have_v = .false.
    else
       have_v = .true.
-      if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
-         do ie=1,nelemd
-	   do i=1, PLEV
-             elem(ie)%state%v(:,:,2,i,:) = vobs(i)  !     set u to uobs at first time step
-           end do
-	 end do
-      endif
    endif
    call shr_sys_flush( iulog )
 
@@ -914,7 +891,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'Q1', &
       .false., dummy, fill_ends, & ! datasets don't contain Q1 at surface
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), q1obs, status )
+      dplevs, nlev,ps_surf, q1obs, status )
    if ( status .ne. nf90_noerr ) then
       have_q1 = .false.
    else
@@ -923,7 +900,7 @@ endif !scm_observed_aero
 
    call getinterpncdata( ncid, scmlat_se, scmlon_se, ioptimeidx, 'Q2', &
       .false., dummy, fill_ends, & ! datasets don't contain Q2 at surface
-      dplevs, nlev,elem(1)%state%ps_v(1,1,3), q1obs, status )
+      dplevs, nlev,ps_surf, q1obs, status )
    if ( status .ne. nf90_noerr ) then
       have_q2 = .false.
    else
@@ -992,12 +969,12 @@ endif !scm_observed_aero
    endif
    call shr_sys_flush( iulog )
 
-   status =  nf90_inq_varid( ncid, 'CLAT', varid   )
-   if ( status .eq. nf90_noerr ) then
-      call wrap_get_vara_realx (ncid,varid,strt4,cnt4,clat)
-      clat_p(1)=clat(1)
-      latdeg(1) = clat(1)*45._r8/atan(1._r8)
-   endif
+!   status =  nf90_inq_varid( ncid, 'CLAT', varid   )
+!   if ( status .eq. nf90_noerr ) then
+!      call wrap_get_vara_realx (ncid,varid,strt4,cnt4,the_clat)
+!      clat_p(1)=the_clat(1)
+!      latdeg(1) = the_clat*45._r8/atan(1._r8)
+!   endif
 
    status =  nf90_inq_varid( ncid, 'beta', varid   )
    if ( status .ne. nf90_noerr ) then
@@ -1014,6 +991,85 @@ endif !scm_observed_aero
       status = nf90_get_var(ncid, varid, srf(1), strt4)
       fixmascam=srf(1)
    endif
+   
+! ====== Initialize here if first timestep
+
+   if (.not. use_camiop .and. get_nstep() .eq. 0) then 
+     do ie=1,nelemd
+       do j=1,np
+         do i=1,np
+	   thelat=elem(ie)%spherep(i,j)%lat*rad2deg
+	   thelon=elem(ie)%spherep(i,j)%lon*rad2deg
+	   
+!	   write(*,*) 'THELATANDLON ', thelat, thelon, scmlat_se, scmlon_se
+	   
+	   if (thelat >= scmlat_se-4.0 .and. thelat <= scmlat_se+4.0) then
+	     if (thelon >= scmlon_se-10.0 .and. thelon <= scmlon_se+10.0) then
+!           if (thelat > 19.0 .and. thelat < 20.0) then
+!	     if (thelon > 298 .and. thelon < 299) then
+	       write(*,*) 'ITSAMATCH ', thelat, thelon, scmlat_se, scmlon_se
+	       do k=1, PLEV
+	         elem(ie)%state%ps_v(i,j,1)=ps_surf
+	         elem(ie)%state%T(i,j,k,1)=tobs(k)
+		 if (elem(ie)%state%T(i,j,k,1) .eq. 0._r8) then
+		   write(iulog,*) 'SHUTTHEFRONTDOOR'
+		 endif
+	         elem(ie)%state%Q(i,j,k,1)=qobs(k)
+	         elem(ie)%state%v(i,j,1,k,1) = uobs(k)
+	         elem(ie)%state%v(i,j,2,k,1) = vobs(k)
+	       enddo
+
+	       write(iulog,*) 'INITPS ', elem(ie)%state%ps_v(i,j,1)
+	       write(iulog,*) 'INITT ', elem(ie)%state%T(i,j,:,1)
+	       write(iulog,*) 'INITQ ', elem(ie)%state%Q(i,j,:,1)
+	       write(iulog,*) 'INITU ', elem(ie)%state%v(i,j,1,:,1)
+	       write(iulog,*) 'INITV ', elem(ie)%state%v(i,j,2,:,1)	       
+	       
+	     endif
+	   endif
+	   
+	 enddo
+       enddo
+     enddo
+   endif
+
+!   if (get_nstep() .eq. 0) then
+!     do ie=1,nelemd
+!       elem(ie)%state%ps_v(:,:,1)=ps_surf  !     set t to tobs at first time step
+!     end do
+!   endif
+   
+!      if (.not.use_camiop .and. get_nstep() .eq. 0) then
+!         do ie=1,nelemd
+!	   do i=1, PLEV
+!             elem(ie)%state%T(:,:,i,1)=tobs(i)  !     set t to tobs at first time step
+!           end do
+!	 end do
+!      endif
+      
+!      if (.not. use_camiop .and. get_nstep() .eq. 0) then
+!         do ie=1,nelemd
+!	   do i=1, PLEV
+!             elem(ie)%state%Q(:,:,i,1)=qobs(i)
+!	   end do
+!         end do
+!      endif 
+ 
+!       if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
+!         do ie=1,nelemd
+!	   do i=1, PLEV
+!             elem(ie)%state%v(:,:,1,i,1) = uobs(i)  !     set u to uobs at first time step
+!           end do
+!	 end do
+!      endif   
+      
+!      if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
+!         do ie=1,nelemd
+!	   do i=1, PLEV
+!             elem(ie)%state%v(:,:,2,i,1) = vobs(i)  !     set u to uobs at first time step
+!           end do
+!	 end do
+!      endif           
 
    call shr_sys_flush( iulog )
 

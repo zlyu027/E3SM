@@ -28,6 +28,7 @@ module stepon
    use scamMod,        only: use_iop, doiopupdate
    use control_mod,    only: single_column_se
    use parallel_mod,   only : par
+   use element_mod,    only : element_t
 
    implicit none
    private
@@ -517,7 +518,10 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
    type(physics_state), intent(inout) :: phys_state(begchunk:endchunk)
    type (dyn_import_t), intent(inout) :: dyn_in  ! Dynamics import container
    type (dyn_export_t), intent(inout) :: dyn_out ! Dynamics export container
+   type (element_t), pointer :: elem(:)
    integer :: rc
+   
+   elem => dyn_out%elem
    
    if (single_column_se) then
 
@@ -530,7 +534,7 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
      ! Update IOP properties e.g. omega, divT, divQ
      
      if (doiopupdate) then
-       call readiopdata(dyn_out)
+       call readiopdata(elem)
      endif   
 
    endif   
