@@ -655,6 +655,7 @@ contains
 subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
            tp2,fu,fv)
 ! 
+    use scamMod, only: single_column
     use kinds, only : real_kind
     use dimensions_mod, only : np, np, nlev, npsq
     use control_mod, only : use_cpstar, single_column_se
@@ -731,7 +732,7 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
 !        endif
 !      endif
  
-      if (single_column_se) then
+      if (single_column) then
         dt=tstep*qsplit 
 
         icount=0
@@ -815,6 +816,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
 !   KE(n+.5) = .5*(  .5 u(n+1)^2 dp(n) +  .5 u(n)^2 dp(n+1) )
 !
 !
+    use scamMod, only: single_column
     use kinds, only : real_kind
     use dimensions_mod, only : np, np, nlev
     use control_mod, only : use_cpstar, single_column_se
@@ -949,7 +951,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
  
 !       write(*,*) 'pelat_deg', pelat_deg
 !       write(*,*) 'pelon_deg', pelon_deg
-      if (single_column_se) then
+      if (single_column) then
         dt=tstep*qsplit 
         if (ie .eq. nets) then
           call forecast(pelat_deg,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&

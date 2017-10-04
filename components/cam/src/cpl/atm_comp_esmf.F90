@@ -747,7 +747,7 @@ CONTAINS
        
        ! Single column specific input 
        
-       if (single_column_se) then
+       if (single_column) then
           call scam_use_iop_srf( cam_in )
        endif
 

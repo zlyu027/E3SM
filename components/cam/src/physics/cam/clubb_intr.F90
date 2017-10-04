@@ -1609,7 +1609,7 @@ end subroutine clubb_init_cnst
       ! global simulations                                !
       ! ------------------------------------------------- !
 
-      if (single_column_se) then
+      if (single_column) then
 
         !  Initialize zo if variable ustar is used
 

@@ -853,6 +853,7 @@ contains
     !       tl%nm1   tracers:  t    dynamics:  t+(qsplit-1)*dt
     !       tl%n0    time t + dt_q
 
+    use scamMod,            only: single_column
     use control_mod,        only: statefreq, ftype, qsplit, rsplit, disable_diagnostics, &
                                   single_column_se
     use hybvcoord_mod,      only: hvcoord_t
@@ -927,7 +928,7 @@ contains
 
     call TimeLevel_Qdp(tl, qsplit, n0_qdp)
 
-    if (single_column_se) then
+    if (single_column) then
       go to 1000
     end if
 
@@ -1065,7 +1066,7 @@ contains
 
 1000 continue
    
-    if (single_column_se) then
+    if (single_column) then
 !      call TimeLevel_update(tl,"leapfrog")
       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
           tp2,fu,fv)

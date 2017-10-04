@@ -8,6 +8,7 @@
 !
 module prim_advance_mod
 
+  use scamMod,        only: single_column
   use control_mod,    only: qsplit,rsplit, use_moisture, single_column_se
   use derivative_mod, only: derivative_t
   use dimensions_mod, only: np, nlev, nlevp, nelemd, qsize, max_corner_elem
@@ -1219,7 +1220,7 @@ contains
         v_vadv=0
      else
 
-!       if (single_column_se) then
+!       if (single_column) then
 !         do j=1,np
 !           do i=1,np
 !             eta_dot_dpdn(i,j,:)=wfldh(:)

@@ -24,7 +24,7 @@ module iop
   use cam_logfile,  only: iulog
   use phys_control, only: phys_getopts
   use dimensions_mod, only: nelemd, np
-  use control_mod, only: single_column_se, scmlat_se, scmlon_se, iopfile_se
+  use control_mod, only: single_column_se, iopfile_se
 !  use eul_control_mod,only: eul_nsplit
 !
 ! !PUBLIC TYPES:
@@ -124,7 +124,7 @@ contains
    real(r8) weight
    real(r8) tmpdata(1)
    real(r8) coldata(plev)
-   real(r8) ps_surf, thelat, thelon, the_clat
+   real(r8) ps_surf, thelat, thelon, the_clat, scmlat_se, scmlon_se
    integer strt4(4),cnt4(4)
    integer t1f
    character(len=16) :: lowername
@@ -148,7 +148,7 @@ contains
 !     
 !     Open IOP dataset
 !     
-  call handle_ncerr( nf90_open (iopfile_se, 0, ncid),&
+  call handle_ncerr( nf90_open (iopfile, 0, ncid),&
        'readiopdata.F90', __LINE__)
 
 !
@@ -353,6 +353,8 @@ endif !scm_observed_aero
       end do
    endif
 
+   scmlat_se = scmlat
+   scmlon_se = scmlon
    write(*,*) 'SCMLATSEHERE', scmlat_se
    write(*,*) 'SCMLONSEHERE', scmlon_se
    call shr_scam_GetCloseLatLon(ncid,scmlat_se,scmlon_se,closelat,closelon,closelatidx,closelonidx)

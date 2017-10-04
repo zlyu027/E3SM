@@ -462,6 +462,7 @@ end function get_block_owner_d
     use dof_mod,        only: UniqueCoords, UniquePoints
     use physconst,      only: pi
     use control_mod,    only: single_column_se, scmlat_se, scmlon_se
+    use scamMod,        only: single_column, scmlat, scmlon
 !    use runtime_opts,   only: single_column_se, scmlat_se, scmlon_se
 
     ! Input variable
@@ -528,9 +529,9 @@ end function get_block_owner_d
       
     pearea_se = 2.0/np
     pemap_se = fdofp_local(1,ie) ! +PAB, check to make sure this is right?
-    write(*,*) 'SCMLATSE', scmlat_se 
-    pelat_deg_se = scmlat_se
-    pelon_deg_se = mod((scmlon_se+360._r8),360._r8)      
+    write(*,*) 'SCMLATSE', scmlat 
+    pelat_deg_se = scmlat
+    pelon_deg_se = mod((scmlon+360._r8),360._r8)      
       
 !      endif
       

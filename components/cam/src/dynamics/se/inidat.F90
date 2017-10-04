@@ -21,6 +21,7 @@ module inidat
   use cam_control_mod, only : ideal_phys, aqua_planet, pertlim, seed_custom, seed_clock, new_random
   use random_xgc, only: init_ranx, ranx
   use control_mod, only: single_column_se
+  use scamMod, only: single_column
   implicit none
   private
   public read_inidat
@@ -374,7 +375,7 @@ contains
        end do
     end do
     
-    if (single_column_se) then
+    if (single_column) then
 !      write(*,*) 'DID INITIAL SCM'
       call setiopupdate()
       call readiopdata(elem)
@@ -392,7 +393,7 @@ contains
       enddo    
     enddo
 
-    if (.not. single_column_se) then    
+    if (.not. single_column) then    
     ! once we've read all the fields we do a boundary exchange to 
     ! update the redundent columns in the dynamics
     if(iam < par%nprocs) then
@@ -450,7 +451,7 @@ contains
        end do
     end do
 
-    if (.not. single_column_se) then
+    if (.not. single_column) then
     if(iam < par%nprocs) then
        call FreeEdgeBuffer(edge)
     end if

@@ -25,7 +25,7 @@ module stepon
    use edgetype_mod,       only: EdgeBuffer_t
    use edge_mod,       only: initEdgeBuffer, FreeEdgeBuffer, edgeVpack, edgeVunpack
    use iop,            only: readiopdata, setiopupdate
-   use scamMod,        only: use_iop, doiopupdate
+   use scamMod,        only: use_iop, doiopupdate, single_column
    use control_mod,    only: single_column_se
    use parallel_mod,   only : par
    use element_mod,    only : element_t
@@ -523,7 +523,7 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
    
    elem => dyn_out%elem
    
-   if (single_column_se) then
+   if (single_column) then
 
      ! Determine whether it is time for an IOP update;
      ! doiopupdate set to true if model time step > next available IOP

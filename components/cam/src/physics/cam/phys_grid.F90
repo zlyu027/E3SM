@@ -99,6 +99,9 @@ module phys_grid
    use cam_abortutils,   only: endrun
    use perf_mod
    use cam_logfile,      only: iulog
+   use scamMod,          only: single_column, scmlat, scmlon
+   use control_mod,      only: single_column_se, scmlat_se, scmlon_se
+   use shr_const_mod,    only: SHR_CONST_PI
 
    implicit none
    save
@@ -264,7 +267,7 @@ module phys_grid
 !  4: concatenated blocks, no load balancing, no interprocess communication
    integer, private, parameter :: min_lbal_opt = -1
    integer, private, parameter :: max_lbal_opt = 5
-   integer, private, parameter :: def_lbal_opt = 2               ! default
+   integer, private, parameter :: def_lbal_opt = 2               ! default = 2
    integer, private :: lbal_opt = def_lbal_opt
 
 ! Physics grid load balancing options:  
@@ -368,6 +371,7 @@ contains
     integer :: owner_p                    ! process owning given chunk column
     integer :: blockids(plev+1)           ! block indices
     integer :: bcids(plev+1)              ! block column indices
+    real(r8), parameter :: deg2rad = SHR_CONST_PI/180.0
 
 
     ! column surface area (from dynamics)
@@ -420,9 +424,14 @@ contains
     !
     ! Initialize physics grid, using dynamics grid
     ! a) column coordinates
-
+    lbal_opt = -1
+    write(iulog,*) 'PHYSGRIDINIT1'
     call get_horiz_grid_dim_d(hdim1_d,hdim2_d)
-    ngcols = hdim1_d*hdim2_d
+    if (single_column) then
+      ngcols = 1
+    else
+      ngcols = hdim1_d*hdim2_d
+    endif
     allocate( clat_d(1:ngcols) )
     allocate( clon_d(1:ngcols) )
     allocate( lat_d(1:ngcols) )
@@ -430,10 +439,19 @@ contains
     allocate( cdex(1:ngcols) )
     clat_d = 100000.0_r8
     clon_d = 100000.0_r8
-    call get_horiz_grid_d(ngcols, clat_d_out=clat_d, clon_d_out=clon_d, lat_d_out=lat_d, lon_d_out=lon_d)
+    if (single_column) then
+      lat_d = scmlat
+      lon_d = scmlon
+      clat_d = scmlat * deg2rad
+      clon_d = scmlon * deg2rad
+    else
+      call get_horiz_grid_d(ngcols, clat_d_out=clat_d, clon_d_out=clon_d, lat_d_out=lat_d, lon_d_out=lon_d)
+    endif
     latmin = MINVAL(ABS(lat_d))
     lonmin = MINVAL(ABS(lon_d))
 !!XXgoldyXX: To do: replace collection above with local physics points
+
+    write(iulog,*) 'PHYSGRIDINIT2'
 
     ! count number of "real" column indices
     ngcols_p = 0
@@ -448,6 +466,8 @@ contains
     call IndexSort(ngcols,cdex,clon_d,descend=.false.)
     clon_p_tmp = clon_d(cdex(1))
     clon_p_tot = 1
+    
+    write(iulog,*) 'PHYSGRIDINIT3'
 
     do i=2,ngcols_p
        if (clon_d(cdex(i)) > clon_p_tmp) then
@@ -459,6 +479,8 @@ contains
     allocate( clon_p(1:clon_p_tot) )
     allocate( clon_p_cnt(1:clon_p_tot) )
     allocate( londeg_p(1:clon_p_tot) )
+    
+    write(iulog,*) 'PHYSGRIDINIT4'
 
     pre_i = 1
     clon_p_tot = 1
@@ -474,6 +496,8 @@ contains
        endif
     enddo
     clon_p_cnt(clon_p_tot) = (ngcols_p+1)-pre_i
+    
+    write(iulog,*) 'PHYSGRIDINIT5'
 
     ! sort over latitude and identify unique latitude coordinates
     call IndexSet(ngcols,cdex)
@@ -486,6 +510,8 @@ contains
           clat_p_tmp = clat_d(cdex(i))
        endif
     enddo
+    
+    write(iulog,*) 'PHYSGRIDINIT6'
 
     allocate( clat_p(1:clat_p_tot) )
     allocate( clat_p_cnt(1:clat_p_tot) )
@@ -506,6 +532,8 @@ contains
        endif
     enddo
     clat_p_cnt(clat_p_tot) = (ngcols_p+1)-pre_i
+    
+    write(iulog,*) 'PHYSGRIDINIT7'
 
     clat_p_idx(1) = 1
     do j=2,clat_p_tot
@@ -535,6 +563,8 @@ contains
     allocate( lon_p(1:ngcols) )
     allocate( dyn_to_latlon_gcol_map(1:ngcols) )
     if (lbal_opt .ne. -1) allocate( latlon_to_dyn_gcol_map(1:ngcols_p) )
+    
+    write(iulog,*) 'PHYSGRIDINIT8'
 
     clat_p_dex = 1
     lat_p = -1
@@ -559,6 +589,8 @@ contains
        end_dex = end_dex + clon_p_cnt(i)
        call IndexSort(cdex(beg_dex:end_dex),clat_d,descend=.false.)
     enddo
+    
+    write(iulog,*) 'PHYSGRIDINIT9'
 
     ! Early clean-up, to minimize memory high water mark
     ! (not executing find_twin)
@@ -580,6 +612,8 @@ contains
        enddo
        lon_p(cdex(i)) = clon_p_dex
     enddo
+    
+    write(iulog,*) 'PHYSGRIDINIT10'
 
     ! Clean-up
     deallocate( clat_d )
@@ -601,14 +635,20 @@ contains
 
     !
     ! Option -1: each dynamics block is a single chunk
-    !            
+    !   
+    write(iulog,*) 'LBALOPT ', lbal_opt         
     if (lbal_opt == -1) then
+    write(iulog,*) 'PHYSGRIDINIT11'
        !
        ! Check that pcols >= maxblksiz
        !
        maxblksiz = 0
        do jb=firstblock,lastblock
-          maxblksiz = max(maxblksiz,get_block_gcol_cnt_d(jb))
+          if (single_column) then
+	    maxblksiz = 1
+	  else
+            maxblksiz = max(maxblksiz,get_block_gcol_cnt_d(jb))
+	  endif
        enddo
        if (pcols < maxblksiz) then
 	  write(iulog,*) 'pcols = ',pcols, ' maxblksiz=',maxblksiz
@@ -618,7 +658,11 @@ contains
        !
        ! Determine total number of chunks
        !
-       nchunks = (lastblock-firstblock+1)
+       if (single_column) then
+         nchunks = 1
+       else
+	 nchunks = (lastblock-firstblock+1)
+       endif
 
        !
        ! Set max virtual SMP node size
@@ -633,9 +677,15 @@ contains
 
        do cid=1,nchunks
           ! get number of global column indices in block
-          max_ncols = get_block_gcol_cnt_d(cid+firstblock-1)
+          if (single_column) then
+	    max_ncols = 1
+	  else
+	    max_ncols = get_block_gcol_cnt_d(cid+firstblock-1)
+	  endif
           ! fill cdex array with global indices from current block
           call get_block_gcol_d(cid+firstblock-1,max_ncols,cdex)
+
+          write(iulog,*) 'DYNTOLATLONGCOLMAP ', dyn_to_latlon_gcol_map
 
           ncols = 0
           do i=1,max_ncols
@@ -648,11 +698,14 @@ contains
                 chunks(cid)%gcol(ncols) = curgcol_d
                 chunks(cid)%lat(ncols) = lat_p(curgcol_d)
                 chunks(cid)%lon(ncols) = lon_p(curgcol_d)
+		write(iulog,*) 'LAT and LON ', lat_p(curgcol_d), ncols, curgcol_d, cid
              endif
           enddo
           chunks(cid)%ncols = ncols
        enddo
 
+       write(iulog,*) 'NCHUCKS ', nchunks
+       write(iulog,*) 'NCOLS ', ncols
        ! Clean-up
        deallocate( cdex )
        deallocate( lat_p )
@@ -706,6 +759,7 @@ contains
        ! Allocate and initialize chunks data structure, then
        ! assign chunks to processes.
        !
+       write(iulog,*) 'PHYSGRIDINIT12'
        if  (twin_alg .eq. 1) then
           ! precompute clon_p_idx: index in lonlat ordering for first 
           ! occurrence of longitude corresponding to given latitude index,
@@ -717,7 +771,9 @@ contains
           enddo
        endif
 
+       write(iulog,*) 'PHYSGRIDINIT12b'
        call create_chunks(lbal_opt, chunks_per_thread)
+       write(iulog,*) 'PHYSGRIDINIT12c'
 
        ! Early clean-up, to minimize memory high water mark
        deallocate( lat_p )
@@ -728,6 +784,7 @@ contains
        if  (twin_alg .eq. 1) deallocate( clon_p_idx )
        if ((twin_alg .eq. 1) .or. (lbal_opt .eq. 3)) deallocate( clat_p_cnt )
 
+       write(iulog,*) 'PHYSGRIDINIT12d'
        !
        ! Determine whether dynamics and physics decompositions
        ! are colocated, not requiring any interprocess communication
@@ -746,10 +803,12 @@ contains
              enddo
           enddo
        enddo
+       write(iulog,*) 'PHYSGRIDINIT12e'
     endif
     !
     ! Allocate and initialize data structures for gather/scatter
     !  
+    write(iulog,*) 'PHYSGRIDINIT13'
     allocate( pgcols(1:ngcols_p) )
     allocate( gs_col_offset(0:npes) )
     allocate( pchunkid(0:npes) )
@@ -778,6 +837,8 @@ contains
        enddo
        gs_col_offset(p) = curgcol
     enddo
+    
+    write(iulog,*) 'PHYSGRIDINIT14'
 
     ! Reinitialize pchunkid and gs_col_offset (for real)
     pchunkid(0) = 1
@@ -809,7 +870,7 @@ contains
           enddo
        endif
     enddo
-
+    write(iulog,*) 'PHYSGRIDINIT15'
     deallocate( pchunkid )
     deallocate( npchunks )
     !
@@ -823,9 +884,13 @@ contains
     area_d = 0.0_r8
     wght_d = 0.0_r8
 
-    call get_horiz_grid_d(ngcols, area_d_out=area_d, wght_d_out=wght_d)
-
-
+    if (single_column) then
+      area_d = 4.0_r8*pi
+      wght_d = 4.0_r8*pi
+    else
+      call get_horiz_grid_d(ngcols, area_d_out=area_d, wght_d_out=wght_d)
+    endif
+    write(iulog,*) 'PHYSGRIDINIT16'
     if ( abs(sum(area_d) - 4.0_r8*pi) > 1.e-10_r8 ) then
        write(iulog,*) ' ERROR: sum of areas on globe does not equal 4*pi'
        write(iulog,*) ' sum of areas = ', sum(area_d), sum(area_d)-4.0_r8*pi
@@ -847,7 +912,7 @@ contains
 
     deallocate( area_d )
     deallocate( wght_d )
-
+    write(iulog,*) 'PHYSGRIDINIT17'
     if (.not. local_dp_map) then
        !
        ! allocate and initialize data structures for transposes
@@ -892,6 +957,7 @@ contains
              endif
           enddo
        enddo
+       write(iulog,*) 'PHYSGRIDINIT18'
        btofc_blk_num(curp) = curcnt
        block_buf_nrecs = glbcnt
        !  
@@ -952,6 +1018,7 @@ contains
        !
        ! Second, determine swap partners.
        !
+       write(iulog,*) 'PHYSGRIDINIT19'
        allocate( dp_coup_proc(dp_coup_steps) )
        dp_coup_steps = 0
        do i=1,ceil2(npes)-1
@@ -1022,7 +1089,7 @@ contains
         end if
       end do
     end do
-
+    write(iulog,*) 'PHYSGRIDINIT20'
     ! Note that if the dycore is using the same points as the physics grid,
     !      it will have already set up 'lat' and 'lon' axes for the physics grid
     !      However, these will be in the dynamics decomposition
@@ -1074,7 +1141,7 @@ contains
       deallocate(copy_attributes)
       nullify(copy_attributes)
     end if
-
+    write(iulog,*) 'PHYSGRIDINIT21'
     !
     physgrid_set = .true.   ! Set flag indicating physics grid is now set
     !
@@ -3950,6 +4017,7 @@ logical function phys_grid_initialized ()
 !
 ! Determine number of threads per process
 !
+   write(iulog,*) 'CREATECHUNKS1'
    nlthreads = 1
 #if ( defined _OPENMP )
    nlthreads = OMP_GET_MAX_THREADS()
@@ -3961,7 +4029,7 @@ logical function phys_grid_initialized ()
    npthreads(0) = nlthreads
    proc_smp_map(0) = 0
 #endif
-
+   write(iulog,*) 'CREATECHUNKS2'
 !
 ! Determine index range for dynamics blocks
 !
@@ -3979,6 +4047,7 @@ logical function phys_grid_initialized ()
 !  determine which (and how many) processes are assigned
 !  dynamics blocks
 !
+   write(iulog,*) 'CREATECHUNKS3'
    allocate( proc_busy_d(0:npes-1) )
    proc_busy_d = .false.
    nproc_busy_d = 0
@@ -3989,7 +4058,7 @@ logical function phys_grid_initialized ()
          nproc_busy_d = nproc_busy_d + 1
       endif
    enddo
-
+   write(iulog,*) 'CREATECHUNKS4', opt
 !
 ! Determine virtual SMP count and processes/virtual SMP map.
 !  If option 0 or >3, pretend that each SMP has only one process. 
@@ -4072,11 +4141,12 @@ logical function phys_grid_initialized ()
       deallocate( smp_smp_mapx )
 
    elseif (opt == 2) then
-
+      write(iulog,*) 'CREATECHUNKS5'
       nsmpx = 1
       do p=0,npes-1
          proc_smp_mapx(p) = 0
       enddo
+      write(iulog,*) 'CREATECHUNKS6'
 
    elseif (opt == 3) then
 
@@ -4104,7 +4174,7 @@ logical function phys_grid_initialized ()
    endif
 !
    deallocate( proc_busy_d )
-
+   write(iulog,*) 'CREATECHUNKS7'
 !
 ! Determine maximum number of processes assigned to a single 
 ! virtual SMP node
@@ -4119,6 +4189,7 @@ logical function phys_grid_initialized ()
    max_nproc_smpx = maxval(nsmpprocs)
 !
    deallocate( nsmpprocs )
+   write(iulog,*) 'CREATECHUNKS8'   
 
 !
 ! Determine number of columns assigned to each
@@ -4146,6 +4217,7 @@ logical function phys_grid_initialized ()
                "but vertical decomposition not limited to virtual SMP"
       call endrun()
    endif
+   write(iulog,*) 'CREATECHUNKS9'   
 !
    allocate( nsmpcolumns(0:nsmpx-1) )
    nsmpcolumns(:) = 0
@@ -4181,6 +4253,7 @@ logical function phys_grid_initialized ()
 ! Option 4: split local dynamics blocks into chunks,
 !           using block-map assignment of columns
 !             
+   write(iulog,*) 'CREATECHUNKS10', opt
    if ((opt >= 0) .and. (opt <= 4)) then
 !
 ! Calculate number of threads available in each SMP node. 
@@ -4193,6 +4266,7 @@ logical function phys_grid_initialized ()
 !
 ! Determine number of chunks to keep all threads busy
 !
+   write(iulog,*) 'CREATECHUNKS11'
       nchunks = 0
       do smp=0,nsmpx-1
          nsmpchunks(smp) = nsmpcolumns(smp)/pcols
@@ -4210,6 +4284,7 @@ logical function phys_grid_initialized ()
          endif
          nchunks = nchunks + nsmpchunks(smp)
       enddo
+   write(iulog,*) 'CREATECHUNKS12'      
 !
 ! Determine maximum number of columns to assign to chunks
 ! in a given SMP
@@ -4230,6 +4305,7 @@ logical function phys_grid_initialized ()
             maxcol_chks(smp) = 0
          endif
       enddo
+   write(iulog,*) 'CREATECHUNKS13'      
 !
 ! Allocate chunks and knuhcs data structures
 !
@@ -4250,18 +4326,26 @@ logical function phys_grid_initialized ()
          cid_offset(smp) = cid_offset(smp-1) + nsmpchunks(smp-1)
          local_cid(smp) = 0
       enddo
+   write(iulog,*) 'CREATECHUNKS14'
+   write(iulog,*) 'PRECHUNKS ', firstblock,lastblock      
 !
 ! Assign columns to chunks
 !
+! Here need to find the one dynamics 
+!  column we care about for SCM and put 
+!  it into the chunk
+
       do jb=firstblock,lastblock
          p = get_block_owner_d(jb)
          smp = proc_smp_mapx(p)
          blksiz = get_block_gcol_cnt_d(jb)
          call get_block_gcol_d(jb,blksiz,cols)
+	 write(iulog,*) 'ASSIGNCHUNKS ', p, smp, blksiz, jb
          do ib = 1,blksiz
 !
 ! Assign column to a chunk if not already assigned
             curgcol = cols(ib)
+	    write(iulog,*) 'ASSIGNCHUNKS2 ', curgcol
             if ((dyn_to_latlon_gcol_map(curgcol) .ne. -1) .and. &
                 (knuhcs(curgcol)%chunkid == -1)) then
 !
@@ -4322,6 +4406,7 @@ logical function phys_grid_initialized ()
             endif
          enddo
       enddo
+      write(iulog,*) 'CREATECHUNKS15'
 !
    else
 !
@@ -4407,8 +4492,10 @@ logical function phys_grid_initialized ()
 !
 ! Assign chunks to processes.
 !
+   write(iulog,*) 'CREATECHUNKS16'
    call assign_chunks(npthreads, nsmpx, proc_smp_mapx, &
                       nsmpthreads, nsmpchunks)
+   write(iulog,*) 'CREATECHUNKS17'		      
 !
 ! Clean up
 !

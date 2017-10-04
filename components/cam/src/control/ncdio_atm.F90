@@ -199,15 +199,15 @@ contains
       end if
 
       ! NB: strt and cnt were initialized to 1
-      if (single_column) then	
-        !!XXgoldyXX: Clearly, this will not work for an unstructured dycore
-        call endrun(trim(subname)//': SCAM not supported in this configuration')
-      else
+!      if (single_column) then	
+!        !!XXgoldyXX: Clearly, this will not work for an unstructured dycore
+!        call endrun(trim(subname)//': SCAM not supported in this configuration')
+!      else
         ! All distributed array processing
         call cam_grid_get_decomp(grid_map, arraydimsize, dimlens(1:ndims),    &
              pio_double, iodesc)
         call pio_read_darray(ncid, varid, iodesc, field, ierr)
-      end if
+!      end if
     end if  ! end of readvar_tmp
 
     readvar = readvar_tmp
@@ -599,17 +599,17 @@ contains
       field_dnames(1) = dimname1
       field_dnames(2) = dimname2
       ! NB: strt and cnt were initialized to 1
-      if (single_column) then	
+!      if (single_column) then	
         !!XXgoldyXX: Clearly, this will not work for an unstructured dycore
         ! Check for permuted dimensions ('out of order' array)
 !       call calc_permutation(dimids(1:2), arraydimids, permutation, ispermuted)
-        call endrun(trim(subname)//': SCAM not supported in this configuration')
-      else
+!        call endrun(trim(subname)//': SCAM not supported in this configuration')
+!      else
         ! All distributed array processing
         call cam_grid_get_decomp(grid_map, arraydimsize, dimlens(1:2),        &
              pio_double, iodesc, field_dnames=field_dnames)
         call pio_read_darray(ncid, varid, iodesc, field, ierr)
-      end if
+!      end if
     end if  ! end of readvar_tmp
 
     readvar = readvar_tmp
