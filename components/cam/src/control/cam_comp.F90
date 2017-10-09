@@ -192,7 +192,7 @@ subroutine cam_init( cam_out, cam_in, mpicom_atm, &
 
    call stepon_init( dyn_in, dyn_out ) ! dyn_out necessary?
 
-   if (single_column) call scm_intht()
+!   if (single_column) call scm_intht()
    call intht()
 
 

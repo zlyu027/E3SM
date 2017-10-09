@@ -102,6 +102,7 @@ module phys_grid
    use scamMod,          only: single_column, scmlat, scmlon
    use control_mod,      only: single_column_se, scmlat_se, scmlon_se
    use shr_const_mod,    only: SHR_CONST_PI
+   use dyn_grid,         only: dyn_grid_find_gcols
 
    implicit none
    save
@@ -371,6 +372,7 @@ contains
     integer :: owner_p                    ! process owning given chunk column
     integer :: blockids(plev+1)           ! block indices
     integer :: bcids(plev+1)              ! block column indices
+    integer :: owners_out(1), col_out(1), lbk_out(1)
     real(r8), parameter :: deg2rad = SHR_CONST_PI/180.0
 
 
@@ -674,6 +676,9 @@ contains
        !
        allocate( cdex(1:maxblksiz) )
        allocate( chunks(1:nchunks) )
+       
+       call dyn_grid_find_gcols(scmlat,scmlon,1,owners_out,col_out,lbk_out)
+       write(iulog,*) 'DYNFIND ', scmlat, scmlon, owners_out, col_out, lbk_out
 
        do cid=1,nchunks
           ! get number of global column indices in block
@@ -692,13 +697,17 @@ contains
              ! check whether global index is for a column that dynamics
              ! intends to pass to the physics
              curgcol_d = cdex(i)
+	     curgcol_d = col_out(i)
              if (dyn_to_latlon_gcol_map(curgcol_d) .ne. -1) then
                 ! yes - then save the information
                 ncols = ncols + 1
-                chunks(cid)%gcol(ncols) = curgcol_d
-                chunks(cid)%lat(ncols) = lat_p(curgcol_d)
-                chunks(cid)%lon(ncols) = lon_p(curgcol_d)
-		write(iulog,*) 'LAT and LON ', lat_p(curgcol_d), ncols, curgcol_d, cid
+!                chunks(cid)%gcol(ncols) = curgcol_d
+!                chunks(cid)%lat(ncols) = lat_p(curgcol_d)
+!                chunks(cid)%lon(ncols) = lon_p(curgcol_d)
+                chunks(cid)%gcol(ncols) = 11
+                chunks(cid)%lat(ncols) = 44
+                chunks(cid)%lon(ncols) = 132		
+		write(iulog,*) 'LAT and LON ', lat_p(curgcol_d), lon_p(curgcol_d), ncols, curgcol_d, cid
              endif
           enddo
           chunks(cid)%ncols = ncols

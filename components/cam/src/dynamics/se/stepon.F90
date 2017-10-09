@@ -113,43 +113,43 @@ subroutine stepon_init(dyn_in, dyn_out )
   !
   ! Forcing from physics
   ! FU, FV, other dycores, doc, says "m/s" but I think that is m/s^2
-  call addfld ('FU',  (/ 'lev' /), 'A', 'm/s2', 'Zonal wind forcing term',     gridname='GLL')
-  call addfld ('FV',  (/ 'lev' /), 'A', 'm/s2', 'Meridional wind forcing term',gridname='GLL')
-  call register_vector_field('FU', 'FV')
-  call addfld ('VOR', (/ 'lev' /), 'A', '1/s',  'Vorticity',                   gridname='GLL')
-  call addfld ('DIV', (/ 'lev' /), 'A', '1/s',  'Divergence',                  gridname='GLL')
+!  call addfld ('FU',  (/ 'lev' /), 'A', 'm/s2', 'Zonal wind forcing term',     gridname='GLL')
+!  call addfld ('FV',  (/ 'lev' /), 'A', 'm/s2', 'Meridional wind forcing term',gridname='GLL')
+!  call register_vector_field('FU', 'FV')
+!  call addfld ('VOR', (/ 'lev' /), 'A', '1/s',  'Vorticity',                   gridname='GLL')
+!  call addfld ('DIV', (/ 'lev' /), 'A', '1/s',  'Divergence',                  gridname='GLL')
 
-  if (smooth_phis_numcycle>0) then
-     call addfld ('PHIS_SM',  horiz_only, 'I', 'm2/s2', 'Surface geopotential (smoothed)',                gridname='GLL')
-     call addfld ('SGH_SM',   horiz_only, 'I', 'm',     'Standard deviation of orography (smoothed)',     gridname='GLL')
-     call addfld ('SGH30_SM', horiz_only, 'I', 'm',     'Standard deviation of 30s orography (smoothed)', gridname='GLL')
-  endif
+!  if (smooth_phis_numcycle>0) then
+!     call addfld ('PHIS_SM',  horiz_only, 'I', 'm2/s2', 'Surface geopotential (smoothed)',           !     gridname='GLL')
+!     call addfld ('SGH_SM',   horiz_only, 'I', 'm',     'Standard deviation of orography !(smoothed)',     gridname='GLL')
+!     call addfld ('SGH30_SM', horiz_only, 'I', 'm',     'Standard deviation of 30s orography !(smoothed)', gridname='GLL')
+!  endif
 
-  call addfld ('CONVU   ', (/ 'ilev' /),'A', 'm/s2    ','Zonal component IE->KE conversion term',      gridname='physgrid')
-  call addfld ('CONVV   ', (/ 'ilev' /),'A', 'm/s2    ','Meridional component IE->KE conversion term', gridname='physgrid')
-  call register_vector_field('CONVU', 'CONVV')
-  call addfld ('DIFFU   ', (/ 'ilev' /),'A', 'm/s2    ','U horizontal diffusion',                      gridname='physgrid')
-  call addfld ('DIFFV   ', (/ 'ilev' /),'A', 'm/s2    ','V horizontal diffusion',                      gridname='physgrid')
-  call register_vector_field('DIFFU', 'DIFFV')
+!  call addfld ('CONVU   ', (/ 'ilev' /),'A', 'm/s2    ','Zonal component IE->KE conversion term',    !  gridname='physgrid')
+!  call addfld ('CONVV   ', (/ 'ilev' /),'A', 'm/s2    ','Meridional component IE->KE conversion !term', gridname='physgrid')
+!  call register_vector_field('CONVU', 'CONVV')
+!  call addfld ('DIFFU   ', (/ 'ilev' /),'A', 'm/s2    ','U horizontal diffusion',                    !  gridname='physgrid')
+!  call addfld ('DIFFV   ', (/ 'ilev' /),'A', 'm/s2    ','V horizontal diffusion',                    !  gridname='physgrid')
+!  call register_vector_field('DIFFU', 'DIFFV')
   
-  call addfld ('ETADOT', (/ 'ilev' /), 'A', '1/s', 'Vertical (eta) velocity', gridname='physgrid')
-  call addfld ('U&IC',   (/ 'lev' /),  'I', 'm/s', 'Zonal wind',              gridname='physgrid' )
-  call addfld ('V&IC',   (/ 'lev' /),  'I', 'm/s', 'Meridional wind',         gridname='physgrid' )
+!  call addfld ('ETADOT', (/ 'ilev' /), 'A', '1/s', 'Vertical (eta) velocity', gridname='physgrid')
+!  call addfld ('U&IC',   (/ 'lev' /),  'I', 'm/s', 'Zonal wind',              gridname='physgrid' )
+!  call addfld ('V&IC',   (/ 'lev' /),  'I', 'm/s', 'Meridional wind',         gridname='physgrid' )
   ! Don't need to register U&IC V&IC since we don't interpolate IC files
-  call add_default ('U&IC',0, 'I')
-  call add_default ('V&IC',0, 'I')
+!  call add_default ('U&IC',0, 'I')
+!  call add_default ('V&IC',0, 'I')
 
-  call addfld ('PS&IC', horiz_only,  'I', 'Pa', 'Surface pressure',gridname='physgrid')
-  call addfld ('T&IC',  (/ 'lev' /), 'I', 'K',  'Temperature',     gridname='physgrid')
+!  call addfld ('PS&IC', horiz_only,  'I', 'Pa', 'Surface pressure',gridname='physgrid')
+!  call addfld ('T&IC',  (/ 'lev' /), 'I', 'K',  'Temperature',     gridname='physgrid')
 
-  call add_default ('PS&IC      ',0, 'I')
-  call add_default ('T&IC       ',0, 'I')
-  do m = 1,pcnst
-     call addfld (trim(cnst_name(m))//'&IC', (/ 'lev' /), 'I', 'kg/kg', cnst_longname(m), gridname='physgrid')
-  end do
-  do m = 1,pcnst
-     call add_default(trim(cnst_name(m))//'&IC',0, 'I')
-  end do
+!  call add_default ('PS&IC      ',0, 'I')
+!  call add_default ('T&IC       ',0, 'I')
+!  do m = 1,pcnst
+!     call addfld (trim(cnst_name(m))//'&IC', (/ 'lev' /), 'I', 'kg/kg', cnst_longname(m), !gridname='physgrid')
+!  end do
+!  do m = 1,pcnst
+!     call add_default(trim(cnst_name(m))//'&IC',0, 'I')
+!  end do
 
   allocate(tp2(npsq,nlev,nelemd))
   allocate(fu(npsq,nlev,nelemd))
@@ -439,7 +439,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                ftmp(i+(j-1)*np,1:pver,1) = tmp_dyn(i,j,1:pver)
             end do
          end do
-         call outfld('VOR',ftmp(:,:,1),npsq,ie)
+!         call outfld('VOR',ftmp(:,:,1),npsq,ie)
       enddo
    endif
    if (hist_fld_active('DIV')) then
@@ -450,7 +450,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                ftmp(i+(j-1)*np,1:pver,1) = tmp_dyn(i,j,1:pver)
             end do
          end do
-         call outfld('DIV',ftmp(:,:,1),npsq,ie)
+!         call outfld('DIV',ftmp(:,:,1),npsq,ie)
       enddo
    endif
 #endif
@@ -462,7 +462,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                   ftmp(i+(j-1)*np,1,1) = phisdyn(i,j,ie)
                end do
             end do
-            call outfld('PHIS_SM',ftmp(:,1,1),npsq,ie)
+!            call outfld('PHIS_SM',ftmp(:,1,1),npsq,ie)
          enddo
       endif
       if (hist_fld_active('SGH_SM')) then
@@ -472,7 +472,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                   ftmp(i+(j-1)*np,1,1) = sghdyn(i,j,ie)
                end do
             end do
-            call outfld('SGH_SM',ftmp(:,1,1),npsq,ie)
+!            call outfld('SGH_SM',ftmp(:,1,1),npsq,ie)
          enddo
       endif
       if (hist_fld_active('SGH30_SM')) then
@@ -482,26 +482,26 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                   ftmp(i+(j-1)*np,1,1) = sgh30dyn(i,j,ie)
                end do
             end do
-            call outfld('SGH30_SM',ftmp(:,1,1),npsq,ie)
+!            call outfld('SGH30_SM',ftmp(:,1,1),npsq,ie)
          enddo
       endif
    end if
    
-   if (hist_fld_active('FU') .or. hist_fld_active('FV')) then
-      do ie=1,nelemd
-         do k=1,nlev
-            do j=1,np
-               do i=1,np
-                  ftmp(i+(j-1)*np,k,1) = dyn_in%elem(ie)%derived%FM(i,j,1,k,1)
-                  ftmp(i+(j-1)*np,k,2) = dyn_in%elem(ie)%derived%FM(i,j,2,k,1)
-               end do
-            end do
-         end do
+!   if (hist_fld_active('FU') .or. hist_fld_active('FV')) then
+!      do ie=1,nelemd
+!         do k=1,nlev
+!            do j=1,np
+!               do i=1,np
+!                  ftmp(i+(j-1)*np,k,1) = dyn_in%elem(ie)%derived%FM(i,j,1,k,1)
+!                  ftmp(i+(j-1)*np,k,2) = dyn_in%elem(ie)%derived%FM(i,j,2,k,1)
+!               end do
+!            end do
+!         end do
          
-         call outfld('FU',ftmp(:,:,1),npsq,ie)
-         call outfld('FV',ftmp(:,:,2),npsq,ie)
-      end do
-   endif
+!         call outfld('FU',ftmp(:,:,1),npsq,ie)
+!         call outfld('FV',ftmp(:,:,2),npsq,ie)
+!      end do
+!   endif
    
    
    

@@ -28,7 +28,7 @@ subroutine scam_use_iop_srf( cam_in )
 !      cam_in(c)%lwup(:ncol) = stebol*(292.5)**4
 !    end do
     
-    if (scm_iop_srf_prop_se) then
+    if (scm_iop_srf_prop) then
        do c=begchunk,endchunk
           ncol = cam_in(c)%ncol
           if(have_lhflx) then

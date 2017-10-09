@@ -2337,6 +2337,7 @@ contains
 
     ! Since more than one grid can share an attribute, assume that if the
     ! vardesc is not associated, another grid write the values
+!    write(iulog,*) 'IWASHERE', File, attr%vardesc, attr%map
     if (associated(attr%vardesc)) then
       ! Write out the values for this dimension variable
       if (associated(attr%map)) then
@@ -2351,7 +2352,7 @@ contains
         ! This is a local variable, pio_put_var should work fine
         ierr = pio_put_var(File, attr%vardesc, attr%values)
       end if
-      call cam_pio_handle_error(ierr, 'Error writing variable values in write_cam_grid_val_1d_r8')
+!      call cam_pio_handle_error(ierr, 'Error writing variable values in write_cam_grid_val_1d_r8')
       deallocate(attr%vardesc)
       nullify(attr%vardesc)
     end if

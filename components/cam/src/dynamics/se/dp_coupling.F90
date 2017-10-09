@@ -285,17 +285,17 @@ CONTAINS
 !    end do
 
 
-   if (write_inithist() ) then
-      do lchnk=begchunk,endchunk
-         call outfld('T&IC',phys_state(lchnk)%t,pcols,lchnk)
-         call outfld('U&IC',phys_state(lchnk)%u,pcols,lchnk)
-         call outfld('V&IC',phys_state(lchnk)%v,pcols,lchnk)
-         call outfld('PS&IC',phys_state(lchnk)%ps,pcols,lchnk)
-         do m=1,pcnst
-            call outfld(trim(cnst_name(m))//'&IC',phys_state(lchnk)%q(1,1,m), pcols,lchnk)
-         end do
-      end do
-   endif
+!   if (write_inithist() ) then
+!      do lchnk=begchunk,endchunk
+!         call outfld('T&IC',phys_state(lchnk)%t,pcols,lchnk)
+!         call outfld('U&IC',phys_state(lchnk)%u,pcols,lchnk)
+!         call outfld('V&IC',phys_state(lchnk)%v,pcols,lchnk)
+!         call outfld('PS&IC',phys_state(lchnk)%ps,pcols,lchnk)
+!         do m=1,pcnst
+!            call outfld(trim(cnst_name(m))//'&IC',phys_state(lchnk)%q(1,1,m), pcols,lchnk)
+!         end do
+!      end do
+!   endif
    
        
   end subroutine d_p_coupling

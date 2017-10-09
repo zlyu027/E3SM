@@ -1005,11 +1005,11 @@ endif !scm_observed_aero
 	   
 !	   write(*,*) 'THELATANDLON ', thelat, thelon, scmlat_se, scmlon_se
 	   
-	   if (thelat >= scmlat_se-4.0 .and. thelat <= scmlat_se+4.0) then
-	     if (thelon >= scmlon_se-10.0 .and. thelon <= scmlon_se+10.0) then
+!	   if (thelat >= scmlat_se-4.0 .and. thelat <= scmlat_se+4.0) then
+!	     if (thelon >= scmlon_se-10.0 .and. thelon <= scmlon_se+10.0) then
 !           if (thelat > 19.0 .and. thelat < 20.0) then
 !	     if (thelon > 298 .and. thelon < 299) then
-	       write(*,*) 'ITSAMATCH ', thelat, thelon, scmlat_se, scmlon_se
+!	       write(*,*) 'ITSAMATCH ', thelat, thelon, scmlat_se, scmlon_se
 	       do k=1, PLEV
 	         elem(ie)%state%ps_v(i,j,1)=ps_surf
 	         elem(ie)%state%T(i,j,k,1)=tobs(k)
@@ -1021,14 +1021,14 @@ endif !scm_observed_aero
 	         elem(ie)%state%v(i,j,2,k,1) = vobs(k)
 	       enddo
 
-	       write(iulog,*) 'INITPS ', elem(ie)%state%ps_v(i,j,1)
-	       write(iulog,*) 'INITT ', elem(ie)%state%T(i,j,:,1)
-	       write(iulog,*) 'INITQ ', elem(ie)%state%Q(i,j,:,1)
-	       write(iulog,*) 'INITU ', elem(ie)%state%v(i,j,1,:,1)
-	       write(iulog,*) 'INITV ', elem(ie)%state%v(i,j,2,:,1)	       
-	       
-	     endif
-	   endif
+!	       write(iulog,*) 'INITPS ', elem(ie)%state%ps_v(i,j,1)
+!	       write(iulog,*) 'INITT ', elem(ie)%state%T(i,j,:,1)
+!	       write(iulog,*) 'INITQ ', elem(ie)%state%Q(i,j,:,1)
+!	       write(iulog,*) 'INITU ', elem(ie)%state%v(i,j,1,:,1)
+!	       write(iulog,*) 'INITV ', elem(ie)%state%v(i,j,2,:,1)	       
+!	       
+!	     endif
+!	   endif
 	   
 	 enddo
        enddo
@@ -1119,7 +1119,7 @@ subroutine setiopupdate
 !     
 !     Open  IOP dataset
 !     
-      STATUS = NF90_OPEN( iopfile_se, NF90_NOWRITE, NCID )
+      STATUS = NF90_OPEN( iopfile, NF90_NOWRITE, NCID )
 !     
 !     Read time (tsec) variable 
 !     
