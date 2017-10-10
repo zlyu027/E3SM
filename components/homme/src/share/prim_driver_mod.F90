@@ -854,8 +854,7 @@ contains
     !       tl%n0    time t + dt_q
 
     use scamMod,            only: single_column
-    use control_mod,        only: statefreq, ftype, qsplit, rsplit, disable_diagnostics, &
-                                  single_column_se
+    use control_mod,        only: statefreq, ftype, qsplit, rsplit, disable_diagnostics
     use hybvcoord_mod,      only: hvcoord_t
     use parallel_mod,       only: abortmp
     use prim_advance_mod,   only: applycamforcing, applycamforcing_dynamics
@@ -864,7 +863,6 @@ contains
     use vertremap_mod,      only: vertical_remap
     use reduction_mod,      only: parallelmax
     use time_mod,           only: TimeLevel_t, timelevel_update, timelevel_qdp, nsplit, tstep
-    use dyn_grid,           only: pelat_deg, pelon_deg
 
 #if USE_OPENACC
     use openacc_utils_mod,  only: copy_qdp_h2d, copy_qdp_d2h
@@ -879,8 +877,6 @@ contains
     type (TimeLevel_t),   intent(inout) :: tl
     integer,              intent(in)    :: nsubstep                     ! nsubstep = 1 .. nsplit
     real(kind=real_kind), intent(inout) :: tp2(npsq,nlev,nelemd), fu(npsq,nlev,nelemd), fv(npsq,nlev,nelemd)
-
-!    type (element_t) :: elem_copy(:)
 
     real(kind=real_kind) :: dp, dt_q, dt_remap
     real(kind=real_kind) :: dp_np1(np,np)
@@ -923,9 +919,6 @@ contains
     !   ftype= 0: apply all forcing here
     !   ftype=-1: do not apply forcing
 
-!    write(iulog,*) 'FTYPE ', ftype
-    ! FTYPE Is 2
-
     call TimeLevel_Qdp(tl, qsplit, n0_qdp)
 
     if (single_column) then
@@ -943,12 +936,6 @@ contains
       call t_stopf("ApplyCAMForcing_dynamics")
     endif
 
-
-!    if (single_column_se) then
-!      call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
-!             tp2,fu,fv)	 
-!      go to 1000    
-!    end if
 
 #else
     ! Apply HOMME test case forcing
@@ -1067,10 +1054,8 @@ contains
 1000 continue
    
     if (single_column) then
-!      call TimeLevel_update(tl,"leapfrog")
       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
           tp2,fu,fv)
-!      write(*,*) 'OMEGAinPRIM ', elem(1)%derived%omega_p(1,1,:)
     end if
 
     ! =================================
@@ -1089,10 +1074,6 @@ contains
        call prim_printstate(elem, tl, hybrid,hvcoord,nets,nete)
     end if
     
-!    if (single_column_se) then
-!       call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
-!           tp2,fu,fv)
-!    end if
     
   end subroutine prim_run_subcycle
 
@@ -1117,7 +1098,7 @@ contains
   !
   !
     use control_mod,        only: statefreq, integration, ftype, qsplit, nu_p, rsplit
-    use control_mod,        only: use_semi_lagrange_transport, single_column_se
+    use control_mod,        only: use_semi_lagrange_transport
     use hybvcoord_mod,      only : hvcoord_t
     use parallel_mod,       only: abortmp
     use prim_advance_mod,   only: prim_advance_exp
@@ -1195,7 +1176,6 @@ contains
     !   if tracer scheme needs v on lagrangian levels it has to vertically interpolate
     !   if tracer scheme needs dp3d, it needs to derive it from ps_v
 
-!    if (.not. single_column_se) then
     call t_startf("prim_step_advec")
     if (qsize > 0) then
       call t_startf("PAT_remap")
@@ -1203,7 +1183,6 @@ contains
       call t_stopf("PAT_remap")
     end if
     call t_stopf("prim_step_advec")
-!    endif
 
   end subroutine prim_step
 

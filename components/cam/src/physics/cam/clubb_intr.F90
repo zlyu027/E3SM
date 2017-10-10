@@ -914,7 +914,6 @@ end subroutine clubb_init_cnst
    use cam_abortutils, only: endrun
    use wv_saturation,  only: qsat
    use micro_mg_cam,   only: micro_mg_version
-   use control_mod,    only: single_column_se
       
 #ifdef CLUBB_SGS
    use hb_diff,                   only: pblintd
@@ -1441,10 +1440,6 @@ end subroutine clubb_init_cnst
        um(i,k)      = state1%u(i,k)
        vm(i,k)      = state1%v(i,k)
        thlm(i,k)    = state1%t(i,k)*exner_clubb(i,k)-(latvap/cpair)*state1%q(i,k,ixcldliq)
-       
-!       if (state1%t(i,k) .gt. 500._r8) then
-!         write(*,*) 'GREATERTHAN500beforeCLUBB ',state1%t(i,k)
-!       endif
 
        if (clubb_do_adv) then
           if (macmic_it .eq. 1) then 
@@ -1706,8 +1701,8 @@ end subroutine clubb_init_cnst
       !  Surface fluxes provided by host model
       wpthlp_sfc = cam_in%shf(i)/(cpair*rho_ds_zm(1))       ! Sensible heat flux
       wprtp_sfc  = cam_in%cflx(i,1)/(rho_ds_zm(1))      ! Latent heat flux
-      upwp_sfc   = cam_in%wsx(i)/rho_ds_zm(1)               ! Surface meridional momentum flux
-      vpwp_sfc   = cam_in%wsy(i)/rho_ds_zm(1)               ! Surface zonal momentum flux  
+!      upwp_sfc   = cam_in%wsx(i)/rho_ds_zm(1)               ! Surface meridional momentum flux
+!      vpwp_sfc   = cam_in%wsy(i)/rho_ds_zm(1)               ! Surface zonal momentum flux  
       
       ! ------------------------------------------------- !
       ! Apply TMS                                         !

@@ -2337,7 +2337,6 @@ contains
 
     ! Since more than one grid can share an attribute, assume that if the
     ! vardesc is not associated, another grid write the values
-!    write(iulog,*) 'IWASHERE', File, attr%vardesc, attr%map
     if (associated(attr%vardesc)) then
       ! Write out the values for this dimension variable
       if (associated(attr%map)) then

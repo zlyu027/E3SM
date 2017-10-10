@@ -26,7 +26,6 @@ module stepon
    use edge_mod,       only: initEdgeBuffer, FreeEdgeBuffer, edgeVpack, edgeVunpack
    use iop,            only: readiopdata, setiopupdate
    use scamMod,        only: use_iop, doiopupdate, single_column
-   use control_mod,    only: single_column_se
    use parallel_mod,   only : par
    use element_mod,    only : element_t
 
@@ -113,43 +112,43 @@ subroutine stepon_init(dyn_in, dyn_out )
   !
   ! Forcing from physics
   ! FU, FV, other dycores, doc, says "m/s" but I think that is m/s^2
-!  call addfld ('FU',  (/ 'lev' /), 'A', 'm/s2', 'Zonal wind forcing term',     gridname='GLL')
-!  call addfld ('FV',  (/ 'lev' /), 'A', 'm/s2', 'Meridional wind forcing term',gridname='GLL')
-!  call register_vector_field('FU', 'FV')
-!  call addfld ('VOR', (/ 'lev' /), 'A', '1/s',  'Vorticity',                   gridname='GLL')
-!  call addfld ('DIV', (/ 'lev' /), 'A', '1/s',  'Divergence',                  gridname='GLL')
+  call addfld ('FU',  (/ 'lev' /), 'A', 'm/s2', 'Zonal wind forcing term',     gridname='GLL')
+  call addfld ('FV',  (/ 'lev' /), 'A', 'm/s2', 'Meridional wind forcing term',gridname='GLL')
+  call register_vector_field('FU', 'FV')
+  call addfld ('VOR', (/ 'lev' /), 'A', '1/s',  'Vorticity',                   gridname='GLL')
+  call addfld ('DIV', (/ 'lev' /), 'A', '1/s',  'Divergence',                  gridname='GLL')
 
-!  if (smooth_phis_numcycle>0) then
-!     call addfld ('PHIS_SM',  horiz_only, 'I', 'm2/s2', 'Surface geopotential (smoothed)',           !     gridname='GLL')
-!     call addfld ('SGH_SM',   horiz_only, 'I', 'm',     'Standard deviation of orography !(smoothed)',     gridname='GLL')
-!     call addfld ('SGH30_SM', horiz_only, 'I', 'm',     'Standard deviation of 30s orography !(smoothed)', gridname='GLL')
-!  endif
+  if (smooth_phis_numcycle>0) then
+     call addfld ('PHIS_SM',  horiz_only, 'I', 'm2/s2', 'Surface geopotential (smoothed)',                gridname='GLL')
+     call addfld ('SGH_SM',   horiz_only, 'I', 'm',     'Standard deviation of orography (smoothed)',     gridname='GLL')
+     call addfld ('SGH30_SM', horiz_only, 'I', 'm',     'Standard deviation of 30s orography (smoothed)', gridname='GLL')
+  endif
 
-!  call addfld ('CONVU   ', (/ 'ilev' /),'A', 'm/s2    ','Zonal component IE->KE conversion term',    !  gridname='physgrid')
-!  call addfld ('CONVV   ', (/ 'ilev' /),'A', 'm/s2    ','Meridional component IE->KE conversion !term', gridname='physgrid')
-!  call register_vector_field('CONVU', 'CONVV')
-!  call addfld ('DIFFU   ', (/ 'ilev' /),'A', 'm/s2    ','U horizontal diffusion',                    !  gridname='physgrid')
-!  call addfld ('DIFFV   ', (/ 'ilev' /),'A', 'm/s2    ','V horizontal diffusion',                    !  gridname='physgrid')
-!  call register_vector_field('DIFFU', 'DIFFV')
+  call addfld ('CONVU   ', (/ 'ilev' /),'A', 'm/s2    ','Zonal component IE->KE conversion term',      gridname='physgrid')
+  call addfld ('CONVV   ', (/ 'ilev' /),'A', 'm/s2    ','Meridional component IE->KE conversion term', gridname='physgrid')
+  call register_vector_field('CONVU', 'CONVV')
+  call addfld ('DIFFU   ', (/ 'ilev' /),'A', 'm/s2    ','U horizontal diffusion',                      gridname='physgrid')
+  call addfld ('DIFFV   ', (/ 'ilev' /),'A', 'm/s2    ','V horizontal diffusion',                      gridname='physgrid')
+  call register_vector_field('DIFFU', 'DIFFV')
   
-!  call addfld ('ETADOT', (/ 'ilev' /), 'A', '1/s', 'Vertical (eta) velocity', gridname='physgrid')
-!  call addfld ('U&IC',   (/ 'lev' /),  'I', 'm/s', 'Zonal wind',              gridname='physgrid' )
-!  call addfld ('V&IC',   (/ 'lev' /),  'I', 'm/s', 'Meridional wind',         gridname='physgrid' )
+  call addfld ('ETADOT', (/ 'ilev' /), 'A', '1/s', 'Vertical (eta) velocity', gridname='physgrid')
+  call addfld ('U&IC',   (/ 'lev' /),  'I', 'm/s', 'Zonal wind',              gridname='physgrid' )
+  call addfld ('V&IC',   (/ 'lev' /),  'I', 'm/s', 'Meridional wind',         gridname='physgrid' )
   ! Don't need to register U&IC V&IC since we don't interpolate IC files
-!  call add_default ('U&IC',0, 'I')
-!  call add_default ('V&IC',0, 'I')
+  call add_default ('U&IC',0, 'I')
+  call add_default ('V&IC',0, 'I')
 
-!  call addfld ('PS&IC', horiz_only,  'I', 'Pa', 'Surface pressure',gridname='physgrid')
-!  call addfld ('T&IC',  (/ 'lev' /), 'I', 'K',  'Temperature',     gridname='physgrid')
+  call addfld ('PS&IC', horiz_only,  'I', 'Pa', 'Surface pressure',gridname='physgrid')
+  call addfld ('T&IC',  (/ 'lev' /), 'I', 'K',  'Temperature',     gridname='physgrid')
 
-!  call add_default ('PS&IC      ',0, 'I')
-!  call add_default ('T&IC       ',0, 'I')
-!  do m = 1,pcnst
-!     call addfld (trim(cnst_name(m))//'&IC', (/ 'lev' /), 'I', 'kg/kg', cnst_longname(m), !gridname='physgrid')
-!  end do
-!  do m = 1,pcnst
-!     call add_default(trim(cnst_name(m))//'&IC',0, 'I')
-!  end do
+  call add_default ('PS&IC      ',0, 'I')
+  call add_default ('T&IC       ',0, 'I')
+  do m = 1,pcnst
+     call addfld (trim(cnst_name(m))//'&IC', (/ 'lev' /), 'I', 'kg/kg', cnst_longname(m), gridname='physgrid')
+  end do
+  do m = 1,pcnst
+     call add_default(trim(cnst_name(m))//'&IC',0, 'I')
+  end do
 
   allocate(tp2(npsq,nlev,nelemd))
   allocate(fu(npsq,nlev,nelemd))

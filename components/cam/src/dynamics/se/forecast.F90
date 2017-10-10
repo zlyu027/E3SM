@@ -30,7 +30,6 @@ subroutine forecast(lat, psm1, psm2,ps, &
    use dyn_grid,       only: w !+PAB, but this probably isn't right, null
 !   use eul_control_mod
    use cam_logfile,    only: iulog
-   use control_mod,    only: scm_relaxation_se
 !-----------------------------------------------------------------------
    implicit none
 !-----------------------------------------------------------------------
@@ -597,7 +596,7 @@ end if
    u3(:)=ufcst(:)
    v3(:)=vfcst(:)
 
-   if (scm_relaxation_se) then
+   if (scm_relaxation) then
 !
 !    THIS IS WHERE WE RELAX THE SOLUTION IF REQUESTED
 !    The relaxation can be thought of as a part of the "adjustment" physics

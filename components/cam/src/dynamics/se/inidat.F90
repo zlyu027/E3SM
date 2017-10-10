@@ -20,7 +20,6 @@ module inidat
   use spmd_utils,   only: iam, masterproc
   use cam_control_mod, only : ideal_phys, aqua_planet, pertlim, seed_custom, seed_clock, new_random
   use random_xgc, only: init_ranx, ranx
-  use control_mod, only: single_column_se
   use scamMod, only: single_column
   implicit none
   private
@@ -323,7 +322,6 @@ contains
       nullify(gcid)
     end if
 
-!+  PAB, need to determine which latitude and longitude to read in
     fieldname = 'PS'
     tmp(:,1,:) = 0.0_r8
     call infld(fieldname, ncid_ini, 'ncol',      &
@@ -376,22 +374,9 @@ contains
     end do
     
     if (single_column) then
-!      write(*,*) 'DID INITIAL SCM'
       call setiopupdate()
       call readiopdata(elem)
     endif
-    
-    do ie = 1, nelemd
-      do k = 1, nlev
-        do j = 1, np
-	  do i = 1, np
-	    if (elem(ie)%state%T(i,j,k,1) .gt. 500._r8) then
-              write(*,*) 'INITGREATERTHAN1 ', ie, elem(ie)%state%T(i,j,k,1), i, j, k
-	    endif
-	  enddo
-	enddo
-      enddo    
-    enddo
 
     if (.not. single_column) then    
     ! once we've read all the fields we do a boundary exchange to 
@@ -428,18 +413,6 @@ contains
     end do
     
     endif
-    
-    do ie = 1, nelemd
-      do k = 1, nlev
-        do j = 1, np
-	  do i = 1, np
-	    if (elem(ie)%state%T(i,j,k,1) .gt. 500._r8) then
-              write(*,*) 'INITGREATERTHAN2 ', ie, elem(ie)%state%T(i,j,k,1), i, j, k
-	    endif
-	  enddo
-	enddo
-      enddo    
-    enddo
 
 !$omp parallel do private(ie, t, m_cnst)
     do ie=1,nelemd
@@ -447,14 +420,13 @@ contains
           elem(ie)%state%ps_v(:,:,t)=elem(ie)%state%ps_v(:,:,1)
           elem(ie)%state%v(:,:,:,:,t)=elem(ie)%state%v(:,:,:,:,1)
           elem(ie)%state%T(:,:,:,t)=elem(ie)%state%T(:,:,:,1)
-	  
        end do
     end do
 
     if (.not. single_column) then
-    if(iam < par%nprocs) then
-       call FreeEdgeBuffer(edge)
-    end if
+      if(iam < par%nprocs) then
+        call FreeEdgeBuffer(edge)
+      end if
     endif
 
     !

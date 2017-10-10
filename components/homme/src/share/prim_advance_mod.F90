@@ -8,8 +8,7 @@
 !
 module prim_advance_mod
 
-  use scamMod,        only: single_column
-  use control_mod,    only: qsplit,rsplit, use_moisture, single_column_se
+  use control_mod,    only: qsplit,rsplit, use_moisture
   use derivative_mod, only: derivative_t
   use dimensions_mod, only: np, nlev, nlevp, nelemd, qsize, max_corner_elem
   use edgetype_mod,   only: EdgeDescriptor_t, EdgeBuffer_t
@@ -278,7 +277,7 @@ contains
     ! ==================================
     ! Take timestep
     ! ==================================
-    
+
     dt_vis = dt
     if (method==0) then
        ! regular LF step
@@ -1049,7 +1048,6 @@ contains
   use physical_constants, only : cp, cpwater_vapor, Rgas, kappa
   use physics_mod, only : virtual_specific_heat, virtual_temperature
   use prim_si_mod, only : preq_vertadv, preq_omega_ps, preq_hydrostatic
-  use scamMod, only: wfldh
 
   use time_mod, only : tevolve
 
@@ -1219,22 +1217,14 @@ contains
         T_vadv=0
         v_vadv=0
      else
-
-!       if (single_column) then
-!         do j=1,np
-!           do i=1,np
-!             eta_dot_dpdn(i,j,:)=wfldh(:)
-!           enddo
-!         enddo
-!       else 
-         do k=1,nlev
+        do k=1,nlev
            ! ==================================================
            ! add this term to PS equation so we exactly conserve dry mass
            ! ==================================================
            sdot_sum(:,:) = sdot_sum(:,:) + divdp(:,:,k)
            eta_dot_dpdn(:,:,k+1) = sdot_sum(:,:)
-         end do
-!       endif
+        end do
+
 
         ! ===========================================================
         ! at this point, eta_dot_dpdn contains integral_etatop^eta[ divdp ]

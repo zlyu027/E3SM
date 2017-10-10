@@ -50,6 +50,7 @@ CONTAINS
 !
 ! Call addfld to add each field to the Master Field List.
 !
+      !+ Make this have backwards compatibility with Eulerian core
       call addfld ('TDIFF',(/ 'lev' /),    'A','K','difference from observed temp')
 
       call addfld ('TOBS',(/ 'lev' /),    'A','K','observed temp')

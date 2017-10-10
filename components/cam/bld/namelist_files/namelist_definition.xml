@@ -5849,59 +5849,7 @@ Number of vertical threads.
 Default: 1.
 </entry>
 
-<entry id="single_column_se" type="logical" category="scm"
-       group="ctl_nl" valid_values="">
-Single column model for SE dy-core.
-Default: FALSE
-</entry>
 
-<entry id="scm_iop_srf_prop_se" type="logical" category="scm"
-       group="ctl_nl" valid_values="">
-Single column model for SE dy-core.
-Default: FALSE
-</entry>
-
-<entry id="scm_relaxation_se" type="logical" category="scm"
-       group="ctl_nl" valid_values="">
-Single column model for SE dy-core.
-Default: FALSE
-</entry>
-
-<entry id="swrad_off_se" type="logical" category="scm"
-       group="ctl_nl" valid_values="">
-Single column model for SE dy-core.
-Default: FALSE
-</entry>
-
-<entry id="lwrad_off_se" type="logical" category="scm"
-       group="ctl_nl" valid_values="">
-Single column model for SE dy-core.
-Default: FALSE
-</entry>
-
-<entry id="precip_off_se" type="logical" category="scm"
-       group="ctl_nl" valid_values="">
-Single column model for SE dy-core.
-Default: FALSE
-</entry>
-
-<entry id="scmlon_se" type="real" category="scam"
-       group="ctl_nl" valid_values="">
-Longitude value of single column for SE dy-core prototype.
-Default: none.
-</entry>
-
-<entry id="scmlat_se" type="real" category="scam"
-       group="ctl_nl" valid_values="">
-Latitude value of single column for SE dy-core prototype.
-Default: none.
-</entry>
-
-<entry id="iopfile_se" type="char*128" input_pathname="abs" category="scam"
-       group="ctl_nl" valid_values="" >
-Full pathname of IOP dataset.
-Default: set by build-namelist.
-</entry>
 
 <!-- CAM I/O  -->
 

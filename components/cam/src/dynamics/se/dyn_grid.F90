@@ -79,13 +79,11 @@ module dyn_grid
   real(r8), public, pointer :: w(:) => null()        ! weights
 
   !! Local lat/lon arrays
-  real(r8), public, pointer :: pelat_deg(:) => null()  ! pe-local latitudes (degrees)
-  real(r8), public, pointer :: pelon_deg(:) => null()  ! pe-local longitudes (degrees)
+  real(r8), pointer :: pelat_deg(:) => null()  ! pe-local latitudes (degrees)
+  real(r8), pointer :: pelon_deg(:) => null()  ! pe-local longitudes (degrees)
   real(r8), pointer :: pearea(:) => null()  ! pe-local areas
   integer(iMap), pointer :: pemap(:) => null()  ! pe-local map for PIO decomp
 
-
-  real(r8), public :: pelat_deg_se, pelon_deg_se, pearea_se, pemap_se
 
 !========================================================================
 contains
@@ -461,9 +459,6 @@ end function get_block_owner_d
     use element_mod,    only: index_t
     use dof_mod,        only: UniqueCoords, UniquePoints
     use physconst,      only: pi
-    use control_mod,    only: single_column_se, scmlat_se, scmlon_se
-    use scamMod,        only: single_column, scmlat, scmlon
-!    use runtime_opts,   only: single_column_se, scmlat_se, scmlon_se
 
     ! Input variable
     integer,                     intent(in)  :: NumUniqueCols
@@ -506,35 +501,22 @@ end function get_block_owner_d
       allocate(pearea(np*np*nelemd))
       allocate(pemap(np*np*nelemd))
       pemap = 0
-      
-!      if (.not. single_column_se) then
       ! Now, fill in the appropriate values
-    ii = 1
-    do ie = 1, nelemd
-      areaw = 1.0_r8 / elem(ie)%rspheremp(:,:)         
-      pearea(ii:ii+npsq-1) = reshape(areaw, (/ np*np /))
-      pemap(ii:ii+npsq-1) = fdofp_local(:,ie)
-      do j = 1, np
-        do i = 1, np
-          pelat_deg(ii) = elem(ie)%spherep(i, j)%lat * rad2deg
-          pelon_deg(ii) = elem(ie)%spherep(i, j)%lon * rad2deg
-          ii = ii + 1
+      ii = 1
+      do ie = 1, nelemd
+        areaw = 1.0_r8 / elem(ie)%rspheremp(:,:)         
+        pearea(ii:ii+npsq-1) = reshape(areaw, (/ np*np /))
+        pemap(ii:ii+npsq-1) = fdofp_local(:,ie)
+        do j = 1, np
+          do i = 1, np
+            pelat_deg(ii) = elem(ie)%spherep(i, j)%lat * rad2deg
+            pelon_deg(ii) = elem(ie)%spherep(i, j)%lon * rad2deg
+            ii = ii + 1
+          end do
         end do
-      end do
 !        bb = bb + nuniq
-    end do
-    local_coords_initialized = .true.
-      
-!      else 
-      
-    pearea_se = 2.0/np
-    pemap_se = fdofp_local(1,ie) ! +PAB, check to make sure this is right?
-    write(*,*) 'SCMLATSE', scmlat 
-    pelat_deg_se = scmlat
-    pelon_deg_se = mod((scmlon+360._r8),360._r8)      
-      
-!      endif
-      
+      end do
+      local_coords_initialized = .true.
     else if (ngcols_d /= NumUniqueCols) then
       call endrun('set_horiz_grid_cnt_d: NumUniqueCols /= ngcols_d')
     end if

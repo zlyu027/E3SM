@@ -658,13 +658,12 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     use scamMod, only: single_column
     use kinds, only : real_kind
     use dimensions_mod, only : np, np, nlev, npsq
-    use control_mod, only : use_cpstar, single_column_se
+    use control_mod, only : use_cpstar
     use hybvcoord_mod, only : hvcoord_t
     use element_mod, only : element_t
     use physical_constants, only : Cp, cpwater_vapor
     use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
     use prim_si_mod, only : preq_hydrostatic
-    use dyn_grid, only: pelat_deg, pelon_deg,pelat_deg_se,pelon_deg_se
     use time_mod, only: tstep
     use constituents, only: pcnst
     use time_manager, only: get_nstep
@@ -719,18 +718,6 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
       do k=1,nlev
         p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*elem(ie)%state%ps_v(:,:,t2)
       end do
-
-!      write(iulog,*) 'PELAT', pelat_deg
-!      write(iulog,*) 'PELON', pelon_deg
-!      write(iulog,*) 'PELAT_scm', pelat_deg_se
-!      write(iulog,*) 'PELON_scm', pelon_deg_se
-
-!      do_column_scm = .false.
-!      if (pelat_deg(ie)+0.5 > pelat_deg_se .and. pelat_deg(ie)-0.5 < pelat_deg_se) then
-!        if (pelon_deg(ie)+0.5 > pelon_deg_se .and. pelon_deg(ie)-0.5 < pelon_deg_se) then
-!          write(iulog,*) 'FUCKINGHERE', pelat_deg(ie), pelon_deg(ie), pelat_deg_se, pelon_deg_se 
-!        endif
-!      endif
  
       if (single_column) then
         dt=tstep*qsplit 
@@ -738,31 +725,13 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
         icount=0
         do i=1,np
           do j=1,np
- 
-!            if (get_nstep() .eq. 0) then
-!	      if (i .eq. 1 .and. j .eq. 1) write(*,*) 'DIDfirstSTEP ', elem(ie)%state%Q(i,j,:,1)
-!	      elem(ie)%state%Qdp(i,j,:,pp,t1_qdp) = elem(ie)%state%Q(i,j,:,1)*dpt1(i,j,:)
-!	      elem(ie)%state%Qdp(i,j,:,pp,t2_qdp) = elem(ie)%state%Q(i,j,:,1)*dpt2(i,j,:)
-!	    endif
          
-!	    stateQin1(:,1) = elem(ie)%state%Q(i,j,:,1)
-!	    stateQin2(:,1) = stateQin1(:,1)
             do pp=1,pcnst
               stateQin1(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t1_qdp)/dpt1(i,j,:)
               stateQin2(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)/dpt2(i,j,:)  
             enddo
 	    
-!	    stateQin_qfcst(:,:) = stateQin2(:,:)
             stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
-
-!            call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t1),&
-!	              elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%v(i,j,1,:,t2),&
-!		      elem(ie)%state%v(i,j,1,:,t1),elem(ie)%state%v(i,j,1,:,t1),& 
-!		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t1),&
-!		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t2),&
-!		      elem(ie)%state%T(i,j,:,t1),elem(ie)%state%T(i,j,:,t1),&
-!		      !stateQin2,stateQin1,stateQin1,dt,elem(ie)%derived%fT(i,j,:,t1),fu(icount,:,ie),fv(icount,:,ie),&
-!                      stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)
 		      
             call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t2),&
 	              elem(ie)%state%ps_v(i,j,t2),elem(ie)%state%v(i,j,1,:,t2),&
@@ -819,13 +788,12 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     use scamMod, only: single_column
     use kinds, only : real_kind
     use dimensions_mod, only : np, np, nlev
-    use control_mod, only : use_cpstar, single_column_se
+    use control_mod, only : use_cpstar
     use hybvcoord_mod, only : hvcoord_t
     use element_mod, only : element_t
     use physical_constants, only : Cp, cpwater_vapor
     use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
     use prim_si_mod, only : preq_hydrostatic
-    use dyn_grid, only: pelat_deg, pelon_deg
     use time_mod, only: tstep
 
     integer :: t1,t2,n,nets,nete
@@ -947,25 +915,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
                 endif
              end do
           end do
-       end do
- 
-!       write(*,*) 'pelat_deg', pelat_deg
-!       write(*,*) 'pelon_deg', pelon_deg
-      if (single_column) then
-        dt=tstep*qsplit 
-        if (ie .eq. nets) then
-          call forecast(pelat_deg,elem(ie)%state%ps_v(1,1,t1),elem(ie)%state%ps_v(1,1,t1),&
-	              elem(ie)%state%ps_v(1,1,t2),elem(ie)%state%v(1,1,1,:,t2),&
-		      elem(ie)%state%v(1,1,1,:,t2),elem(ie)%state%v(1,1,1,:,t1),& 
-		      elem(ie)%state%v(1,1,2,:,t2),elem(ie)%state%v(1,1,2,:,t2),&
-		      elem(ie)%state%v(1,1,2,:,t1),elem(ie)%state%T(1,1,:,t2),&
-		      elem(ie)%state%T(1,1,:,t2),elem(ie)%state%T(1,1,:,t1),&
-		      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),&
-		      elem(ie)%state%Qdp(1,1,:,1,t1_qdp)/dpt1(1,1,:),dt,tp2(1,:),fu(1,:),fv(1,:),&
-                      elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),p(1,1,:),1.0,elem(ie)%state%Qdp(1,1,:,1,t2_qdp)/dpt2(1,1,:),1)
-!! +PAB: really unsure about some of the inputs above
-        endif
-      endif        
+       end do     
 
     enddo
     

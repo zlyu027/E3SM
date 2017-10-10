@@ -220,7 +220,7 @@ contains
    use carma_flags_mod,  only: carma_readnl
    use co2_cycle,        only: co2_cycle_readnl
    use shr_string_mod,   only: shr_string_toUpper
-   use scamMod,          only: scam_setopts,scam_default_opts,use_iop
+   use scamMod,          only: scam_setopts,scam_default_opts
 
    ! Some modules read their own namelist input.
    use spmd_utils,          only: spmd_utils_readnl
@@ -368,7 +368,7 @@ contains
       iradae_out      = iradae,     &
       irad_always_out = irad_always, &
       spectralflux_out = spectralflux,&
-      use_rad_dt_cosz_out = use_rad_dt_cosz )   
+      use_rad_dt_cosz_out = use_rad_dt_cosz )
 
    if (present(single_column_in)) then
       call scam_default_opts(scmlat_out=scmlat,scmlon_out=scmlon, &
@@ -385,8 +385,6 @@ contains
 	precip_off_out=precip_off, &
         scm_clubb_iop_name_out=scm_clubb_iop_name)
    end if
-
-   use_iop = .true.
 
    ! Read in the cam_inparm namelist from input filename
 

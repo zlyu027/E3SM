@@ -25,6 +25,7 @@ module dp_coupling
   use spmd_utils,   only: mpicom, iam
   use perf_mod,    only : t_startf, t_stopf, t_barrierf
   use parallel_mod, only : par
+  use scamMod,      only: single_column
   private
   public :: d_p_coupling, p_d_coupling
 !===============================================================================
@@ -274,28 +275,30 @@ CONTAINS
     call derived_phys(phys_state,phys_tend,pbuf2d)
     call t_stopf('derived_phys')
 
-!$omp parallel do private (lchnk, ncols, ilyr, icol)
-!    do lchnk=begchunk,endchunk
-!       ncols=get_ncols_p(lchnk)
-!       do ilyr=1,pver
-!          do icol=1,ncols
-!             phys_state(lchnk)%omega(icol,ilyr)=phys_state(lchnk)%omega(icol,ilyr)*phys_state(lchnk)%pmid(icol,ilyr)
-!          end do
-!       end do
-!    end do
+$omp parallel do private (lchnk, ncols, ilyr, icol)
+    if (.not. single_column) then
+      do lchnk=begchunk,endchunk
+        ncols=get_ncols_p(lchnk)
+        do ilyr=1,pver
+          do icol=1,ncols
+            phys_state(lchnk)%omega(icol,ilyr)=phys_state(lchnk)%omega(icol,ilyr)*phys_state(lchnk)%pmid(icol,ilyr)
+          end do
+        end do
+      end do
+    endif
 
 
-!   if (write_inithist() ) then
-!      do lchnk=begchunk,endchunk
-!         call outfld('T&IC',phys_state(lchnk)%t,pcols,lchnk)
-!         call outfld('U&IC',phys_state(lchnk)%u,pcols,lchnk)
-!         call outfld('V&IC',phys_state(lchnk)%v,pcols,lchnk)
-!         call outfld('PS&IC',phys_state(lchnk)%ps,pcols,lchnk)
-!         do m=1,pcnst
-!            call outfld(trim(cnst_name(m))//'&IC',phys_state(lchnk)%q(1,1,m), pcols,lchnk)
-!         end do
-!      end do
-!   endif
+   if (write_inithist() ) then
+      do lchnk=begchunk,endchunk
+         call outfld('T&IC',phys_state(lchnk)%t,pcols,lchnk)
+         call outfld('U&IC',phys_state(lchnk)%u,pcols,lchnk)
+         call outfld('V&IC',phys_state(lchnk)%v,pcols,lchnk)
+         call outfld('PS&IC',phys_state(lchnk)%ps,pcols,lchnk)
+         do m=1,pcnst
+            call outfld(trim(cnst_name(m))//'&IC',phys_state(lchnk)%q(1,1,m), pcols,lchnk)
+         end do
+      end do
+   endif
    
        
   end subroutine d_p_coupling
@@ -402,10 +405,6 @@ CONTAINS
                 cbuffer   (cpter(icol,ilyr)+1)   = phys_tend(lchnk)%dudt(icol,ilyr)
                 cbuffer   (cpter(icol,ilyr)+2)   = phys_tend(lchnk)%dvdt(icol,ilyr)
 		
-!		tp2(icol,ilyr) = phys_tend(lchnk)%dtdt(icol,ilyr)
-!		fu(icol,ilyr) = phys_tend(lchnk)%dudt(icol,ilyr)
-!		fv(icol,ilyr) = phys_tend(lchnk)%dvdt(icol,ilyr)
-
                 do m=1,pcnst
                    cbuffer(cpter(icol,ilyr)+2+m) = phys_state(lchnk)%q(icol,ilyr,m)
                 end do

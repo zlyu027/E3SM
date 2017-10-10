@@ -12,7 +12,6 @@ module namelist_mod
   use control_mod, only : &
     MAX_STRING_LEN,&
     MAX_FILE_LEN,  &
-    MAX_CHARS,     &
     partmethod,    &       ! Mesh partitioning method (METIS)
     coord_transform_method,    &       !how to represent the coordinates.
     z2_map_method,    &       !zoltan2 how to perform mapping (network-topology aware)
@@ -74,16 +73,7 @@ module namelist_mod
     maxits,        &
     tol,           &
     debug_level,   &
-    vert_remap_q_alg, &
-    single_column_se, &
-    scm_iop_srf_prop_se, &
-    scm_relaxation_se, &
-    swrad_off_se, &
-    lwrad_off_se, &
-    precip_off_se, &
-    scmlat_se, &
-    scmlon_se, &
-    iopfile_se
+    vert_remap_q_alg
 
 #ifndef CAM
   use control_mod, only:              &
@@ -253,16 +243,7 @@ module namelist_mod
       u_perturb,     &
       rotate_grid,   &
       mesh_file,     &               ! Name of mesh file
-      vert_remap_q_alg, &
-      single_column_se, &
-      scm_iop_srf_prop_se, &
-      scm_relaxation_se, &
-      swrad_off_se, &
-      lwrad_off_se, &
-      precip_off_se, &
-      scmlat_se, &
-      scmlon_se, &
-      iopfile_se
+      vert_remap_q_alg
 
 
 #ifdef CAM
@@ -384,15 +365,6 @@ module namelist_mod
     use_semi_lagrange_transport   = .false.
     use_semi_lagrange_transport_local_conservation   = .false.
     disable_diagnostics = .false.
-    single_column_se = .false.
-    scm_iop_srf_prop_se = .false.
-    scm_relaxation_se = .false.
-    swrad_off_se = .false.
-    lwrad_off_se = .false.
-    precip_off_se = .false.
-    scmlat_se = -999.99
-    scmlon_se = -999.99
-    iopfile_se = "none"
 
 
     ! =======================
@@ -685,15 +657,6 @@ module namelist_mod
     call MPI_bcast(tstep_type,1,MPIinteger_t ,par%root,par%comm,ierr)
     call MPI_bcast(cubed_sphere_map,1,MPIinteger_t ,par%root,par%comm,ierr)
     call MPI_bcast(qsplit,1,MPIinteger_t ,par%root,par%comm,ierr)
-    call MPI_bcast(single_column_se,1,MPIlogical_t,par%root,par%comm,ierr)
-    call MPI_bcast(scm_iop_srf_prop_se,1,MPIlogical_t,par%root,par%comm,ierr)
-    call MPI_bcast(scm_relaxation_se,1,MPIlogical_t,par%root,par%comm,ierr)
-    call MPI_bcast(swrad_off_se,1,MPIlogical_t,par%root,par%comm,ierr)
-    call MPI_bcast(lwrad_off_se,1,MPIlogical_t,par%root,par%comm,ierr)
-    call MPI_bcast(precip_off_se,1,MPIlogical_t,par%root,par%comm,ierr)
-    call MPI_bcast(scmlat_se,1,MPIreal_t,par%root,par%comm,ierr)
-    call MPI_bcast(scmlon_se,1,MPIreal_t,par%root,par%comm,ierr)
-    call MPI_bcast(iopfile_se,MAX_CHARS,MPIChar_t,par%root,par%comm,ierr)
     call MPI_bcast(rsplit,1,MPIinteger_t ,par%root,par%comm,ierr)
     call MPI_bcast(rk_stage_user,1,MPIinteger_t ,par%root,par%comm,ierr)
     call MPI_bcast(LFTfreq,1,MPIinteger_t ,par%root,par%comm,ierr)
@@ -929,16 +892,6 @@ module namelist_mod
 #endif
        write(iulog,*)"readnl: qsplit        = ",qsplit
        write(iulog,*)"readnl: vertical remap frequency rsplit (0=disabled): ",rsplit
-       
-       write(iulog,*)"readnl: single_column_se = ",single_column_se
-       write(iulog,*)"readnl: scm_iop_srf_prop_se = ",scm_iop_srf_prop_se
-       write(iulog,*)"readnl: scm_relaxation_se = ",scm_relaxation_se
-       write(iulog,*)"readnl: swrad_off_se = ",swrad_off_se
-       write(iulog,*)"readnl: lwrad_off_se = ",lwrad_off_se
-       write(iulog,*)"readnl: precip_off_se = ",precip_off_se
-       write(iulog,*)"readnl: scmlat_se = ",scmlat_se
-       write(iulog,*)"readnl: scmlon_se = ",scmlon_se 
-       write(iulog,*)"readnl: iopfile_se = ",iopfile_se
 
        write(iulog,*)"readnl: runtype       = ",runtype
 

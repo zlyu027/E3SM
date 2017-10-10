@@ -619,7 +619,6 @@ CONTAINS
     use time_manager,    only: advance_timestep, get_curr_date, get_curr_calday, &
 	                       get_nstep, get_step_size
     use scamMod,         only: single_column
-    use control_mod,     only: single_column_se
 !   use iop,             only: scam_use_iop_srf
     use pmgrid,          only: plev, plevp
     use constituents,    only: pcnst

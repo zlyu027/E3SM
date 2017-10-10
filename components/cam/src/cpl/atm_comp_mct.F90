@@ -48,7 +48,6 @@ module atm_comp_mct
   use co2_cycle        , only: co2_readFlux_ocn, co2_readFlux_fuel
   use runtime_opts     , only: read_namelist
   use scamMod          , only: single_column,scmlat,scmlon
-  use control_mod      , only: single_column_se
 
 !
 ! !PUBLIC TYPES:

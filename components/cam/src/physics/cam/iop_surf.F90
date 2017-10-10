@@ -4,7 +4,6 @@ subroutine scam_use_iop_srf( cam_in )
     use camsrfexch,       only: cam_in_t    
     use physconst,   only: stebol, latvap
     use scamMod
-    use control_mod, only : scm_iop_srf_prop_se
 
     implicit none
     save
@@ -16,17 +15,7 @@ subroutine scam_use_iop_srf( cam_in )
     !
     ! Replace surface fluxes with observed values for IOP forcing if
     ! requested by switch settings in the GUI
-    !
-
-!    do c=begchunk,endchunk
-!      ncol = cam_in(c)%ncol
-!      
-!      cam_in(c)%shf(:ncol) = 15.0
-!      cam_in(c)%lhf(:ncol) = 115.0
-!      cam_in(c)%cflx(:ncol,1) = 115.0/latvap
-!      cam_in(c)%ts(:ncol) = 292.5
-!      cam_in(c)%lwup(:ncol) = stebol*(292.5)**4
-!    end do
+    !+ PAB, need to make this compatible with SE and EUL dy-core
     
     if (scm_iop_srf_prop) then
        do c=begchunk,endchunk

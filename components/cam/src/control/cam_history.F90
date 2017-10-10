@@ -4114,11 +4114,9 @@ end subroutine print_active_fldlst
     !
     if(.not. is_satfile(t)) then
       if(interpolate) then
-        write(iulog,*) 'DIDINTERPOLATE'
         call cam_grid_write_var(tape(t)%File, interpolate_info(t)%grid_id)
       else if((.not. patch_output) .or. restart) then
         do i = 1, size(tape(t)%grid_ids)
-	  write(iulog,*) 'DIDPATCH'
           call cam_grid_write_var(tape(t)%File, tape(t)%grid_ids(i))
         end do
       else

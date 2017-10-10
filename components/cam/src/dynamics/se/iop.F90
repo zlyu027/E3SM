@@ -24,7 +24,6 @@ module iop
   use cam_logfile,  only: iulog
   use phys_control, only: phys_getopts
   use dimensions_mod, only: nelemd, np
-  use control_mod, only: single_column_se, iopfile_se
 !  use eul_control_mod,only: eul_nsplit
 !
 ! !PUBLIC TYPES:
