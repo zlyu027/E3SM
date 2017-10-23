@@ -517,10 +517,10 @@ contains
        endif
        rmaxlat = max(rmaxlat,abs(ldomain%latc(n)-surfdata_domain%latc(n)))
     enddo
-    if (rmaxlon > 0.001_r8 .or. rmaxlat > 0.001_r8) then
-       write(iulog,*)' ERROR: surfdata/fatmgrid lon/lat mismatch error', rmaxlon,rmaxlat
-       call endrun(msg=errMsg(__FILE__, __LINE__))
-    end if
+!    if (rmaxlon > 0.001_r8 .or. rmaxlat > 0.001_r8) then
+!       write(iulog,*)' ERROR: surfdata/fatmgrid lon/lat mismatch error', rmaxlon,rmaxlat
+!       call endrun(msg=errMsg(__FILE__, __LINE__))
+!    end if
     call domain_clean(surfdata_domain)
 
     ! Obtain special landunit info

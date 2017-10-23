@@ -200,7 +200,7 @@ subroutine forecast(lat, psm1, psm2,ps, &
 
    wfldint(plevp) = 0.0_r8
 
-   t2(:) = 0.0
+!   t2(:) = 0.0
    fu(:) = 0.0
    fv(:) = 0.0
 
@@ -291,32 +291,47 @@ subroutine forecast(lat, psm1, psm2,ps, &
 !
 !  Eularian forecast for u,v and t
 !
+
    do k=2,plev-1
       fac = ztodt/(2.0_r8*pdelm1(k))
-      tfcst(k) = t3m2(k) &
+      tfcst(k) = t3m1(k) &
            - fac*(wfldint(k+1)*(t3m1(k+1) - t3m1(k)) &
            + wfldint(k)*(t3m1(k) - t3m1(k-1)))
-      vfcst(k) = v3m2(k) &
+      vfcst(k) = v3m1(k) &
            - fac*(wfldint(k+1)*(v3m1(k+1) - v3m1(k)) &
            + wfldint(k)*(v3m1(k) - v3m1(k-1)))
-      ufcst(k) = u3m2(k) &
+      ufcst(k) = u3m1(k) &
            - fac*(wfldint(k+1)*(u3m1(k+1) - u3m1(k)) &
            + wfldint(k)*(u3m1(k) - u3m1(k-1)))
+      do m=1,pcnst
+        qfcst(1,k,m) = q3m1(k,m) &
+	   - fac*(wfldint(k+1)*(q3m1(k+1,m) - q3m1(k,m)) &
+	   + wfldint(k)*(q3m1(k,m) - q3m1(k-1,m)))
+      end do
    end do
+
 !     
 !     - top and bottom levels next -
 !     
+
    k = 1
    fac = ztodt/(2.0_r8*pdelm1(k))
-   tfcst(k) = t3m2(k) - fac*(wfldint(k+1)*(t3m1(k+1) - t3m1(k)))
-   vfcst(k) = v3m2(k) - fac*(wfldint(k+1)*(v3m1(k+1) - v3m1(k)))
-   ufcst(k) = u3m2(k) - fac*(wfldint(k+1)*(u3m1(k+1) - u3m1(k)))
-!     
+   tfcst(k) = t3m1(k) - fac*(wfldint(k+1)*(t3m1(k+1) - t3m1(k)))
+   vfcst(k) = v3m1(k) - fac*(wfldint(k+1)*(v3m1(k+1) - v3m1(k)))
+   ufcst(k) = u3m1(k) - fac*(wfldint(k+1)*(u3m1(k+1) - u3m1(k)))
+   do m=1,pcnst
+     qfcst(1,k,m) = q3m1(k,m) - fac*(wfldint(k+1)*(q3m1(k+1,m) - q3m1(k,m)))
+   end do
+     
    k = plev
    fac = ztodt/(2.0_r8*pdelm1(plev))
-   tfcst(k) = t3m2(k) - fac*(wfldint(k)*(t3m1(k) - t3m1(k-1)))
-   vfcst(k) = v3m2(k) - fac*(wfldint(k)*(v3m1(k) - v3m1(k-1)))
-   ufcst(k) = u3m2(k) - fac*(wfldint(k)*(u3m1(k) - u3m1(k-1)))
+   tfcst(k) = t3m1(k) - fac*(wfldint(k)*(t3m1(k) - t3m1(k-1)))
+   vfcst(k) = v3m1(k) - fac*(wfldint(k)*(v3m1(k) - v3m1(k-1)))
+   ufcst(k) = u3m1(k) - fac*(wfldint(k)*(u3m1(k) - u3m1(k-1)))
+   do m=1,pcnst
+     qfcst(1,k,m) = q3m1(k,m) - fac*(wfldint(k)*(q3m1(k,m) - q3m1(k-1,m)))
+   end do
+
 !
 !  SLT is used for constituents only
 !  so that a centered approximation is used for T, U and V, and Q
@@ -487,30 +502,18 @@ end if
      t2(:) = 0.0
    endif
    
-!   t2(:) = 0.0
-!   fu(:) = 0.0
-!   fv(:) = 0.0
-
-!   tfcst(:) = t3m2(:)
-!   qfcst(1,:,:) = q3m2(:,:)
-!   t2(:) = 0.0 
-!   write(*,*) 'TFCSTPRE ', tfcst(:)
-!   write(*,*) 'WFLD ', wfld(:)
-!   write(*,*) 'T3M1 ', t3m1(:)
-!   write(*,*) 'T2 ', t2(:)
-!   write(*,*) 'DIVT ', divt(:)
    do k=1,plev
       tfcst(k) = tfcst(k) + ztodt*wfld(k)*t3m1(k)*rair/(cpair*pmidm1(k)) &
          + ztodt*(t2(k) + divt(k))
-      if (tfcst(k) .gt. 500.) then
-        write(*,*) 'EXTREME ', tfcst(k), t3m2(k), ztodt, wfld(k), t3m1(k), t2(k), divt(k), k
-      endif
+!      if (t2(k) .ne. 0) then
+!        write(*,*) 'EXTREME ', t2(k), k
+!      endif
       do m=1,pcnst
-        qfcst(1,k,m) = qfcst(1,k,m) + ztodt*divq(k,m)
+        qfcst(1,k,m) = qfcst(1,k,m) + ztodt*wfld(k)*q3m1(k,m)*rair/(cpair*pmidm1(k)) &
+         + ztodt*divq(k,m)
       end do
    enddo
 
-!   write(*,*) 'TFCSTPOST ',tfcst(:)
 !     
 !---ESTIMATE VERTICAL ADVECTION TENDENCY FOR T,q (DIAGNOSTIC)------
 !   using eulerian form for evaluating advection (can actually
@@ -711,30 +714,30 @@ end if
 !   write(iulog,*) 'WHERE ', w
 !   write(iulog,*) 'CWAVA ', cwava
 !   hcwavaw = 0.5_r8*cwava*w(lat)
-   do m=1,pcnst
-      hw2al(m) = 0._r8
-      hw2bl(m) = 0._r8
-      hw3al(m) = 0._r8
-      hw3bl(m) = 0._r8
-      hwxal(m,1) = 0._r8
-      hwxal(m,2) = 0._r8
-      hwxal(m,3) = 0._r8
-      hwxal(m,4) = 0._r8
-      hwxbl(m,1) = 0._r8
-      hwxbl(m,2) = 0._r8
-      hwxbl(m,3) = 0._r8
-      hwxbl(m,4) = 0._r8
-      do k=1,plev
-         dotproda = 0._r8
-         dotprodb = 0._r8
-         do i=1,nlon
-            dotproda = dotproda + qfcst(i,k,m)*pdela(i,k)
-            dotprodb = dotprodb + qfcst(i,k,m)*pdelb(i,k)
-         end do
-         hw2al(m) = hw2al(m) + hcwavaw*dotproda
-         hw2bl(m) = hw2bl(m) + hcwavaw*dotprodb
-      end do
-   end do
+!   do m=1,pcnst
+!      hw2al(m) = 0._r8
+!      hw2bl(m) = 0._r8
+!      hw3al(m) = 0._r8
+!      hw3bl(m) = 0._r8
+!      hwxal(m,1) = 0._r8
+!      hwxal(m,2) = 0._r8
+!      hwxal(m,3) = 0._r8
+!      hwxal(m,4) = 0._r8
+!      hwxbl(m,1) = 0._r8
+!      hwxbl(m,2) = 0._r8
+!      hwxbl(m,3) = 0._r8
+!      hwxbl(m,4) = 0._r8
+!      do k=1,plev
+!         dotproda = 0._r8
+!         dotprodb = 0._r8
+!         do i=1,nlon
+!            dotproda = dotproda + qfcst(i,k,m)*pdela(i,k)
+!            dotprodb = dotprodb + qfcst(i,k,m)*pdelb(i,k)
+!         end do
+!         hw2al(m) = hw2al(m) + hcwavaw*dotproda
+!         hw2bl(m) = hw2bl(m) + hcwavaw*dotprodb
+!      end do
+!   end do
 
 !   call qmassd (cwava, etamid, w(lat), qminus, qfcst, &
 !                pdela, hw3al, nlon)

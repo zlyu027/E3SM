@@ -20,7 +20,7 @@ module inidat
   use spmd_utils,   only: iam, masterproc
   use cam_control_mod, only : ideal_phys, aqua_planet, pertlim, seed_custom, seed_clock, new_random
   use random_xgc, only: init_ranx, ranx
-  use scamMod, only: single_column
+  use scamMod, only: single_column, precip_off
   implicit none
   private
   public read_inidat
@@ -231,9 +231,19 @@ contains
     do m_cnst=1,pcnst
        found = .false.
        if(cnst_read_iv(m_cnst)) then
-          tmp = 0.0_r8
-          call infld(cnst_name(m_cnst), ncid_ini, 'ncol', 'lev',      &
-               1, npsq, 1, nlev, 1, nelemd, tmp, found, gridname='GLL')
+!          if (precip_off .and. (cnst_name(m_cnst) .eq. 'RAINQM' .or. cnst_name(m_cnst) .eq. 'SNOWQM' &
+!	    .or. cnst_name(m_cnst) .eq. 'NUMRAI' .or. cnst_name(m_cnst) .eq. 'NUMSNO')) then
+	
+          if (precip_off .and. m_cnst .gt. 1) then	    
+	    found = .false.
+	    
+	  else
+	    
+	    tmp = 0.0_r8
+            call infld(cnst_name(m_cnst), ncid_ini, 'ncol', 'lev',      &
+                 1, npsq, 1, nlev, 1, nelemd, tmp, found, gridname='GLL')
+	    
+	  endif
        end if
        if(.not. found) then
 

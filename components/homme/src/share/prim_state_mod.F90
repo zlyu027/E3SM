@@ -675,7 +675,7 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     logical :: t_before_advance, do_column_scm
     real(kind=real_kind), intent(inout), dimension(npsq,nlev,nelemd) :: tp2, fu, fv
 
-    integer :: ie,k,i,j,nm_f
+    integer :: ie,k,i,j,t,nm_f
     real (kind=real_kind), dimension(np,np,nlev)  :: dpt1,dpt2   ! delta pressure
     real (kind=real_kind), dimension(np,np)  :: E
     real (kind=real_kind), dimension(np,np)  :: suml,suml2,v1,v2
@@ -684,6 +684,8 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     real (kind=real_kind) :: cp_star1,cp_star2,qval_t1,qval_t2
     real (kind=real_kind) :: Qt,dt
     real (kind=real_kind), dimension(nlev,pcnst) :: stateQin1, stateQin2, stateQin_qfcst
+    real (kind=real_kind), dimension(nlev,pcnst) :: dummyq
+    real (kind=real_kind), dimension(nlev) :: dummy1, dummyt, dummyu, dummyv, dummyFT
     logical :: wet
 
     integer:: t2_qdp, t1_qdp   ! the time pointers for Qdp are not the same
@@ -720,9 +722,10 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
       end do
  
       if (single_column) then
-        dt=tstep*qsplit 
+!        dt=tstep*qsplit 
+        dt=1800.
 
-        icount=0
+        icount=1
         do i=1,np
           do j=1,np
          
@@ -732,19 +735,44 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
             enddo
 	    
             stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
+            stateQin1(:,:) = stateQin_qfcst(:,:)
+            stateQin2(:,:) = stateQin_qfcst(:,:)	
+    
+	    dummy1(:) = 0.0 
+	    dummyt(:) = elem(ie)%state%T(i,j,:,1) 
+            dummyu(:) = elem(ie)%state%v(i,j,1,:,1) 
+            dummyv(:) = elem(ie)%state%v(i,j,2,:,1) 
+	    dummyq(:,:) = elem(ie)%state%Q(i,j,:,:)
+            dummyFT(:) = elem(ie)%derived%fT(i,j,:,1)
+        
+            do k=1,nlev
+              if (dummyFT(k) .ne. 0) then
+                write(iulog,*) 'FUCKTEND ', i, j, ie
+                write(iulog,*) 'FUCKTENDval ', dummyFT(:)
+                go to 1000
+              endif
+            enddo     
 		      
+1000 continue 
             call forecast(1,elem(ie)%state%ps_v(i,j,t1),elem(ie)%state%ps_v(i,j,t2),&
-	              elem(ie)%state%ps_v(i,j,t2),elem(ie)%state%v(i,j,1,:,t2),&
+	              elem(ie)%state%ps_v(i,j,t2),dummyu,&
 		      elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
-		      elem(ie)%state%v(i,j,2,:,t2),elem(ie)%state%v(i,j,2,:,t2),&
-		      elem(ie)%state%v(i,j,2,:,t1),elem(ie)%state%T(i,j,:,t2),&
+		      dummyv,elem(ie)%state%v(i,j,2,:,t2),&
+		      elem(ie)%state%v(i,j,2,:,t1),dummyt,&
 		      elem(ie)%state%T(i,j,:,t2),elem(ie)%state%T(i,j,:,t1),&
-		      stateQin2,stateQin1,stateQin1,dt,elem(ie)%derived%fT(i,j,:,t1),fu(icount,:,ie),fv(icount,:,ie),&
+		      dummyq,stateQin2,stateQin1,dt,elem(ie)%derived%fT(i,j,:,1),dummy1,dummy1,&
                       stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)		      
 
-            elem(ie)%state%Q(i,j,:,:) = stateQin2(:,:)
-            do pp=1,pcnst
-              elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)=stateQin2(:,pp)*dpt2(i,j,:)
+            
+            do t=1,3
+              elem(ie)%state%T(i,j,:,t) = dummyt(:)
+              elem(ie)%state%v(i,j,1,:,t) = dummyu(:)
+              elem(ie)%state%v(i,j,2,:,t) = dummyv(:)
+              elem(ie)%state%Q(i,j,:,:) = dummyq(:,:)
+            enddo
+
+            do t=1,2
+              elem(ie)%state%Qdp(i,j,:,pp,t)=dummyq(:,pp)*dpt2(i,j,:)
             enddo
 
             icount=icount+1

@@ -919,11 +919,11 @@ contains
     !   ftype= 0: apply all forcing here
     !   ftype=-1: do not apply forcing
 
-    call TimeLevel_Qdp(tl, qsplit, n0_qdp)
-
     if (single_column) then
       go to 1000
     end if
+
+    call TimeLevel_Qdp(tl, qsplit, n0_qdp)
 
     if (ftype==0) then
       call t_startf("ApplyCAMForcing")
