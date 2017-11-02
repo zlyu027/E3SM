@@ -471,9 +471,20 @@ subroutine shr_dmodel_readgrid( gGrid, gsMap, nxgo, nygo, nzgo, filename, compid
            endif
         enddo
 
+        !--- to deal with spectral element grids
+        mind = 1.0e20
+        do i=1,nxg
+          dist=abs(lscmlon - lon(i,1)) + abs(scmlat - lat(i,1))
+          if (dist < mind) then
+            mind = dist
+            ni = i
+          endif
+        enddo
+
         n = 1
         i = ni
-        j = nj
+!        j = nj
+        j = 1
         gGridRoot%data%rAttr(nlat ,n) = lat(i,j)
         gGridRoot%data%rAttr(nlon ,n) = lon(i,j)
         gGridRoot%data%rAttr(narea,n) = area(i,j)

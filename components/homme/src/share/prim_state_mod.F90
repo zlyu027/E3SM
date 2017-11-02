@@ -772,7 +772,9 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
             enddo
 
             do t=1,2
-              elem(ie)%state%Qdp(i,j,:,pp,t)=dummyq(:,pp)*dpt2(i,j,:)
+	      do pp=1,pcnst
+                elem(ie)%state%Qdp(i,j,:,pp,t)=dummyq(:,pp)*dpt2(i,j,:)
+	      enddo
             enddo
 
             icount=icount+1

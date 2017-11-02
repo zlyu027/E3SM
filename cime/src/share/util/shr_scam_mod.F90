@@ -56,6 +56,7 @@ module shr_scam_mod
 
    private :: is_latlon          ! Check if variable name is a latitude or longitude
    private :: get_close          ! Retrieve the closest lat/lon
+   private :: get_close1d
    private :: get_latlonindices  ! Get the start/count indices to retreive lat or long
 
 ! !PRIVATE DATA MEMBERS:
@@ -252,17 +253,17 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
          write(s_logunit,*) subname//"WARNING: Cant find appropriate latitude or longitude coordinate variables"
          found = .false.
       else
-         call get_close( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx, found )
+         call get_close1d( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx, found )
          if ( found )then
             closelon=lons(closelonidx)
-            closelat=lats(closelatidx)
+            closelat=lats(closelonidx)
          end if
       end if
    else
 
-      call get_close( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx )
+      call get_close1d( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx )
       closelon=lons(closelonidx)
-      closelat=lats(closelatidx)
+      closelat=lats(closelonidx)
 
    end if
 
@@ -387,6 +388,7 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
             !--- is this a latitude dimension  ---
             if ( is_latlon( latdimnames(ndimid), latitude=.true., varnotdim=.false. ) )then
                latlen = len
+!               if (len .eq. 1) latlen = 866
             end if
          end do
       end if
@@ -418,6 +420,10 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
    nlon=0
    nvarid=0
 
+   if (lonlen .eq. 866 .and. latlen .eq. 1) then
+     latlen=866
+   endif
+
    !--- Loop through all variables until we find lat and lon ---
 
    do while (nvarid < nvars .and.(nlon.eq.0 .or. nlat.eq.0))
@@ -427,8 +433,11 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
 
       if ( is_latlon( vars(nvarid), latitude=.true., varnotdim=.true. ) )then
 
-         call get_latlonindices( latitude=.true., ndims=nlatdims, dimnames=latdimnames, &
+         call get_latlonindices( latitude=.false., ndims=nlatdims, dimnames=latdimnames, &
                                  nlen=latlen, strt=strt, cnt=cnt )
+
+         write(*,*) 'STRTandCNT ', strt, cnt, latlen
+!         cnt = latlen !+PAB
          nlat = latlen
          allocate(lats(nlat))
          rcode= pio_get_var(pioid, nvarid ,strt(:nlatdims), cnt(:nlatdims), lats)
@@ -467,20 +476,22 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
          write(s_logunit,*) subname//"WARNING: Cant find appropriate latitude or longitude coordinate variables"
          found = .false.
       else
-         call get_close( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx, found )
+         call get_close1d( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx, found )
          if ( found )then
             closelon=lons(closelonidx)
-            closelat=lats(closelatidx)
+            closelat=lats(closelonidx)
          end if
       end if
    else
-      call get_close( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx )
+      call get_close1d( targetLon, targetLat, nlon, lons, nlat, lats, closelonidx, closelatidx )
       closelon=lons(closelonidx)
-      closelat=lats(closelatidx)
+      closelat=lats(closelonidx)
    end if
    if ( allocated(lats) ) deallocate(lats)
    if ( allocated(lons) ) deallocate(lons)
    deallocate( vars )
+
+!   closelatidx=closelonidx
 
    return
 end subroutine shr_scam_getCloseLatLonPIO
@@ -945,6 +956,97 @@ subroutine get_close( targetlon, targetlat, nlon, lons, nlat, lats, closelonidx,
    deallocate(poslons)
    return
 end subroutine get_close
+
+! !INTERFACE: ------------------------------------------------------------------
+subroutine get_close1d( targetlon, targetlat, nlon, lons, nlat, lats, closelonidx, &
+                      closelatidx, found )
+
+! !USES:
+! !INPUT/OUTPUT PARAMETERS:
+   implicit none
+   real   (R8),intent(in)   :: targetLon    ! find closest longitude to this point
+   real   (R8),intent(in)   :: targetLat    ! find closest latitude to this point
+   integer(IN),intent(in)   :: nlon         ! Number of longitudes
+   real   (R8),intent(in)   :: lons(nlon)   ! Longitude array
+   integer(IN),intent(in)   :: nlat         ! Number of latitudes
+   real   (R8),intent(in)   :: lats(nlat)   ! Latitude array
+   integer(IN),intent(out)  :: closeLatIdx  ! index of returned lat point
+   integer(IN),intent(out)  :: closeLonIdx  ! index of returned lon point
+   logical, optional, intent(out):: found   ! if found answer (will abort if found NOT sent and
+                                            ! it couldn't find the lat/lon
+                                            ! dimensions)
+!EOP
+
+   !----- local variables -----
+   real   (R8),allocatable  :: poslons(:)
+   real   (R8)              :: postargetlon, minpoint, testpoint
+   integer                  :: n
+   character(*),parameter :: subname = "(shr_scam_getclose) "
+!-------------------------------------------------------------------------------
+! Notes:
+!-------------------------------------------------------------------------------
+   if ( present(found) )then
+      found = .true.
+   end if
+
+   !--- Did we get find valid lat and lon coordinate variables ---
+
+   if (nlon == 0) then
+      write(s_logunit,*) subname//"ERROR: Coudnt find longitude coordinate"
+      if ( present(found) )then
+         found = .false.
+         return
+      else
+         call shr_sys_abort( subname//"ERROR: Couldnt find a longitude coordinate variable")
+      end if
+   end if
+   if (nlat == 0) then
+      write(s_logunit,*) subname//"ERROR: Coudnt find latitude coordinate"
+      if ( present(found) )then
+         found = .false.
+         return
+      else
+         call shr_sys_abort( subname//"ERROR: Couldnt find a latitude coordinate variable")
+      end if
+   end if
+   !--- Convert target latitude to within 0-360 ---
+   postargetlon=mod(targetlon+360._r8,360._r8)
+
+   !--- Make sure target latitude within globe ---
+   if ( targetlat < -90.0_r8 .or. targetlat > 90.0_r8 )then
+      write(s_logunit,*) subname//"ERROR: target latitude out of range = ", targetlat
+      if ( present(found) )then
+         found = .false.
+         return
+      else
+         call shr_sys_abort( subname//"ERROR: target latitude out of reasonable range")
+      end if
+   end if
+
+   !--- convert lons array and targetlon to 0,360 ---
+
+   allocate(poslons(nlon))
+   poslons=mod(lons+360._r8,360._r8)
+
+   !--- find index of value closest to 0 and set returned values ---
+   
+   minpoint=1000.0
+   do n = 1, nlon
+     testpoint=abs(poslons(n)-postargetlon)+abs(lats(n)-targetlat)
+     if (testpoint .lt. minpoint) then
+       minpoint=testpoint
+       closelonidx=n
+     endif
+   enddo
+   closelatidx=1
+!   closelonidx=(MINLOC(abs(poslons-postargetlon),dim=1))
+!   closelatidx=(MINLOC(abs(lats-targetlat),dim=1))
+
+   !--- if it gets here we need to clean up after ourselves ---
+
+   deallocate(poslons)
+   return
+end subroutine get_close1d
 
 !===============================================================================
 
