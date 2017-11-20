@@ -987,7 +987,9 @@
 
       real (kind=dbl_kind) :: &
          pos_scmlon,&         ! temporary
-         scamdata             ! temporary
+         scamdata,&           ! temporary
+         minpoint,&
+         testpoint
 
       !-----------------------------------------------------------------
       ! - kmt file is actually clm fractional land file
@@ -1022,7 +1024,7 @@
          end if
 
          ! Read in domain file for single column
-         allocate(lats(nj))
+         allocate(lats(ni))
          allocate(lons(ni))
          allocate(pos_lons(ni))
          allocate(glob_grid(ni,nj))
@@ -1037,8 +1039,10 @@
 
          call check_ret(nf90_inq_varid(ncid, 'yc' , varid), subname)
          call check_ret(nf90_get_var(ncid, varid, glob_grid, start3, count3), subname)
-         do j = 1,nj
-            lats(j) = glob_grid(1,j) 
+!         do j = 1,nj
+         do i=1,ni
+!            lats(j) = glob_grid(1,j) 
+             lats(i) = glob_grid(i,1)
          end do
          
          ! convert lons array and scmlon to 0,360 and find index of value closest to 0
@@ -1046,8 +1050,18 @@
          
          pos_lons(:)= mod(lons(:) + 360._dbl_kind,360._dbl_kind)
          pos_scmlon = mod(scmlon  + 360._dbl_kind,360._dbl_kind)
-         start(1) = (MINLOC(abs(pos_lons-pos_scmlon),dim=1))
-         start(2) = (MINLOC(abs(lats    -scmlat    ),dim=1))
+
+         minpoint=1000.0
+         do i=1,ni
+           testpoint=abs(pos_lons(i)-pos_scmlon)+abs(lats(i)-scmlat)
+           if (testpoint .lt. minpoint) then
+             minpoint=testpoint
+             start(1)=i
+             start(2)=1
+           endif
+         enddo
+!         start(1) = (MINLOC(abs(pos_lons-pos_scmlon),dim=1))
+!         start(2) = (MINLOC(abs(lats    -scmlat    ),dim=1))
 
          deallocate(lats)
          deallocate(lons)

@@ -103,7 +103,7 @@ contains
    integer nlev, nmod, nsps
    integer total_levs
 
-   integer bdate, ntime
+   integer bdate, ntime, thelev
    integer, allocatable :: tsec(:)
    integer k, m
    integer icldliq,icldice
@@ -139,7 +139,7 @@ contains
 !   allocate(clat(1))
 !   allocate(latdeg(1))
 
-   fill_ends= .true.
+   fill_ends= .false.
 
    t1f = Timelevel%n0
 !   elem => dyn_out%elem
@@ -389,9 +389,11 @@ endif !scm_observed_aero
       endif
    else
       !+ PAB, check the time levels for all variables
-      status = nf90_get_var(ncid, varid, ps_surf, strt4)
+      status = nf90_get_var(ncid, varid, psobs, strt4)
       have_ps = .true.
    endif
+
+   ps_surf = psobs
 
 !  for reproducing CAM output don't do interpolation.
 !  the most expedient way of doing this is to set      
@@ -400,7 +402,7 @@ endif !scm_observed_aero
 	
    if ( use_camiop ) then
       do i = 1, plev
-         dplevs( i ) = 1000.0_r8 * hyam( i ) + elem(1)%state%ps_v(1,1,3) * hybm( i ) / 100.0_r8
+         dplevs( i ) = 1000.0_r8 * hyam( i ) + psobs * hybm( i ) / 100.0_r8
       end do
    endif
 
@@ -1001,76 +1003,29 @@ endif !scm_observed_aero
          do i=1,np
 	   thelat=elem(ie)%spherep(i,j)%lat*rad2deg
 	   thelon=elem(ie)%spherep(i,j)%lon*rad2deg
-	   
-!	   write(*,*) 'THELATANDLON ', thelat, thelon, scmlat_se, scmlon_se
-	   
-!	   if (thelat >= scmlat_se-4.0 .and. thelat <= scmlat_se+4.0) then
-!	     if (thelon >= scmlon_se-10.0 .and. thelon <= scmlon_se+10.0) then
-!           if (thelat > 19.0 .and. thelat < 20.0) then
-!	     if (thelon > 298 .and. thelon < 299) then
-!	       write(*,*) 'ITSAMATCH ', thelat, thelon, scmlat_se, scmlon_se
-	       do k=1, PLEV
-	         elem(ie)%state%ps_v(i,j,1)=ps_surf
-	         elem(ie)%state%T(i,j,k,1)=tobs(k)
-		 if (elem(ie)%state%T(i,j,k,1) .eq. 0._r8) then
-		   write(iulog,*) 'SHUTTHEFRONTDOOR'
-		 endif
-	         elem(ie)%state%Q(i,j,k,1)=qobs(k)
-	         elem(ie)%state%v(i,j,1,k,1) = uobs(k)
-	         elem(ie)%state%v(i,j,2,k,1) = vobs(k)
-	       enddo
 
-!	       write(iulog,*) 'INITPS ', elem(ie)%state%ps_v(i,j,1)
-!	       write(iulog,*) 'INITT ', elem(ie)%state%T(i,j,:,1)
-!	       write(iulog,*) 'INITQ ', elem(ie)%state%Q(i,j,:,1)
-!	       write(iulog,*) 'INITU ', elem(ie)%state%v(i,j,1,:,1)
-!	       write(iulog,*) 'INITV ', elem(ie)%state%v(i,j,2,:,1)	       
-!	       
-!	     endif
-!	   endif
-	   
+           ! Find level where tobs is no longer zero
+           thelev=1
+           do k=1, PLEV
+             if (tobs(k) .ne. 0) then
+               thelev=k
+               go to 1000             
+             endif
+           enddo
+
+1000 continue 
+	   do k=thelev, PLEV
+	     elem(ie)%state%ps_v(i,j,1)=ps_surf
+	     elem(ie)%state%T(i,j,k,1)=tobs(k)
+	     elem(ie)%state%Q(i,j,k,1)=qobs(k)
+	     elem(ie)%state%v(i,j,1,k,1) = uobs(k)
+	     elem(ie)%state%v(i,j,2,k,1) = vobs(k)
+	   enddo
+
 	 enddo
        enddo
      enddo
    endif
-
-!   if (get_nstep() .eq. 0) then
-!     do ie=1,nelemd
-!       elem(ie)%state%ps_v(:,:,1)=ps_surf  !     set t to tobs at first time step
-!     end do
-!   endif
-   
-!      if (.not.use_camiop .and. get_nstep() .eq. 0) then
-!         do ie=1,nelemd
-!	   do i=1, PLEV
-!             elem(ie)%state%T(:,:,i,1)=tobs(i)  !     set t to tobs at first time step
-!           end do
-!	 end do
-!      endif
-      
-!      if (.not. use_camiop .and. get_nstep() .eq. 0) then
-!         do ie=1,nelemd
-!	   do i=1, PLEV
-!             elem(ie)%state%Q(:,:,i,1)=qobs(i)
-!	   end do
-!         end do
-!      endif 
- 
-!       if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
-!         do ie=1,nelemd
-!	   do i=1, PLEV
-!             elem(ie)%state%v(:,:,1,i,1) = uobs(i)  !     set u to uobs at first time step
-!           end do
-!	 end do
-!      endif   
-      
-!      if (.not. use_camiop .and. get_nstep() .eq. 0 ) then
-!         do ie=1,nelemd
-!	   do i=1, PLEV
-!             elem(ie)%state%v(:,:,2,i,1) = vobs(i)  !     set u to uobs at first time step
-!           end do
-!	 end do
-!      endif           
 
    call shr_sys_flush( iulog )
 
@@ -1110,6 +1065,7 @@ subroutine setiopupdate
    integer :: ncsec,ncdate                      ! current time of day,date
    integer :: yr, mon, day                      ! year, month, and day component
    integer :: start_ymd,start_tod
+   logical :: doiter
    save tsec, ntime, bdate
    save last_date, last_sec 
 !------------------------------------------------------------------------------
@@ -1201,24 +1157,40 @@ subroutine setiopupdate
 !------------------------------------------------------------------------------
    else                      ! endstep > 1
 
-      call timemgr_time_inc(bdate, 0, next_date, next_sec, inc_s=tsec(iopTimeIdx+1))
+!      call timemgr_time_inc(bdate, 0, next_date, next_sec, inc_s=tsec(iopTimeIdx+1))
+
+! call a second time
+!      call timemgr_time_inc(bdate, 0, next_date2, next_sec2, inc_s2=tsec(iopTimeIdx+2))
 
       call get_curr_date(yr, mon, day, ncsec)
       ncdate = yr*10000 + mon*100 + day
 
-      if ( ncdate .gt. next_date .or. (ncdate .eq. next_date &
-         .and. ncsec .ge. next_sec)) then
-         iopTimeIdx = iopTimeIdx + 1
-         doiopupdate = .true.
-#if DEBUG > 2
-         write(iulog,*) 'nstep = ',get_nstep()
-         write(iulog,*) 'ncdate=',ncdate,' ncsec=',ncsec
-         write(iulog,*) 'next_date=',next_date,' next_sec=',next_sec
-         write(iulog,*)'******* do iop update'
-#endif 
-      else
-         doiopupdate = .false.
-      end if
+      doiopupdate = .false.
+      iopTimeIdx = iopTimeIdx
+      i=0
+      doiter=.true.
+      do while(doiter)
+        call timemgr_time_inc(bdate, 0, next_date, next_sec, inc_s=tsec(iopTimeIdx+i+1))
+        if (ncdate .gt. next_date .or. (ncdate .eq. next_date &
+          .and. ncsec .ge. next_sec)) then
+
+          doiopupdate=.true.
+          i=i+1
+          iopTimeIdx=iopTimeIdx+1
+        else
+          doiter=.false.
+        endif
+      enddo
+
+      if (doiopupdate) then
+     
+          write(iulog,*) 'iopTimeIdx =', iopTimeIdx 
+          write(iulog,*) 'nstep = ',get_nstep()
+          write(iulog,*) 'ncdate=',ncdate,' ncsec=',ncsec
+          write(iulog,*) 'next_date=',next_date,' next_sec=',next_sec
+          write(iulog,*)'******* do iop update'
+      endif
+   
    endif                     ! if (endstep .eq. 0 )
 !
 !     make sure we're

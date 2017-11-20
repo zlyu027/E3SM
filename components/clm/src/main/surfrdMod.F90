@@ -98,6 +98,7 @@ contains
     allocate(mask(ns))
     mask(:) = 1
 
+!    isgrid2d=.false.
     if (isgrid2d) then
        allocate(idata2d(ni,nj))
        idata2d(:,:) = 1	
@@ -240,6 +241,9 @@ contains
     end if
 
     ! Check lat limited to -90,90
+!    ldomain%latc = 18.1389709902394
+!    ldomain%lonc = 298.125000000000
+
 
     if (minval(ldomain%latc) < -90.0_r8 .or. &
         maxval(ldomain%latc) >  90.0_r8) then

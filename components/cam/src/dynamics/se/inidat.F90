@@ -20,7 +20,7 @@ module inidat
   use spmd_utils,   only: iam, masterproc
   use cam_control_mod, only : ideal_phys, aqua_planet, pertlim, seed_custom, seed_clock, new_random
   use random_xgc, only: init_ranx, ranx
-  use scamMod, only: single_column, precip_off
+  use scamMod, only: single_column, precip_off, scmlat, scmlon
   implicit none
   private
   public read_inidat
@@ -59,15 +59,18 @@ contains
     use cam_grid_support,    only: cam_grid_get_local_size, cam_grid_get_gcid
     use cam_map_utils,       only: iMap
     use iop,                 only: readiopdata, setiopupdate
+    use shr_const_mod,       only: SHR_CONST_PI
     implicit none
     type(file_desc_t),intent(inout) :: ncid_ini, ncid_topo
     type (dyn_import_t), target, intent(inout) :: dyn_in   ! dynamics import
 
+    real(r8), parameter :: rad2deg = 180.0 / SHR_CONST_PI
     type(element_t), pointer :: elem(:)
     real(r8), allocatable :: tmp(:,:,:)    ! (npsp,nlev,nelemd)
     real(r8), allocatable :: qtmp(:,:)     ! (npsp*nelemd,nlev)
     logical,  allocatable :: tmpmask(:,:)  ! (npsp,nlev,nelemd) unique grid val
     integer :: ie, k, t
+    integer :: indx_scm, ie_scm, i_scm, j_scm
     character(len=max_fieldname_len) :: fieldname
     logical :: found
     integer :: kptr, m_cnst
@@ -87,6 +90,7 @@ contains
     real(r8), parameter :: D0_5 = 0.5_r8
     real(r8), parameter :: D1_0 = 1.0_r8
     real(r8), parameter :: D2_0 = 2.0_r8
+    real(r8) :: scmposlon, minpoint, testlat, testlon, testval 
     character*16 :: subname='READ_INIDAT'
 
     if(iam < par%nprocs) then
@@ -111,6 +115,43 @@ contains
       end if
     end if
 
+!   Determine column closest to SCM point
+    if (single_column) then
+      if (scmlon .lt. 0._r8) then
+        scmposlon=scmlon+360._r8
+      else
+        scmposlon=scmlon
+      endif 
+      minpoint=10000.0_r8
+      ie_scm=1
+      i_scm=1
+      j_scm=1
+      indx_scm=1
+      do ie=1, nelemd
+        indx=1
+        do j=1, np
+          do i=1, np
+            testlat=elem(ie)%spherep(i,j)%lat * rad2deg
+            testlon=elem(ie)%spherep(i,j)%lon * rad2deg
+            if (testlon .lt. 0._r8) testlon=testlon+360._r8
+            testval=abs(scmlat-testlat)+abs(scmposlon-testlon)
+            if (testval .lt. minpoint) then
+              ie_scm=ie
+              indx_scm=indx
+              i_scm=i
+              j_scm=j
+              minpoint=testval
+            endif 
+            indx=indx+1                   
+          enddo
+        enddo
+      enddo
+
+      write(iulog,*) 'SCMLATLON', scmlat, scmposlon, indx_scm, ie_scm, i_scm, j_scm, minpoint
+      write(iulog,*) 'THEPOINTBRO ', elem(ie_scm)%spherep(i_scm,j_scm)%lat * rad2deg, &
+                                     elem(ie_scm)%spherep(i_scm,j_scm)%lon * rad2deg
+    endif
+
     fieldname = 'U'
     tmp = 0.0_r8
     call infld(fieldname, ncid_ini, 'ncol', 'lev', 1, npsq,          &
@@ -125,6 +166,7 @@ contains
        do j = 1, np
           do i = 1, np
              elem(ie)%state%v(i,j,1,:,1) = tmp(indx,:,ie)
+             if (single_column) elem(ie)%state%v(i,j,1,:,1)=tmp(indx_scm,:,ie_scm)
              indx = indx + 1
           end do
        end do
@@ -143,6 +185,7 @@ contains
        do j = 1, np
           do i = 1, np
              elem(ie)%state%v(i,j,2,:,1) = tmp(indx,:,ie)
+             if (single_column) elem(ie)%state%v(i,j,2,:,1) = tmp(indx_scm,:,ie_scm)
              indx = indx + 1
           end do
        end do
@@ -162,6 +205,7 @@ contains
        do j = 1, np
           do i = 1, np
              elem(ie)%state%T(i,j,:,1) = tmp(indx,:,ie)
+             if (single_column) elem(ie)%state%T(i,j,:,1) = tmp(indx_scm,:,ie_scm)
              indx = indx + 1
           end do
        end do
@@ -321,6 +365,7 @@ contains
           do j = 1, np
              do i = 1, np
                 elem(ie)%state%Q(i,j,:,m_cnst) = tmp(indx,:,ie)
+                if (single_column) elem(ie)%state%Q(i,j,:,m_cnst) = tmp(indx_scm,:,ie_scm)
                 indx = indx + 1
              end do
           end do
@@ -355,6 +400,7 @@ contains
           do j = 1, np
              do i = 1, np
                 elem(ie)%state%ps_v(i,j,1) = tmp(indx,1,ie)
+                if (single_column) elem(ie)%state%ps_v(i,j,1) = tmp(indx_scm,1,ie_scm)
                 indx = indx + 1
              end do
           end do
@@ -378,6 +424,7 @@ contains
        do j = 1, np
           do i = 1, np
              elem(ie)%state%phis(i,j) = tmp(indx,1,ie)
+             if (single_column) elem(ie)%state%phis(i,j) = tmp(indx_scm,1,ie_scm)
              indx = indx + 1
           end do
        end do

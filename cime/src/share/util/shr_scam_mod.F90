@@ -436,7 +436,7 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
          call get_latlonindices( latitude=.false., ndims=nlatdims, dimnames=latdimnames, &
                                  nlen=latlen, strt=strt, cnt=cnt )
 
-         write(*,*) 'STRTandCNT ', strt, cnt, latlen
+!         write(*,*) 'STRTandCNT ', strt, cnt, latlen
 !         cnt = latlen !+PAB
          nlat = latlen
          allocate(lats(nlat))

@@ -101,6 +101,7 @@ module scamMod
   real(r8), public ::      tdiff(plev)         ! model minus observed temp 
   real(r8), public ::      tground(1)          ! ground temperature
   real(r8), public ::      tobs(plev)          ! actual temperature
+  real(r8), public ::      psobs
   real(r8), public ::      tsair(1)            ! air temperature at the surface
   real(r8), public ::      udiff(plev)         ! model minus observed uwind
   real(r8), public ::      uobs(plev)          ! actual u wind

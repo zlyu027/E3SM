@@ -39,7 +39,7 @@ subroutine forecast(lat, psm1, psm2,ps, &
    real(r8), intent(inout) :: t2(plev)         ! temp tendency
    real(r8), intent(inout) :: fu(plev)         ! u wind tendency
    real(r8), intent(inout) :: fv(plev)         ! v wind tendency
-   real(r8), intent(in) :: ps(plon)            ! surface pressure (time n)
+   real(r8), intent(inout) :: ps(plon)            ! surface pressure (time n)
    real(r8), intent(in) :: psm1(plon)          ! surface pressure (time n)
    real(r8), intent(in) :: psm2(plon)          ! surface pressure (time n-1)
    real(r8), intent(out) :: u3(plev)   ! u-wind (time n)
@@ -185,6 +185,8 @@ subroutine forecast(lat, psm1, psm2,ps, &
 !   end do
 	
 !
+   ps = psobs
+
    call plevs0(nlon    ,plon   ,plev    ,psm1   ,pintm1  ,pmidm1 ,pdelm1)
    call plevs0(nlon    ,plon   ,plev    ,psm2   ,pintm2  ,pmidm2 ,pdelm2)
 !
@@ -498,9 +500,9 @@ end if
 !        add it here to t2 and dqv
 !
 
-   if (is_first_step()) then
-     t2(:) = 0.0
-   endif
+!   if (is_first_step()) then
+!     t2(:) = 0.0
+!   endif
    
    do k=1,plev
       tfcst(k) = tfcst(k) + ztodt*wfld(k)*t3m1(k)*rair/(cpair*pmidm1(k)) &
@@ -620,7 +622,7 @@ end if
 !
 !      if(scm_relaxation) then
 !            dist = 300000.      ! distance across the ARM domain
-         do k=1,plev
+         do k=26,plev
 !               denom = 2.0*sqrt(u3(k)**2 + v3(k)**2)
 !               rtau(k)   = dist/denom
 !
@@ -634,8 +636,8 @@ end if
             t3(k)     = t3(k)   + relaxt(k)*ztodt
             q3(k,1)   = q3(k,1) + relaxq(k)*ztodt
 
-            t3(k)     = tobs(k)
-            q3(k,1)   = qobs(k)
+!            t3(k)     = tobs(k)
+!            q3(k,1)   = qobs(k)
 
          end do
 !
