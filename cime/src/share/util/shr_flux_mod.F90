@@ -36,7 +36,7 @@ module shr_flux_mod
 ! !PUBLIC MEMBER FUNCTIONS:
 
    public :: shr_flux_atmOcn      ! computes atm/ocn fluxes
-   public :: shr_flx_atmOcn_UA    ! computes atm/ocn fluxes using University of 
+   public :: shr_flux_atmOcn_UA    ! computes atm/ocn fluxes using University of 
                                   ! Arizona algorithm (Zeng et al., 1998)
    public :: shr_flux_atmOcn_diurnal   ! computes atm/ocn fluxes with diurnal cycle
    public :: shr_flux_atmIce      ! computes atm/ice fluxes
@@ -71,6 +71,7 @@ module shr_flux_mod
    real(R8) :: loc_latvap = shr_const_latvap
    real(R8) :: loc_latice = shr_const_latice
    real(R8) :: loc_stebol = shr_const_stebol
+   real(R8) :: loc_tkfrz  = shr_const_tkfrz
 
 !===============================================================================
 contains
