@@ -124,6 +124,7 @@ MODULE seq_infodata_mod
       character(SHR_KIND_CL)  :: flux_epbal      ! selects E,P,R adjustment technique
       logical                 :: flux_albav      ! T => no diurnal cycle in ocn albedos
       logical                 :: flux_diurnal    ! T => diurnal cycle in atm/ocn fluxes
+      logical                 :: flux_use_ua     ! T => use UA algorithm for atm/ocn fluxes
       real(SHR_KIND_R8)       :: gust_fac        ! wind gustiness factor
       character(SHR_KIND_CL)  :: glc_renormalize_smb ! Whether to renormalize smb sent from lnd -> glc
       real(SHR_KIND_R8)       :: wall_time_limit ! force stop time limit (hours)
@@ -358,6 +359,7 @@ SUBROUTINE seq_infodata_Init( infodata, nmlfile, ID, pioid, cpl_tag)
     character(SHR_KIND_CL) :: flux_epbal         ! selects E,P,R adjustment technique
     logical                :: flux_albav         ! T => no diurnal cycle in ocn albedos
     logical                :: flux_diurnal       ! T => diurnal cycle in atm/ocn fluxes
+    logical                :: flux_use_ua        ! T => use UA algorithm for atm/ocn fluxes
     real(SHR_KIND_R8)      :: gust_fac           ! wind gustiness factor
     character(SHR_KIND_CL) :: glc_renormalize_smb ! Whether to renormalize smb sent from lnd -> glc
     real(SHR_KIND_R8)      :: wall_time_limit    ! force stop time limit (hours)
@@ -423,7 +425,8 @@ SUBROUTINE seq_infodata_Init( infodata, nmlfile, ID, pioid, cpl_tag)
          brnch_retain_casename, info_debug, bfbflag,       &
          restart_pfile, restart_file, run_barriers,        &
          single_column, scmlat, force_stop_at,             &
-         scmlon, logFilePostFix, outPathRoot, flux_diurnal, gust_fac,&
+         scmlon, logFilePostFix, outPathRoot,              &
+         flux_diurnal, flux_use_ua, gust_fac,              &
          perpetual, perpetual_ymd, flux_epbal, flux_albav, &
          orb_iyear_align, orb_mode, wall_time_limit,       &
          orb_iyear, orb_obliq, orb_eccen, orb_mvelp,       &
@@ -499,6 +502,7 @@ SUBROUTINE seq_infodata_Init( infodata, nmlfile, ID, pioid, cpl_tag)
        flux_epbal            = 'off'
        flux_albav            = .false.
        flux_diurnal          = .false.
+       flux_use_ua           = .false.
        gust_fac              = huge(1.0_SHR_KIND_R8)
        glc_renormalize_smb   = 'on_if_glc_coupled_fluxes'
        wall_time_limit       = -1.0
@@ -619,6 +623,7 @@ SUBROUTINE seq_infodata_Init( infodata, nmlfile, ID, pioid, cpl_tag)
        infodata%flux_epbal            = flux_epbal
        infodata%flux_albav            = flux_albav
        infodata%flux_diurnal          = flux_diurnal
+       infodata%flux_use_ua           = flux_use_ua
        infodata%gust_fac              = gust_fac
        infodata%glc_renormalize_smb   = glc_renormalize_smb
        infodata%wall_time_limit       = wall_time_limit
@@ -941,7 +946,8 @@ SUBROUTINE seq_infodata_GetData_explicit( infodata, cime_model, case_name, case_
            shr_map_dopole, vect_map, aoflux_grid, flux_epbalfact,             &
            nextsw_cday, precip_fact, flux_epbal, flux_albav,                  &
            glc_g2lupdate, atm_aero, run_barriers, esmf_map_flag,              &
-           do_budgets, do_histinit, drv_threading, flux_diurnal, gust_fac,    &
+           do_budgets, do_histinit, drv_threading,                            &
+           flux_diurnal, flux_use_ua, gust_fac,    &
            budget_inst, budget_daily, budget_month, wall_time_limit,          &
            budget_ann, budget_ltann, budget_ltend , force_stop_at,            &
            histaux_a2x    , histaux_a2x1hri, histaux_a2x1hr,                  &
@@ -1010,6 +1016,7 @@ SUBROUTINE seq_infodata_GetData_explicit( infodata, cime_model, case_name, case_
    character(len=*),       optional, intent(OUT) :: flux_epbal              ! selects E,P,R adjustment technique
    logical,                optional, intent(OUT) :: flux_albav              ! T => no diurnal cycle in ocn albedos
    logical,                optional, intent(OUT) :: flux_diurnal            ! T => diurnal cycle in atm/ocn flux
+   logical,                optional, intent(OUT) :: flux_use_ua            ! T => use UA algorithm for atm/ocn flux
    real(SHR_KIND_R8),      optional, intent(OUT) :: gust_fac                ! wind gustiness factor
    character(len=*),       optional, intent(OUT) :: glc_renormalize_smb     ! Whether to renormalize smb sent from lnd -> glc
    real(SHR_KIND_R8),      optional, intent(OUT) :: wall_time_limit         ! force stop wall time (hours)
@@ -1181,6 +1188,7 @@ SUBROUTINE seq_infodata_GetData_explicit( infodata, cime_model, case_name, case_
     if ( present(flux_epbal)     ) flux_epbal     = infodata%flux_epbal
     if ( present(flux_albav)     ) flux_albav     = infodata%flux_albav
     if ( present(flux_diurnal)   ) flux_diurnal   = infodata%flux_diurnal
+    if ( present(flux_use_ua)    ) flux_use_ua    = infodata%flux_use_ua
     if ( present(gust_fac)       ) gust_fac       = infodata%gust_fac
     if ( present(glc_renormalize_smb)) glc_renormalize_smb = infodata%glc_renormalize_smb
     if ( present(wall_time_limit)) wall_time_limit= infodata%wall_time_limit
@@ -1504,7 +1512,8 @@ SUBROUTINE seq_infodata_PutData_explicit( infodata, cime_model, case_name, case_
            shr_map_dopole, vect_map, aoflux_grid, run_barriers,               &
            nextsw_cday, precip_fact, flux_epbal, flux_albav,                  &
            glc_g2lupdate, atm_aero, esmf_map_flag, wall_time_limit,           &
-           do_budgets, do_histinit, drv_threading, flux_diurnal, gust_fac,    &
+           do_budgets, do_histinit, drv_threading,                            &
+           flux_diurnal, flux_use_ua, gust_fac,                               &
            budget_inst, budget_daily, budget_month, force_stop_at,            &
            budget_ann, budget_ltann, budget_ltend ,                           &
            histaux_a2x    , histaux_a2x1hri, histaux_a2x1hr,                  &
@@ -1573,6 +1582,7 @@ SUBROUTINE seq_infodata_PutData_explicit( infodata, cime_model, case_name, case_
    character(len=*),       optional, intent(IN)    :: flux_epbal              ! selects E,P,R adjustment technique
    logical,                optional, intent(IN)    :: flux_albav              ! T => no diurnal cycle in ocn albedos
    logical,                optional, intent(IN)    :: flux_diurnal            ! T => diurnal cycle in atm/ocn flux
+   logical,                optional, intent(IN)    :: flux_use_ua             ! T => use UA algorithm for atm/ocn flux
    real(SHR_KIND_R8),      optional, intent(IN)    :: gust_fac                ! wind gustiness factor
    character(len=*),       optional, intent(IN)    :: glc_renormalize_smb     ! Whether to renormalize smb sent from lnd -> glc
    real(SHR_KIND_R8),      optional, intent(IN)    :: wall_time_limit         ! force stop wall time (hours)
@@ -1743,6 +1753,7 @@ SUBROUTINE seq_infodata_PutData_explicit( infodata, cime_model, case_name, case_
     if ( present(flux_epbal)     ) infodata%flux_epbal     = flux_epbal
     if ( present(flux_albav)     ) infodata%flux_albav     = flux_albav
     if ( present(flux_diurnal)   ) infodata%flux_diurnal   = flux_diurnal
+    if ( present(flux_use_ua)    ) infodata%flux_use_ua    = flux_use_ua
     if ( present(gust_fac)       ) infodata%gust_fac       = gust_fac
     if ( present(glc_renormalize_smb)) infodata%glc_renormalize_smb = glc_renormalize_smb
     if ( present(wall_time_limit)) infodata%wall_time_limit= wall_time_limit
@@ -2162,6 +2173,7 @@ subroutine seq_infodata_bcast(infodata,mpicom)
     call shr_mpi_bcast(infodata%flux_epbal,              mpicom)
     call shr_mpi_bcast(infodata%flux_albav,              mpicom)
     call shr_mpi_bcast(infodata%flux_diurnal,            mpicom)
+    call shr_mpi_bcast(infodata%flux_use_ua,             mpicom)
     call shr_mpi_bcast(infodata%gust_fac,                mpicom)
     call shr_mpi_bcast(infodata%glc_renormalize_smb,     mpicom)
     call shr_mpi_bcast(infodata%wall_time_limit,         mpicom)
@@ -2829,6 +2841,7 @@ SUBROUTINE seq_infodata_print( infodata )
        write(logunit,F0A) subname,'flux_epbal               = ', trim(infodata%flux_epbal)
        write(logunit,F0L) subname,'flux_albav               = ', infodata%flux_albav
        write(logunit,F0L) subname,'flux_diurnal             = ', infodata%flux_diurnal
+       write(logunit,F0L) subname,'flux_use_ua              = ', infodata%flux_use_ua
        write(logunit,F0R) subname,'gust_fac                 = ', infodata%gust_fac
        write(logunit,F0A) subname,'glc_renormalize_smb      = ', trim(infodata%glc_renormalize_smb)
        write(logunit,F0R) subname,'wall_time_limit          = ', infodata%wall_time_limit

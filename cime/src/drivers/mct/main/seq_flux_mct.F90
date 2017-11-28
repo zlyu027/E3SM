@@ -2,7 +2,7 @@ module seq_flux_mct
 
   use shr_kind_mod,      only: r8 => shr_kind_r8, in=>shr_kind_in
   use shr_sys_mod,       only: shr_sys_abort
-  use shr_flux_mod,      only: shr_flux_atmocn, shr_flux_atmocn_diurnal
+  use shr_flux_mod,      only: shr_flux_atmocn, shr_flux_atmOcn_UA, shr_flux_atmocn_diurnal
   use shr_orb_mod,       only: shr_orb_params, shr_orb_cosz, shr_orb_decl
   use shr_mct_mod,       only: shr_mct_queryConfigFile, shr_mct_sMatReaddnc
 
@@ -54,6 +54,7 @@ module seq_flux_mct
   real(r8), allocatable ::  roce_18O (:)  ! ocn H218O ratio
   real(r8), allocatable ::  dens (:)  ! atm density
   real(r8), allocatable ::  tbot (:)  ! atm bottom surface T
+  real(r8), allocatable ::  pslv (:)  ! sea level pressure (Pa)
   real(r8), allocatable ::  sen  (:)  ! heat flux: sensible
   real(r8), allocatable ::  lat  (:)  ! heat flux: latent
   real(r8), allocatable ::  lwup (:)  ! lwup over ocean
@@ -119,6 +120,7 @@ module seq_flux_mct
   integer :: index_a2x_Sa_shum_HDO
   integer :: index_a2x_Sa_shum_18O
   integer :: index_a2x_Sa_dens
+  integer :: index_a2x_Sa_pslv
   integer :: index_a2x_Faxa_swndr
   integer :: index_a2x_Faxa_swndf
   integer :: index_a2x_Faxa_swvdr
@@ -249,6 +251,9 @@ contains
     allocate(tbot(nloc),stat=ier)
     if(ier/=0) call mct_die(subName,'allocate tbot',ier)
     tbot = 0.0_r8
+    allocate(pslv(nloc),stat=ier)
+    if(ier/=0) call mct_die(subName,'allocate pslv',ier)
+    pslv = 0.0_r8
     allocate(ustar(nloc),stat=ier)
     if(ier/=0) call mct_die(subName,'allocate ustar',ier)
     ustar = 0.0_r8
@@ -610,6 +615,8 @@ contains
     if(ier/=0) call mct_die(subName,'allocate dens',ier)
     allocate(tbot(nloc_a2o),stat=ier)
     if(ier/=0) call mct_die(subName,'allocate tbot',ier)
+    allocate(pslv(nloc_a2o),stat=ier)
+    if(ier/=0) call mct_die(subName,'allocate pslv',ier)
     allocate(ustar(nloc_a2o),stat=ier)
     if(ier/=0) call mct_die(subName,'allocate ustar',ier)
     allocate(re(nloc_a2o), stat=ier)
@@ -913,6 +920,7 @@ contains
     logical     :: read_restart    ! .true. => model starting from restart
     logical     :: ocn_prognostic  ! .true. => ocn is prognostic
     logical     :: flux_diurnal    ! .true. => turn on diurnal cycle in atm/ocn fluxes
+    logical     :: flux_use_ua     ! .true. => use U.Arizona flux algorithm (Zeng et al 1998) 
     logical     :: cold_start      ! .true. to initialize internal fields in shr_flux diurnal
     character(len=256) :: fldlist  ! subset of xao fields
     !
@@ -939,7 +947,13 @@ contains
          ocn_nx=ocn_nx, ocn_ny=ocn_ny,  &
          ocn_prognostic=ocn_prognostic, &
          flux_diurnal=flux_diurnal,     &
+         flux_use_ua=flux_use_ua,     &
          gust_fac = gust_fac            )
+
+    ! Cannot use both UA fluxes and diurnal fluxes:
+    if (flux_diurnal .and. flux_use_ua) then
+       call shr_sys_abort(trim(subname)//' ERROR cannot use diurnal fluxes with UA fluxes')
+    endif
 
     cold_start = .false.   ! use restart data or data from last timestep
 
@@ -966,6 +980,7 @@ contains
           roce_18O(n) = 1.0_r8 ! H218O ratio ~ mol/mol
           dens(n) =   1.0_r8 ! atm density                ~ kg/m^3
           tbot(n) = 300.0_r8 ! atm temperature            ~ Kelvin
+          pslv(n) = 101300.0_r8 ! sea level pressure      ~ Pa
        enddo
     else
 
@@ -998,6 +1013,7 @@ contains
           shum_18O(n) = a2x_e%rAttr(index_a2x_Sa_shum_18O,ia)
           dens(n) = a2x_e%rAttr(index_a2x_Sa_dens,ia)
           tbot(n) = a2x_e%rAttr(index_a2x_Sa_tbot,ia)
+          pslv(n) = a2x_e%rAttr(index_a2x_Sa_pslv,ia)
           tocn(n) = o2x_e%rAttr(index_o2x_So_t   ,io)
           uocn(n) = o2x_e%rAttr(index_o2x_So_u   ,io)
           vocn(n) = o2x_e%rAttr(index_o2x_So_v   ,io)
@@ -1024,6 +1040,13 @@ contains
                           cskin, cskin_night, tod, dt,          &
                           duu10n,ustar, re  , ssq , missval = 0.0_r8, &
                           cold_start=cold_start)
+    else if (flux_use_ua) then
+       call shr_flux_atmocn_ua (nloc_a2o , zbot , ubot, vbot, thbot, &
+                          shum , shum_16O , shum_HDO, shum_18O, dens , tbot, pslv, &
+                          uocn, vocn , tocn , emask, sen , lat , lwup , &
+                          roce_16O, roce_HDO, roce_18O,    &
+                          evap , evap_16O, evap_HDO, evap_18O, taux, tauy, tref, qref , &
+                          duu10n,ustar, re  , ssq , missval = 0.0_r8 )
     else
        call shr_flux_atmocn (nloc_a2o , zbot , ubot, vbot, thbot, prec_gust, gust_fac, &
                           shum , shum_16O , shum_HDO, shum_18O, dens , tbot, uocn, vocn , &
@@ -1212,6 +1235,7 @@ contains
     logical     :: read_restart    ! .true. => continue run
     logical     :: ocn_prognostic  ! .true. => ocn is prognostic
     logical     :: flux_diurnal    ! .true. => turn on diurnal cycle in atm/ocn fluxes
+    logical     :: flux_use_ua     ! .true. => use U.Arizona flux algorithm (Zeng et al 1998) 
     !
     real(r8),parameter :: albdif = 0.06_r8 ! 60 deg reference albedo, diffuse
     real(r8),parameter :: albdir = 0.07_r8 ! 60 deg reference albedo, direct
@@ -1225,7 +1249,13 @@ contains
          dead_comps=dead_comps, &
          ocn_prognostic=ocn_prognostic, &
          flux_diurnal=flux_diurnal,     &
+         flux_use_ua=flux_use_ua,     &
          gust_fac = gust_fac            )
+
+    ! Cannot use both UA fluxes and diurnal fluxes:
+    if (flux_diurnal .and. flux_use_ua) then
+       call shr_sys_abort(trim(subname)//' ERROR cannot use diurnal fluxes with UA fluxes')
+    endif
 
     cold_start = .false.   ! use restart data or data from last timestep
 
@@ -1274,6 +1304,7 @@ contains
        index_a2x_Sa_u      = mct_aVect_indexRA(a2x,'Sa_u')
        index_a2x_Sa_v      = mct_aVect_indexRA(a2x,'Sa_v')
        index_a2x_Sa_tbot   = mct_aVect_indexRA(a2x,'Sa_tbot')
+       index_a2x_Sa_pslv   = mct_aVect_indexRA(a2x,'Sa_pslv')
        index_a2x_Sa_ptem   = mct_aVect_indexRA(a2x,'Sa_ptem')
        index_a2x_Sa_shum   = mct_aVect_indexRA(a2x,'Sa_shum')
        index_a2x_Sa_shum_16O   = mct_aVect_indexRA(a2x,'Sa_shum_16O', perrWith='quiet')
@@ -1331,8 +1362,9 @@ contains
           roce_16O(n) = 1.0_r8   ! H216O surface ratio     ~ mol/mol
           roce_HDO(n) = 1.0_r8   ! HDO   surface ratio     ~ mol/mol
           roce_18O(n) = 1.0_r8   ! H218O surface ratio     ~ mol/mol
-          dens(n) =   1.0_r8 ! atm density                ~ kg/m^3
-          tbot(n) = 300.0_r8 ! atm temperature            ~ Kelvin
+          dens(n) =   1.0_r8     ! atm density             ~ kg/m^3
+          tbot(n) = 300.0_r8     ! atm temperature         ~ Kelvin
+          pslv(n) = 101300.0_r8  ! sea level pressure      ~ Pa
           uGust(n)=   0.0_r8
           lwdn(n) =   0.0_r8
           prec(n) =   0.0_r8
@@ -1376,6 +1408,7 @@ contains
              if ( index_a2x_Sa_shum_18O /= 0 ) shum_18O(n) = a2x%rAttr(index_a2x_Sa_shum_18O,n)
              dens(n) = a2x%rAttr(index_a2x_Sa_dens,n)
              tbot(n) = a2x%rAttr(index_a2x_Sa_tbot,n)
+             pslv(n) = a2x%rAttr(index_a2x_Sa_pslv,n)
              tocn(n) = o2x%rAttr(index_o2x_So_t   ,n)
              uocn(n) = o2x%rAttr(index_o2x_So_u   ,n)
              vocn(n) = o2x%rAttr(index_o2x_So_v   ,n)
@@ -1442,6 +1475,13 @@ contains
                           !consistent with mrgx2a fraction
                           !duu10n,ustar, re  , ssq, missval = 0.0_r8 )
                           cold_start=cold_start)
+    else if (flux_use_ua) then
+       call shr_flux_atmocn_ua (nloc , zbot , ubot, vbot, thbot, &
+                          shum , shum_16O , shum_HDO, shum_18O, dens , tbot, pslv, &
+                          uocn, vocn , tocn , emask, sen , lat , lwup , &
+                          roce_16O, roce_HDO, roce_18O,    &
+                          evap , evap_16O, evap_HDO, evap_18O, taux , tauy, tref, qref , &
+                          duu10n,ustar, re  , ssq)
     else
        call shr_flux_atmocn (nloc , zbot , ubot, vbot, thbot, prec_gust, gust_fac, &
                           shum , shum_16O , shum_HDO, shum_18O, dens , tbot, uocn, vocn , &

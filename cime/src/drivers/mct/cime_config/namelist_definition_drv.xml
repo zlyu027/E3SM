@@ -664,6 +664,20 @@
     </values>
   </entry>
 
+  <entry id="flux_use_ua">
+    <type>logical</type>
+    <category>control</category>
+    <group>seq_infodata_inparm</group>
+    <desc>
+      If true, use University of Arizona algorithm (Zeng et al 1998)
+      for computing atm/ocn fluxes.
+      default: false
+    </desc>
+    <values>
+      <value>.false.</value>
+    </values>
+  </entry>
+
   <entry id="gust_fac">
     <type>real</type>
     <category>control</category>
