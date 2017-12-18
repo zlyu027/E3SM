@@ -967,7 +967,8 @@ endif !scm_observed_aero
 !     make sure that use_3dfrc flag is set to true if we only have
 !     3d forcing available
 !
-   if ( .not. have_divt .or. .not. have_divq ) then
+!   if ( .not. have_divt .or. .not. have_divq ) then
+   if (have_divt3d .or. have_divq3d) then
       use_3dfrc = .true.
    endif
    call shr_sys_flush( iulog )
