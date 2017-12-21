@@ -98,7 +98,6 @@ contains
     allocate(mask(ns))
     mask(:) = 1
 
-!    isgrid2d=.false.
     if (isgrid2d) then
        allocate(idata2d(ni,nj))
        idata2d(:,:) = 1	
@@ -241,9 +240,6 @@ contains
     end if
 
     ! Check lat limited to -90,90
-!    ldomain%latc = 18.1389709902394
-!    ldomain%lonc = 298.125000000000
-
 
     if (minval(ldomain%latc) < -90.0_r8 .or. &
         maxval(ldomain%latc) >  90.0_r8) then
@@ -521,10 +517,10 @@ contains
        endif
        rmaxlat = max(rmaxlat,abs(ldomain%latc(n)-surfdata_domain%latc(n)))
     enddo
-!    if (rmaxlon > 0.001_r8 .or. rmaxlat > 0.001_r8) then
-!       write(iulog,*)' ERROR: surfdata/fatmgrid lon/lat mismatch error', rmaxlon,rmaxlat
-!       call endrun(msg=errMsg(__FILE__, __LINE__))
-!    end if
+    if (rmaxlon > 0.001_r8 .or. rmaxlat > 0.001_r8) then
+       write(iulog,*)' ERROR: surfdata/fatmgrid lon/lat mismatch error', rmaxlon,rmaxlat
+       call endrun(msg=errMsg(__FILE__, __LINE__))
+    end if
     call domain_clean(surfdata_domain)
 
     ! Obtain special landunit info

@@ -1498,16 +1498,12 @@ contains
           if (single_column) then
              start(:) = 1 ; count(:) = 1
              call scam_field_offsets(ncid,clmlevel,vardesc,start,count)
-             if (trim(clmlevel) == grlnd) then
-                if (present(nt)) then
-!                   start(3) = nt ; count(3) = 1
-                  start(2) = nt ; count(2) = 1
-                end if
-             else
-                if (present(nt)) then
-                   start(2) = nt ; count(2) = 1
-                end if
-             end if
+             if (present(nt)) then
+               n=3
+               if (start(3) .eq. 0) n=2
+               start(n) = nt ; count(n) = 1
+             endif
+
 #if ({ITYPE}==TYPELOGICAL)
              allocate(idata(size(data))) 
              status = pio_get_var(ncid, varid, start, count, idata)
@@ -1691,18 +1687,11 @@ contains
           if (single_column) then
              start(:) = 1 ; count(:) = 1
              call scam_field_offsets(ncid, clmlevel, vardesc, start, count)
-             if (trim(clmlevel) == grlnd) then
-!                count(3) = size(data,dim=2)
                 if (present(nt)) then
-!                   start(4) = nt; count(4) = 1
-                   start(3) = nt; count(3) = 1
+                   n=4
+                   if (start(4) .eq. 0) n=3
+                   start(n) = nt; count(n) = 1
                 end if
-             else
-                count(2) = size(data,dim=2)
-                if (present(nt)) then
-                   start(3) = nt ; count(3) = 1
-                end if
-             end if
              if (present(switchdim)) then
                 status = pio_get_var(ncid, vardesc, start, count, temp)
                 do j = lb2,ub2
@@ -1889,23 +1878,13 @@ contains
           if (single_column) then
              start(:) = 1 
              count(:) = 1
-             write(iulog,*) 'PROBLEMVar', varname
              call scam_field_offsets(ncid, clmlevel, vardesc, start, count)
-             if (trim(clmlevel) == grlnd) then
-!                count(3) = size(data,dim=2); 
-!                count(4) = size(data,dim=3)
-                if (present(nt)) then
-                   start(5) = nt
-                   count(5) = 1
-                end if
-             else
-                count(2) = size(data,dim=2)
-                count(3) = size(data,dim=3)
-                if (present(nt)) then
-                   start(4) = nt
-                   count(4) = 1
-                end if
-             end if
+             if (present(nt)) then
+               n=5
+               if (start(5) .eq. 0) n=4
+               start(n) = nt ; count(n) = 1
+             endif
+             
              status = pio_get_var(ncid, vardesc, start, count, data)
           else
              status = pio_inq_varndims(ncid, vardesc, ndims)
@@ -2051,11 +2030,9 @@ contains
        if ( trim(dimname)=='nj'.or. trim(dimname)=='lat'.or. trim(dimname)=='lsmlat') then
           start(i)=latidx
           count(i)=1
-          write(*,*) 'WENTHERENJ'
        else if ( trim(dimname)=='ni'.or. trim(dimname)=='lon'.or. trim(dimname)=='lsmlon' .or. trim(dimname)=='gridcell') then
           start(i)=lonidx
           count(i)=1
-          write(*,*) 'WENTHERENI'
        else if ( trim(dimname)=='column') then
 
           allocate (cols1dlon(dimlen))
@@ -2169,8 +2146,6 @@ contains
        end if
     enddo
 
-    write(*,*) 'STARTCLM ', start
-    write(*,*) 'COUNTCLM ', count
     deallocate(dids)
 
   end subroutine scam_field_offsets
