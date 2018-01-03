@@ -783,7 +783,8 @@ logical function is_latlon( var_name, latitude, varnotdim )
            trim(var_name) == trim(xyvar)    .or. trim(var_name) == 'lsmlat'    .or. &
            trim(var_name) == trim(gcvar)    .or.                                    &
            trim(var_name) == 'LAT'          .or. trim(var_name) == 'LATIXY'    .or. &
-           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLAT' )  then
+           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLAT'    .or. &
+	   trim(var_name) == 'ncol')  then
            is_latlon = .true.
       else
            is_latlon = .false.
@@ -802,7 +803,8 @@ logical function is_latlon( var_name, latitude, varnotdim )
            trim(var_name) == trim(xyvar)    .or. trim(var_name) == 'lsmlon'    .or. &
            trim(var_name) == trim(gcvar)    .or.                                    &
            trim(var_name) == 'LON'          .or. trim(var_name) == 'LONGXY'    .or. &
-           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLON' )  then
+           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLON'    .or. & 
+	   trim(var_name) == 'ncol')  then
            is_latlon = .true.
       else
            is_latlon = .false.

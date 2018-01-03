@@ -197,12 +197,23 @@ contains
           call pio_setframe(ncid, varid, int(timelevel,kind=pio_offset_kind))
         end if
       end if
+      
+      if (single_column .and. dim1e == 1) then
+      
+        strt(1) = dim1b
+        cnt(1) = 1 
+        call shr_scam_getCloseLatLon(ncid%fh,scmlat,scmlon,closelat,closelon,latidx,lonidx)
+        strt(1) = lonidx
+        ierr = pio_get_var(ncid, varid, strt, cnt, field)
 
-      ! NB: strt and cnt were initialized to 1
+      else      
+
+        ! NB: strt and cnt were initialized to 1
         ! All distributed array processing
-      call cam_grid_get_decomp(grid_map, arraydimsize, dimlens(1:ndims),    &
+        call cam_grid_get_decomp(grid_map, arraydimsize, dimlens(1:ndims),    &
              pio_double, iodesc)
-      call pio_read_darray(ncid, varid, iodesc, field, ierr)
+        call pio_read_darray(ncid, varid, iodesc, field, ierr)
+      end if
     end if  ! end of readvar_tmp
 
     readvar = readvar_tmp

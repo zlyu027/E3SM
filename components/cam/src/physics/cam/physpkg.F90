@@ -381,7 +381,6 @@ subroutine phys_inidat( cam_out, pbuf2d )
        fh_topo=>topo_file_get_id()
        call infld('SGH', fh_topo, dim1name, dim2name, 1, pcols, begchunk, endchunk, &
             sgh, found, gridname='physgrid')
-	    !+PAB need to read in SGH correctly here
        if(.not. found) call endrun('ERROR: SGH not found on topo file')
 
        call infld('SGH30', fh_topo, dim1name, dim2name, 1, pcols, begchunk, endchunk, &
