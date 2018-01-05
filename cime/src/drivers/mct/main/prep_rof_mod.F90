@@ -416,6 +416,8 @@ contains
     integer, save :: index_x2r_Flrl_rofl_HDO
     integer, save :: index_x2r_Flrl_rofi_HDO
 
+    integer, save :: index_l2x_Flrl_Tqsur
+    integer, save :: index_l2x_Flrl_Tqsub
     integer, save :: index_a2x_Sa_tbot
     integer, save :: index_a2x_Sa_pbot
     integer, save :: index_a2x_Sa_u
@@ -426,6 +428,8 @@ contains
     integer, save :: index_a2x_Faxa_swvdr
     integer, save :: index_a2x_Faxa_swvdf
     integer, save :: index_a2x_Faxa_lwdn
+    integer, save :: index_x2r_Flrl_Tqsur
+    integer, save :: index_x2r_Flrl_Tqsub
     integer, save :: index_x2r_Sa_tbot
     integer, save :: index_x2r_Sa_pbot
     integer, save :: index_x2r_Sa_u
@@ -532,6 +536,8 @@ contains
              'lfrac*l2x%Flrl_rofi_HDO'
        end if
 
+       index_l2x_Flrl_Tqsur = mct_aVect_indexRA(l2x_r,'Flrl_Tqsur' )
+       index_l2x_Flrl_Tqsub = mct_aVect_indexRA(l2x_r,'Flrl_Tqsub' )
        index_a2x_Sa_tbot    = mct_aVect_indexRA(a2x_r,'Sa_tbot')
        index_a2x_Sa_pbot    = mct_aVect_indexRA(a2x_r,'Sa_pbot')
        index_a2x_Sa_u       = mct_aVect_indexRA(a2x_r,'Sa_u')
@@ -543,6 +549,8 @@ contains
        index_a2x_Faxa_swvdf = mct_aVect_indexRA(a2x_r,'Faxa_swvdf')
        index_a2x_Faxa_lwdn  = mct_aVect_indexRA(a2x_r,'Faxa_lwdn')
 
+       index_x2r_Flrl_Tqsur = mct_aVect_indexRA(x2r_r,'Flrl_Tqsur' )
+       index_x2r_Flrl_Tqsub = mct_aVect_indexRA(x2r_r,'Flrl_Tqsub' )
        index_x2r_Sa_tbot    = mct_aVect_indexRA(x2r_r,'Sa_tbot')
        index_x2r_Sa_pbot    = mct_aVect_indexRA(x2r_r,'Sa_pbot')
        index_x2r_Sa_u       = mct_aVect_indexRA(x2r_r,'Sa_u')
@@ -554,6 +562,8 @@ contains
        index_x2r_Faxa_swvdf = mct_aVect_indexRA(x2r_r,'Faxa_swvdf')
        index_x2r_Faxa_lwdn  = mct_aVect_indexRA(x2r_r,'Faxa_lwdn')
 
+       mrgstr(index_x2r_Flrl_Tqsur) = trim(mrgstr(index_x2r_Flrl_Tqsur))//' = '//'l2x%Flrl_Tqsur'
+       mrgstr(index_x2r_Flrl_Tqsur) = trim(mrgstr(index_x2r_Flrl_Tqsub))//' = '//'l2x%Flrl_Tqsub'
        mrgstr(index_x2r_Sa_tbot)    = trim(mrgstr(index_x2r_Sa_tbot))//' = '//'a2x%Sa_tbot'
        mrgstr(index_x2r_Sa_pbot)    = trim(mrgstr(index_x2r_Sa_pbot))//' = '//'a2x%Sa_pbot'
        mrgstr(index_x2r_Sa_u)       = trim(mrgstr(index_x2r_Sa_u))//' = '//'a2x%Sa_u'
@@ -586,6 +596,8 @@ contains
           x2r_r%rAttr(index_x2r_Flrl_rofl_HDO,i) = l2x_r%rAttr(index_l2x_Flrl_rofl_HDO,i) * lfrac
           x2r_r%rAttr(index_x2r_Flrl_rofi_HDO,i) = l2x_r%rAttr(index_l2x_Flrl_rofi_HDO,i) * lfrac
        end if
+       x2r_r%rAttr(index_x2r_Flrl_Tqsur,i) = l2x_r%rAttr(index_l2x_Flrl_Tqsur,i)
+       x2r_r%rAttr(index_x2r_Flrl_Tqsub,i) = l2x_r%rAttr(index_l2x_Flrl_Tqsub,i)
        x2r_r%rAttr(index_x2r_Sa_tbot,i) = a2x_r%rAttr(index_a2x_Sa_tbot,i)
        x2r_r%rAttr(index_x2r_Sa_pbot,i) = a2x_r%rAttr(index_a2x_Sa_pbot,i)
        x2r_r%rAttr(index_x2r_Sa_u,i)    = a2x_r%rAttr(index_a2x_Sa_u,i)

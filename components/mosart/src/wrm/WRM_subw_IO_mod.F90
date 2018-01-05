@@ -300,11 +300,10 @@ MODULE WRM_subw_IO_mod
 
      !--- read in entire gridID_from_Dam field on all pes
      allocate(temp_gridID_from_Dam(ctlSubwWRM%NDam, maxNumDependentGrid))
-     temp_gridID_from_Dam = -99
+	 temp_gridID_from_Dam = -99
      ier = nf90_inq_varid(ncdfid,'gridID_from_Dam',varid)
      ier = nf90_get_var(ncdfid,varid,temp_gridID_from_Dam)
      ier = nf90_close(ncdfid)
-
      allocate (WRMUnit%myDamNum(begr:endr))
      WRMUnit%myDamNum = 0
      allocate (WRMUnit%myDam(10,begr:endr))

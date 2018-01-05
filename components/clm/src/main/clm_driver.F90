@@ -101,7 +101,6 @@ module clm_driver
   use clm_instMod            , only : soilstate_vars
   use clm_instMod            , only : soilhydrology_vars
   use clm_instMod            , only : solarabs_vars
-  use clm_instMod            , only : soilhydrology_vars
   use clm_instMod            , only : surfalb_vars
   use clm_instMod            , only : surfrad_vars
   use clm_instMod            , only : temperature_vars
@@ -1169,7 +1168,7 @@ contains
          atm2lnd_vars, surfalb_vars, temperature_vars, frictionvel_vars, &
          waterstate_vars, waterflux_vars, energyflux_vars,               &
          solarabs_vars, carbonflux_vars, drydepvel_vars,                 &
-         vocemis_vars, dust_vars, ch4_vars, lnd2atm_vars) 
+         vocemis_vars, dust_vars, ch4_vars, soilhydrology_vars, lnd2atm_vars) 
     call t_stopf('lnd2atm')
 
     ! ============================================================================

@@ -1981,6 +1981,22 @@ module seq_flds_mod
      attname  = 'Flrl_demand'
      call metadata_set(attname, longname, stdname, units)
 
+     call seq_flds_add(l2x_fluxes,'Flrl_Tqsur')
+     call seq_flds_add(x2r_fluxes,'Flrl_Tqsur')
+     longname = 'Temperature of surface runoff'
+     stdname  = 'Temperature_of_surface_runoff'
+     units    = 'Kelvin'
+     attname  = 'Flrl_Tqsur'
+     call metadata_set(attname, longname, stdname, units)
+
+     call seq_flds_add(l2x_fluxes,'Flrl_Tqsub')
+     call seq_flds_add(x2r_fluxes,'Flrl_Tqsub')
+     longname = 'Temperature of subsurface runoff'
+     stdname  = 'Temperature_of_subsurface_runoff'
+     units    = 'Kelvin'
+     attname  = 'Flrl_Tqsub'
+     call metadata_set(attname, longname, stdname, units)
+	 
      ! Currently only the CESM land and runoff models treat irrigation as a separate
      ! field: in ACME, this field is folded in to the other runoff fields. Eventually,
      ! ACME may want to update its land and runoff models to map irrigation specially, as
