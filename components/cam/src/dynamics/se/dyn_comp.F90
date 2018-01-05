@@ -357,7 +357,7 @@ CONTAINS
   ! !ROUTINE:  RUN --- Driver for the 
   !
   ! !INTERFACE:
-  subroutine dyn_run( dyn_state, rc, tp2, fu, fv )
+  subroutine dyn_run( dyn_state, rc )
 
     ! !USES:
     use parallel_mod,     only : par
@@ -371,7 +371,6 @@ CONTAINS
 
     type (dyn_export_t), intent(inout)       :: dyn_state   !  container
     type(hybrid_t) :: hybrid
-    real(r8), intent(inout) :: tp2(npsq,nlev,nelemd), fu(npsq,nlev,nelemd), fv(npsq,nlev,nelemd)
 
     integer, intent(out)               :: rc      ! Return code
     integer ::  n
@@ -399,7 +398,7 @@ CONTAINS
           ! forward-in-time RK, with subcycling
           call t_startf("prim_run_sybcycle")
           call prim_run_subcycle(dyn_state%elem,hybrid,nets,nete,&
-               tstep, TimeLevel, hvcoord, n, tp2, fu, fv)
+               tstep, TimeLevel, hvcoord, n)
           call t_stopf("prim_run_sybcycle")
        end do
 

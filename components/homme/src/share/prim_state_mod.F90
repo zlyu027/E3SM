@@ -652,8 +652,7 @@ contains
   call t_stopf('prim_printstate')
   end subroutine prim_printstate
    
-subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
-           tp2,fu,fv)
+subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete)
 ! 
     use scamMod, only: single_column
     use kinds, only : real_kind
@@ -662,8 +661,6 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     use hybvcoord_mod, only : hvcoord_t
     use element_mod, only : element_t
     use physical_constants, only : Cp, cpwater_vapor
-    use physics_mod, only : Virtual_Specific_Heat, Virtual_Temperature
-    use prim_si_mod, only : preq_hydrostatic
     use time_mod, only: tstep
     use constituents, only: pcnst
     use time_manager, only: get_nstep
@@ -674,7 +671,6 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     type (hvcoord_t)                  :: hvcoord
     type (TimeLevel_t), intent(in)       :: tl
     logical :: t_before_advance, do_column_scm
-    real(kind=real_kind), intent(inout), dimension(npsq,nlev,nelemd) :: tp2, fu, fv
     real(kind=real_kind), parameter :: rad2deg = 180.0 / SHR_CONST_PI
 
     integer :: ie,k,i,j,t,nm_f
@@ -686,9 +682,9 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     real (kind=real_kind) :: cp_star1,cp_star2,qval_t1,qval_t2
     real (kind=real_kind) :: Qt,dt
     real (kind=real_kind), dimension(nlev,pcnst) :: stateQin1, stateQin2, stateQin_qfcst
-    real (kind=real_kind), dimension(nlev,pcnst) :: dummyq
-    real (kind=real_kind), dimension(nlev) :: dummy1, dummyt, dummyu, dummyv, dummyFT
-    real (kind=real_kind) :: dummyps
+    real (kind=real_kind), dimension(nlev,pcnst) :: forecast_q
+    real (kind=real_kind), dimension(nlev) :: dummy1, forecast_t, forecast_u, forecast_v
+    real (kind=real_kind) :: forecast_ps
     logical :: wet
 
     integer:: t2_qdp, t1_qdp   ! the time pointers for Qdp are not the same
@@ -724,80 +720,52 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
         p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*elem(ie)%state%ps_v(:,:,t2)
       end do
  
-      if (single_column) then
-!        dt=tstep*qsplit 
-        dt=1800.
+      dt=2.0*tstep 
 
-        icount=1
-        do i=1,np
-          do j=1,np
+      icount=1
+      do i=1,np
+        do j=1,np
          
-            do pp=1,pcnst
-              stateQin1(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t1_qdp)/dpt1(i,j,:)
-              stateQin2(:,pp) = elem(ie)%state%Qdp(i,j,:,pp,t2_qdp)/dpt2(i,j,:)  
-            enddo
-	    
-            stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
-            stateQin1(:,:) = stateQin_qfcst(:,:)
-            stateQin2(:,:) = stateQin_qfcst(:,:)	
+          stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
+          stateQin1(:,:) = stateQin_qfcst(:,:)
+          stateQin2(:,:) = stateQin_qfcst(:,:)	
     
-	    dummy1(:) = 0.0 
-	    dummyt(:) = elem(ie)%state%T(i,j,:,1) 
-            dummyu(:) = elem(ie)%state%v(i,j,1,:,1) 
-            dummyv(:) = elem(ie)%state%v(i,j,2,:,1) 
-	    dummyq(:,:) = elem(ie)%state%Q(i,j,:,:)
-            dummyFT(:) = elem(ie)%derived%fT(i,j,:,1)
-            dummyps = elem(ie)%state%ps_v(i,j,1)
+	  dummy1(:) = 0.0 
+          forecast_ps = elem(ie)%state%ps_v(i,j,1)
         
-            do k=1,nlev
-              if (dummyFT(k) .ne. 0) then
-                write(iulog,*) 'FUCKTEND ', i, j, ie
-                write(iulog,*) 'LAT ', elem(ie)%spherep(i,j)%lat * rad2deg
-                write(iulog,*) 'LON ', elem(ie)%spherep(i,j)%lon * rad2deg
-                go to 1000
-              endif
-            enddo     
-		      
-1000 continue 
-            call forecast(1,elem(ie)%state%ps_v(i,j,t2),&
-                      elem(ie)%state%ps_v(i,j,t2),dummyps,dummyu,&
-		      elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
-		      dummyv,elem(ie)%state%v(i,j,2,:,t2),&
-		      elem(ie)%state%v(i,j,2,:,t1),dummyt,&
-		      elem(ie)%state%T(i,j,:,t2),elem(ie)%state%T(i,j,:,t1),&
-		      dummyq,stateQin2,stateQin1,dt,elem(ie)%derived%fT(i,j,:,1),dummy1,dummy1,&
-                      stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)		      
-
-            
-            do t=1,3
-              elem(ie)%state%T(i,j,:,t) = dummyt(:)
-              elem(ie)%state%v(i,j,1,:,t) = dummyu(:)
-              elem(ie)%state%v(i,j,2,:,t) = dummyv(:)
-              elem(ie)%state%Q(i,j,:,:) = dummyq(:,:)
-            enddo
-
-            elem(ie)%state%ps_v(i,j,:) = dummyps
-
-            do t=1,2
-              do pp=1,pcnst
-                elem(ie)%state%Qdp(i,j,:,pp,t)=dummyq(:,pp)*dpt2(i,j,:)
-              enddo
-            enddo
-
-            icount=icount+1
+          call forecast(1,elem(ie)%state%ps_v(i,j,t2),&
+                 elem(ie)%state%ps_v(i,j,t2),forecast_ps,forecast_u,&
+		 elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
+		 forecast_v,elem(ie)%state%v(i,j,2,:,t2),&
+		 elem(ie)%state%v(i,j,2,:,t1),forecast_t,&
+		 elem(ie)%state%T(i,j,:,t2),elem(ie)%state%T(i,j,:,t1),&
+		 forecast_q,stateQin2,stateQin1,dt,elem(ie)%derived%fT(i,j,:,1),dummy1,dummy1,&
+                 stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)		      
+ 
+          do t=1,3
+            elem(ie)%state%T(i,j,:,t) = forecast_t(:)
+            elem(ie)%state%v(i,j,1,:,t) = forecast_u(:)
+            elem(ie)%state%v(i,j,2,:,t) = forecast_v(:)
+            elem(ie)%state%Q(i,j,:,:) = forecast_q(:,:)
           enddo
-        enddo
 
-!! +PAB: really unsure about some of the inputs above
-!        endif
-      endif        
+          elem(ie)%state%ps_v(i,j,:) = forecast_ps
+
+          do t=1,2
+            do pp=1,pcnst
+              elem(ie)%state%Qdp(i,j,:,pp,t)=forecast_q(:,pp)*dpt2(i,j,:)
+            enddo
+          enddo
+
+          icount=icount+1
+        enddo
+      enddo
 
     enddo
     
 end subroutine prim_apply_forcing   
 
-subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
-           tp2,fu,fv)
+subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)
 ! 
 !  called at the end of a timestep, before timelevel update.  Solution known at
 !  dynamics:     nm1,  n0,  np1.  
@@ -822,7 +790,6 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
 !   KE(n+.5) = .5*(  .5 u(n+1)^2 dp(n) +  .5 u(n)^2 dp(n+1) )
 !
 !
-    use scamMod, only: single_column
     use kinds, only : real_kind
     use dimensions_mod, only : np, np, nlev
     use control_mod, only : use_cpstar
@@ -838,7 +805,6 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     type (hvcoord_t)                  :: hvcoord
     type (TimeLevel_t), intent(in)       :: tl
     logical :: t_before_advance
-    real(kind=real_kind), intent(inout), dimension(nelemd,nlev) :: tp2, fu, fv
 
     integer :: ie,k,i,j,nm_f
     real (kind=real_kind), dimension(np,np,nlev)  :: dpt1,dpt2   ! delta pressure
@@ -847,7 +813,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete,&
     real (kind=real_kind), dimension(np,np,nlev)  :: sumlk, suml2k
     real (kind=real_kind), dimension(np,np,nlev)  :: p,T_v,phi
     real (kind=real_kind) :: cp_star1,cp_star2,qval_t1,qval_t2
-    real (kind=real_kind) :: Qt,dt
+    real (kind=real_kind) :: Qt
     logical :: wet
 
 

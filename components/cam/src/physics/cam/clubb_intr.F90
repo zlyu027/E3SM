@@ -1644,7 +1644,6 @@ end subroutine clubb_init_cnst
              ustar  = diag_ustar(zt_g(2),bflx22,ubar,zo)      
         endif
     
-        ustar = 0.28_r8
         !  Compute the surface momentum fluxes, if this is a SCAM simulation       
         upwp_sfc = -um(i,pver)*ustar**2/ubar
         vpwp_sfc = -vm(i,pver)*ustar**2/ubar
@@ -2157,10 +2156,6 @@ end subroutine clubb_init_cnst
    call t_startf('ice_cloud_detrain_diag')
    do k=1,pver
       do i=1,ncol
-      
-!         if (state1%t(i,k) .gt. 500._r8) then
-!           write(*,*) 'GREATERTHAN500afterCLUBB ',state1%t(i,k)
-!         endif
       
          if( state1%t(i,k) > clubb_tk1 ) then
             dum1 = 0.0_r8

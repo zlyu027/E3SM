@@ -303,7 +303,7 @@ $omp parallel do private (lchnk, ncols, ilyr, icol)
        
   end subroutine d_p_coupling
 
-  subroutine p_d_coupling(phys_state, phys_tend,  dyn_in, tp2, fu, fv)
+  subroutine p_d_coupling(phys_state, phys_tend,  dyn_in)
     use shr_vmath_mod, only: shr_vmath_log
     use cam_control_mod, only : adiabatic
     implicit none
@@ -312,10 +312,6 @@ $omp parallel do private (lchnk, ncols, ilyr, icol)
     type(physics_state), intent(inout), dimension(begchunk:endchunk) :: phys_state
     type(physics_tend),  intent(inout), dimension(begchunk:endchunk) :: phys_tend
     
-!    real(r8), intent(out) :: tp2(nelemd, plev)
-!    real(r8), intent(out) :: fu(nelemd, plev)
-!    real(r8), intent(out) :: fv(nelemd, plev)
-
 ! !OUTPUT PARAMETERS:
     type(dyn_import_t),  intent(inout)   :: dyn_in
 
@@ -329,9 +325,6 @@ $omp parallel do private (lchnk, ncols, ilyr, icol)
     real (kind=real_kind)    :: uv_tmp(npsq,2,pver,nelemd)    ! temporary array to hold uv
 !   real (kind=real_kind)    :: omega_tmp(npsq,pver,nelemd)   ! temporary array to hold omega
     real (kind=real_kind)    :: q_tmp(npsq,pver,pcnst,nelemd) ! temporary array to hold q
-    real (kind=real_kind)    :: tp2(npsq,pver,nelemd)
-    real (kind=real_kind)    :: fu(npsq,pver,nelemd)
-    real (kind=real_kind)    :: fv(npsq,pver,nelemd) 
 
     integer (kind=int_kind)  :: ioff, m, i, j, k
     integer(kind=int_kind)   :: pgcols(pcols), idmb1(1), idmb2(1), idmb3(1)
@@ -445,10 +438,6 @@ $omp parallel do private (lchnk, ncols, ilyr, icol)
        deallocate( bbuffer )
        deallocate( cbuffer )
 
-       tp2(:,:,:) = T_tmp(:,:,:)
-       fu(:,:,:) = uv_tmp(:,1,:,:)
-       fv(:,:,:) = uv_tmp(:,2,:,:)
-       
     end if
     call t_stopf('pd_copy')
     if(iam < par%nprocs) then

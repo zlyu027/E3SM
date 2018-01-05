@@ -102,6 +102,7 @@ module phys_grid
    use scamMod,          only: single_column, scmlat, scmlon
    use shr_const_mod,    only: SHR_CONST_PI
    use dyn_grid,         only: dyn_grid_find_gcols
+   use dycore,           only: dycore_is
 
    implicit none
    save
@@ -267,7 +268,7 @@ module phys_grid
 !  4: concatenated blocks, no load balancing, no interprocess communication
    integer, private, parameter :: min_lbal_opt = -1
    integer, private, parameter :: max_lbal_opt = 5
-   integer, private, parameter :: def_lbal_opt = 2               ! default = 2
+   integer, private, parameter :: def_lbal_opt = 2               ! default 
    integer, private :: lbal_opt = def_lbal_opt
 
 ! Physics grid load balancing options:  
@@ -424,9 +425,9 @@ contains
     !
     ! Initialize physics grid, using dynamics grid
     ! a) column coordinates
-    lbal_opt = -1 !+PAB make this default option for SCM
+    if (single_column .and. dycore_is ('SE')) lbal_opt = -1 !+PAB make this default option for SCM
     call get_horiz_grid_dim_d(hdim1_d,hdim2_d)
-    if (single_column) then
+    if (single_column .and. dycore_is('SE')) then
       ngcols = 1
     else
       ngcols = hdim1_d*hdim2_d
@@ -438,7 +439,7 @@ contains
     allocate( cdex(1:ngcols) )
     clat_d = 100000.0_r8
     clon_d = 100000.0_r8
-    if (single_column) then
+    if (single_column .and. dycore_is('SE')) then
       lat_d = scmlat
       lon_d = scmlon
       clat_d = scmlat * deg2rad
@@ -624,7 +625,7 @@ contains
        !
        maxblksiz = 0
        do jb=firstblock,lastblock
-          if (single_column) then
+          if (single_column .and. dycore_is('SE')) then
 	    maxblksiz = 1
 	  else
             maxblksiz = max(maxblksiz,get_block_gcol_cnt_d(jb))
@@ -638,7 +639,7 @@ contains
        !
        ! Determine total number of chunks
        !
-       if (single_column) then
+       if (single_column .and. dycore_is('SE')) then
          nchunks = 1
        else
 	 nchunks = (lastblock-firstblock+1)
@@ -657,7 +658,7 @@ contains
 
        do cid=1,nchunks
           ! get number of global column indices in block
-          if (single_column) then
+          if (single_column .and. dycore_is('SE')) then
 	    max_ncols = 1
 	  else
 	    max_ncols = get_block_gcol_cnt_d(cid+firstblock-1)
@@ -853,7 +854,7 @@ contains
     area_d = 0.0_r8
     wght_d = 0.0_r8
 
-    if (single_column) then
+    if (single_column .and. dycore_is('SE')) then
       area_d = 4.0_r8*pi
       wght_d = 4.0_r8*pi
     else

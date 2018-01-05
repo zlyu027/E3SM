@@ -500,6 +500,10 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
      closelatidx = 1
    endif
 
+   write(*,*) 'TARGETLATLON ', targetLat, targetLon
+   write(*,*) 'CLOSELATANDLON ', closelat, closelon
+   write(*,*) 'CLOSEIDX', closelatidx, closelonidx
+
    return
 end subroutine shr_scam_getCloseLatLonPIO
 
@@ -784,7 +788,7 @@ logical function is_latlon( var_name, latitude, varnotdim )
            trim(var_name) == trim(gcvar)    .or.                                    &
            trim(var_name) == 'LAT'          .or. trim(var_name) == 'LATIXY'    .or. &
            trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLAT'    .or. &
-	   trim(var_name) == 'ncol')  then
+           trim(var_name) == 'ncol')  then
            is_latlon = .true.
       else
            is_latlon = .false.
@@ -803,8 +807,8 @@ logical function is_latlon( var_name, latitude, varnotdim )
            trim(var_name) == trim(xyvar)    .or. trim(var_name) == 'lsmlon'    .or. &
            trim(var_name) == trim(gcvar)    .or.                                    &
            trim(var_name) == 'LON'          .or. trim(var_name) == 'LONGXY'    .or. &
-           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLON'    .or. & 
-	   trim(var_name) == 'ncol')  then
+           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLON'    .or. &
+           trim(var_name) == 'ncol')  then
            is_latlon = .true.
       else
            is_latlon = .false.

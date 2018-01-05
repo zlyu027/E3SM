@@ -197,18 +197,21 @@ contains
           call pio_setframe(ncid, varid, int(timelevel,kind=pio_offset_kind))
         end if
       end if
-      
+
+      write(*,*) 'NCWTF', single_column, dim1e
+
       if (single_column .and. dim1e == 1) then
-      
+        write(*,*) 'NCWTF WENT HERE'
         strt(1) = dim1b
         cnt(1) = 1 
         call shr_scam_getCloseLatLon(ncid%fh,scmlat,scmlon,closelat,closelon,latidx,lonidx)
+        write(*,*) 'NCWTF lats and lons', scmlat, scmlon, closelat, closelon, latidx, lonidx
         strt(1) = lonidx
         ierr = pio_get_var(ncid, varid, strt, cnt, field)
 
-      else      
+      else
 
-        ! NB: strt and cnt were initialized to 1
+      ! NB: strt and cnt were initialized to 1
         ! All distributed array processing
         call cam_grid_get_decomp(grid_map, arraydimsize, dimlens(1:ndims),    &
              pio_double, iodesc)

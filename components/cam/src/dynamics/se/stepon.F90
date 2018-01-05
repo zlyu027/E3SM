@@ -42,10 +42,6 @@ module stepon
   public stepon_run3    ! run method phase 3
   public stepon_final  ! Finalization
   
-  real(r8), allocatable, public :: tp2(:,:,:) ! temp tendency
-  real(r8), allocatable, public :: fu(:,:,:)  ! u wind tendency
-  real(r8), allocatable, public :: fv(:,:,:)  ! v wind tendency
-
 !----------------------------------------------------------------------
 !
 ! !DESCRIPTION: Module for dynamics time-stepping.
@@ -150,10 +146,6 @@ subroutine stepon_init(dyn_in, dyn_out )
      call add_default(trim(cnst_name(m))//'&IC',0, 'I')
   end do
 
-  allocate(tp2(npsq,nlev,nelemd))
-  allocate(fu(npsq,nlev,nelemd))
-  allocate(fv(npsq,nlev,nelemd))
-
 end subroutine stepon_init
 
 !-----------------------------------------------------------------------
@@ -232,7 +224,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
    ! copy from phys structures -> dynamics structures
    call t_barrierf('sync_p_d_coupling', mpicom)
    call t_startf('p_d_coupling')
-   call p_d_coupling(phys_state, phys_tend,  dyn_in, tp2, fu, fv)
+   call p_d_coupling(phys_state, phys_tend,  dyn_in)
    call t_stopf('p_d_coupling')
 
    if(iam >= par%nprocs) return
@@ -442,7 +434,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                ftmp(i+(j-1)*np,1:pver,1) = tmp_dyn(i,j,1:pver)
             end do
          end do
-!         call outfld('VOR',ftmp(:,:,1),npsq,ie)
+         if (.not. single_column) call outfld('VOR',ftmp(:,:,1),npsq,ie)
       enddo
    endif
    if (hist_fld_active('DIV')) then
@@ -453,7 +445,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                ftmp(i+(j-1)*np,1:pver,1) = tmp_dyn(i,j,1:pver)
             end do
          end do
-!         call outfld('DIV',ftmp(:,:,1),npsq,ie)
+         if (.not. single_column) call outfld('DIV',ftmp(:,:,1),npsq,ie)
       enddo
    endif
 #endif
@@ -465,7 +457,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                   ftmp(i+(j-1)*np,1,1) = phisdyn(i,j,ie)
                end do
             end do
-!            call outfld('PHIS_SM',ftmp(:,1,1),npsq,ie)
+            if (.not. single_column) call outfld('PHIS_SM',ftmp(:,1,1),npsq,ie)
          enddo
       endif
       if (hist_fld_active('SGH_SM')) then
@@ -475,7 +467,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                   ftmp(i+(j-1)*np,1,1) = sghdyn(i,j,ie)
                end do
             end do
-!            call outfld('SGH_SM',ftmp(:,1,1),npsq,ie)
+            if (.not. single_column) call outfld('SGH_SM',ftmp(:,1,1),npsq,ie)
          enddo
       endif
       if (hist_fld_active('SGH30_SM')) then
@@ -485,26 +477,26 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
                   ftmp(i+(j-1)*np,1,1) = sgh30dyn(i,j,ie)
                end do
             end do
-!            call outfld('SGH30_SM',ftmp(:,1,1),npsq,ie)
+            if (.not. single_column) call outfld('SGH30_SM',ftmp(:,1,1),npsq,ie)
          enddo
       endif
    end if
    
-!   if (hist_fld_active('FU') .or. hist_fld_active('FV')) then
-!      do ie=1,nelemd
-!         do k=1,nlev
-!            do j=1,np
-!               do i=1,np
-!                  ftmp(i+(j-1)*np,k,1) = dyn_in%elem(ie)%derived%FM(i,j,1,k,1)
-!                  ftmp(i+(j-1)*np,k,2) = dyn_in%elem(ie)%derived%FM(i,j,2,k,1)
-!               end do
-!            end do
-!         end do
-         
-!         call outfld('FU',ftmp(:,:,1),npsq,ie)
-!         call outfld('FV',ftmp(:,:,2),npsq,ie)
-!      end do
-!   endif
+   if (hist_fld_active('FU') .or. hist_fld_active('FV') .and. .not. single_column) then
+      do ie=1,nelemd
+         do k=1,nlev
+            do j=1,np
+               do i=1,np
+                  ftmp(i+(j-1)*np,k,1) = dyn_in%elem(ie)%derived%FM(i,j,1,k,1)
+                  ftmp(i+(j-1)*np,k,2) = dyn_in%elem(ie)%derived%FM(i,j,2,k,1)
+               end do
+            end do
+         end do
+        
+         call outfld('FU',ftmp(:,:,1),npsq,ie)
+         call outfld('FV',ftmp(:,:,2),npsq,ie)
+      end do
+   endif
    
    
    
@@ -544,7 +536,7 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
 
    call t_barrierf('sync_dyn_run', mpicom)
    call t_startf ('dyn_run')
-   call dyn_run(dyn_out,rc,tp2,fu,fv)	
+   call dyn_run(dyn_out,rc)	
    call t_stopf  ('dyn_run')
 
 end subroutine stepon_run3

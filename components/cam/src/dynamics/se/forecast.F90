@@ -202,17 +202,7 @@ subroutine forecast(lat, psm1, psm2,ps, &
 
    wfldint(plevp) = 0.0_r8
 
-!   t2(:) = 0.0
-   fu(:) = 0.0
-   fv(:) = 0.0
-
    if (use_3dfrc .and. use_iop) then
-
-!   write(*,*) 'TFCST3D WENT HERE'
-!   write(*,*) 't3m2 ', t3m2
-!   write(*,*) 'divt3d ', divt3d
-!   write(*,*) 'ztodt ', ztodt
-!   write(*,*) 't2 ', t2
 
 !  Complete a very simple forecast using supplied 3-dimensional forcing
 !  by the large scale.  Obviates the need for any kind of vertical 
@@ -220,13 +210,10 @@ subroutine forecast(lat, psm1, psm2,ps, &
       i=1
       do k=1,plev
          tfcst(k) = t3m2(k) + ztodt*t2(k) + ztodt*divt3d(k)
-!            qfcst(1,k,m) = qminus(1,k,m) +  divq3d(k,m)*ztodt
       end do
       do m=1,pcnst
          do k=1,plev
             qfcst(1,k,m) = qminus(1,k,m) +  divq3d(k,m)*ztodt
-!            write(iulog,'(a,i,a,i,a,i,a,z16,ES30.16)'),'qfcst(',i,',',k,',',m,')=',qfcst(i,k,m),qfcst(i,k,m),'qminus(',i,',',k,',',m,')=',&
-!                 qminus(i,k,m),qminus(i,k,m),'divq3d(',i,',',k,',',m,')=',divq3d(k,m),divq3d(k,m)
          end do
       enddo
      
@@ -241,7 +228,6 @@ subroutine forecast(lat, psm1, psm2,ps, &
 !  appropriate 2d and/or 3d forcing is available so there is no need to
 !  place software checks here to guard agains missing data.
 !
-
 
       if((.not. (have_divt .and. have_divq)) .and. use_iop) then
 !
@@ -414,8 +400,6 @@ if (.not.use_iop) then
 !
    endif !=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 
-
-
 !
 !
 !  *** Remove flux correction term from advection forecast (after "fixer") ***
@@ -500,10 +484,6 @@ end if
 !        add it here to t2 and dqv
 !
 
-!   if (is_first_step()) then
-!     t2(:) = 0.0
-!   endif
-   
    do k=1,plev
       tfcst(k) = tfcst(k) + ztodt*wfld(k)*t3m1(k)*rair/(cpair*pmidm1(k)) &
          + ztodt*(t2(k) + divt(k))
@@ -622,7 +602,7 @@ end if
 !
 !      if(scm_relaxation) then
 !            dist = 300000.      ! distance across the ARM domain
-         do k=26,plev
+         do k=1,plev
 !               denom = 2.0*sqrt(u3(k)**2 + v3(k)**2)
 !               rtau(k)   = dist/denom
 !
@@ -636,9 +616,6 @@ end if
             t3(k)     = t3(k)   + relaxt(k)*ztodt
             q3(k,1)   = q3(k,1) + relaxq(k)*ztodt
 
-!            t3(k)     = tobs(k)
-!            q3(k,1)   = qobs(k)
-
          end do
 !
 !         call outfld('TRELAX',relaxt,plon,lat )
@@ -647,8 +624,6 @@ end if
 !      end if
    end if
 
-!   write(iulog,*) 'TFCST ', t3(:)
-!   write(iulog,*) 'QFCST ', q3(:,1)
 !     
 !  evaluate the difference in state information from observed
 !
@@ -704,54 +679,6 @@ end if
    do i=1,nlon
       sum = sum + psm1(1)
    end do
-!   tmass(lat) = w(lat)*rga*sum/nlon
-
-!
-! Add spegrd calculations to fix water mass
-!
-!
-! Calculate SLT moisture and constituent integrals
-!
-!   write(iulog,*) 'LATHERE ', lat
-!   write(iulog,*) 'WHERE ', w
-!   write(iulog,*) 'CWAVA ', cwava
-!   hcwavaw = 0.5_r8*cwava*w(lat)
-!   do m=1,pcnst
-!      hw2al(m) = 0._r8
-!      hw2bl(m) = 0._r8
-!      hw3al(m) = 0._r8
-!      hw3bl(m) = 0._r8
-!      hwxal(m,1) = 0._r8
-!      hwxal(m,2) = 0._r8
-!      hwxal(m,3) = 0._r8
-!      hwxal(m,4) = 0._r8
-!      hwxbl(m,1) = 0._r8
-!      hwxbl(m,2) = 0._r8
-!      hwxbl(m,3) = 0._r8
-!      hwxbl(m,4) = 0._r8
-!      do k=1,plev
-!         dotproda = 0._r8
-!         dotprodb = 0._r8
-!         do i=1,nlon
-!            dotproda = dotproda + qfcst(i,k,m)*pdela(i,k)
-!            dotprodb = dotprodb + qfcst(i,k,m)*pdelb(i,k)
-!         end do
-!         hw2al(m) = hw2al(m) + hcwavaw*dotproda
-!         hw2bl(m) = hw2bl(m) + hcwavaw*dotprodb
-!      end do
-!   end do
-
-!   call qmassd (cwava, etamid, w(lat), qminus, qfcst, &
-!                pdela, hw3al, nlon)
-
-!   call qmassd (cwava, etamid, w(lat), qminus, qfcst, &
-!                pdelb, hw3bl, nlon)
-
-!   if (pcnst.gt.1) then
-!      call xqmass (cwava, etamid, w(lat), qminus, qfcst, &
-!                   qminus, qfcst, pdela, pdelb, hwxal, &
-!                   hwxbl, nlon)
-!   end if
 
    return
 end subroutine forecast

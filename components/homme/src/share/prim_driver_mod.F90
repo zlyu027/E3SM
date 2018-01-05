@@ -836,8 +836,7 @@ contains
 
 
 
-  subroutine prim_run_subcycle(elem, hybrid,nets,nete, dt, tl, hvcoord,nsubstep, &
-        tp2, fu, fv)
+  subroutine prim_run_subcycle(elem, hybrid,nets,nete, dt, tl, hvcoord,nsubstep)
 
     !   advance dynamic variables and tracers (u,v,T,ps,Q,C) from time t to t + dt_q
     !
@@ -876,7 +875,6 @@ contains
     real(kind=real_kind), intent(in)    :: dt                           ! "timestep dependent" timestep
     type (TimeLevel_t),   intent(inout) :: tl
     integer,              intent(in)    :: nsubstep                     ! nsubstep = 1 .. nsplit
-    real(kind=real_kind), intent(inout) :: tp2(npsq,nlev,nelemd), fu(npsq,nlev,nelemd), fv(npsq,nlev,nelemd)
 
     real(kind=real_kind) :: dp, dt_q, dt_remap
     real(kind=real_kind) :: dp_np1(np,np)
@@ -946,7 +944,7 @@ contains
     ! E(1) Energy after CAM forcing
     if (compute_energy) then
       call t_startf("prim_energy_halftimes")
-      call prim_energy_halftimes(elem,hvcoord,tl,1,.true.,nets,nete,tp2,fu,fv)
+      call prim_energy_halftimes(elem,hvcoord,tl,1,.true.,nets,nete)
       call t_stopf("prim_energy_halftimes")
     endif
 
@@ -1037,7 +1035,7 @@ contains
     endif
     if (compute_energy) then
       call t_startf("prim_energy_halftimes")
-      call prim_energy_halftimes(elem,hvcoord,tl,2,.false.,nets,nete,tp2,fu,fv)
+      call prim_energy_halftimes(elem,hvcoord,tl,2,.false.,nets,nete)
       call t_stopf("prim_energy_halftimes")
     endif
 
@@ -1047,15 +1045,14 @@ contains
       call t_stopf("prim_diag_scalars")
 
       call t_startf("prim_energy_halftimes")
-      call prim_energy_halftimes(elem,hvcoord,tl,3,.false.,nets,nete,tp2,fu,fv)
+      call prim_energy_halftimes(elem,hvcoord,tl,3,.false.,nets,nete)
       call t_stopf("prim_energy_halftimes")
     endif
 
 1000 continue
    
     if (single_column) then
-      call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete,&
-          tp2,fu,fv)
+      call prim_apply_forcing(elem,hvcoord,tl,3,.false.,nets,nete)
     end if
 
     ! =================================

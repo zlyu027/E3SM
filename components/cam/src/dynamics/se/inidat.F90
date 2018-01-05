@@ -147,9 +147,6 @@ contains
         enddo
       enddo
 
-      write(iulog,*) 'SCMLATLON', scmlat, scmposlon, indx_scm, ie_scm, i_scm, j_scm, minpoint
-      write(iulog,*) 'THEPOINTBRO ', elem(ie_scm)%spherep(i_scm,j_scm)%lat * rad2deg, &
-                                     elem(ie_scm)%spherep(i_scm,j_scm)%lon * rad2deg
     endif
 
     fieldname = 'U'
@@ -275,10 +272,10 @@ contains
     do m_cnst=1,pcnst
        found = .false.
        if(cnst_read_iv(m_cnst)) then
-!          if (precip_off .and. (cnst_name(m_cnst) .eq. 'RAINQM' .or. cnst_name(m_cnst) .eq. 'SNOWQM' &
-!	    .or. cnst_name(m_cnst) .eq. 'NUMRAI' .or. cnst_name(m_cnst) .eq. 'NUMSNO')) then
-	
-          if (precip_off .and. m_cnst .gt. 1) then	    
+
+        ! If precip processes are turned off, do not initialize the field	
+          if (precip_off .and. (cnst_name(m_cnst) .eq. 'RAINQM' .or. cnst_name(m_cnst) .eq. 'SNOWQM' &
+            .or. cnst_name(m_cnst) .eq. 'NUMRAI' .or. cnst_name(m_cnst) .eq. 'NUMSNO')) then	    
 	    found = .false.
 	    
 	  else
@@ -436,38 +433,39 @@ contains
     endif
 
     if (.not. single_column) then    
-    ! once we've read all the fields we do a boundary exchange to 
-    ! update the redundent columns in the dynamics
-    if(iam < par%nprocs) then
-       call initEdgeBuffer(par, edge, elem, (3+pcnst)*nlev+2, numthreads_in=1)
-    end if
-    do ie=1,nelemd
-       kptr=0
-       call edgeVpack(edge, elem(ie)%state%ps_v(:,:,1),1,kptr,ie)
-       kptr=kptr+1
-       call edgeVpack(edge, elem(ie)%state%phis,1,kptr,ie)
-       kptr=kptr+1
-       call edgeVpack(edge, elem(ie)%state%v(:,:,:,:,1),2*nlev,kptr,ie)
-       kptr=kptr+2*nlev
-       call edgeVpack(edge, elem(ie)%state%T(:,:,:,1),nlev,kptr,ie)
-       kptr=kptr+nlev
-       call edgeVpack(edge, elem(ie)%state%Q(:,:,:,:),nlev*pcnst,kptr,ie)
-    end do
-    if(iam < par%nprocs) then
-       call bndry_exchangeV(par,edge)
-    end if
-    do ie=1,nelemd
-       kptr=0
-       call edgeVunpack(edge, elem(ie)%state%ps_v(:,:,1),1,kptr,ie)
-       kptr=kptr+1
-       call edgeVunpack(edge, elem(ie)%state%phis,1,kptr,ie)
-       kptr=kptr+1
-       call edgeVunpack(edge, elem(ie)%state%v(:,:,:,:,1),2*nlev,kptr,ie)
-       kptr=kptr+2*nlev
-       call edgeVunpack(edge, elem(ie)%state%T(:,:,:,1),nlev,kptr,ie)
-       kptr=kptr+nlev
-       call edgeVunpack(edge, elem(ie)%state%Q(:,:,:,:),nlev*pcnst,kptr,ie)
-    end do
+
+      ! once we've read all the fields we do a boundary exchange to 
+      ! update the redundent columns in the dynamics
+      if(iam < par%nprocs) then
+        call initEdgeBuffer(par, edge, elem, (3+pcnst)*nlev+2, numthreads_in=1)
+      end if
+      do ie=1,nelemd
+        kptr=0
+        call edgeVpack(edge, elem(ie)%state%ps_v(:,:,1),1,kptr,ie)
+        kptr=kptr+1
+        call edgeVpack(edge, elem(ie)%state%phis,1,kptr,ie)
+        kptr=kptr+1
+        call edgeVpack(edge, elem(ie)%state%v(:,:,:,:,1),2*nlev,kptr,ie)
+        kptr=kptr+2*nlev
+        call edgeVpack(edge, elem(ie)%state%T(:,:,:,1),nlev,kptr,ie)
+        kptr=kptr+nlev
+        call edgeVpack(edge, elem(ie)%state%Q(:,:,:,:),nlev*pcnst,kptr,ie)
+      end do
+      if(iam < par%nprocs) then
+        call bndry_exchangeV(par,edge)
+      end if
+      do ie=1,nelemd
+        kptr=0
+        call edgeVunpack(edge, elem(ie)%state%ps_v(:,:,1),1,kptr,ie)
+        kptr=kptr+1
+        call edgeVunpack(edge, elem(ie)%state%phis,1,kptr,ie)
+        kptr=kptr+1
+        call edgeVunpack(edge, elem(ie)%state%v(:,:,:,:,1),2*nlev,kptr,ie)
+        kptr=kptr+2*nlev
+        call edgeVunpack(edge, elem(ie)%state%T(:,:,:,1),nlev,kptr,ie)
+        kptr=kptr+nlev
+        call edgeVunpack(edge, elem(ie)%state%Q(:,:,:,:),nlev*pcnst,kptr,ie)
+      end do
     
     endif
 
