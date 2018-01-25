@@ -40,7 +40,7 @@ contains
     use edgetype_mod, only : EdgeBuffer_t
     use ncdio_atm, only : infld
     use shr_vmath_mod, only: shr_vmath_log
-    use hycoef,           only: ps0
+    use hycoef,           only: ps0, hyam, hybm
     use cam_abortutils,     only: endrun
     use pio, only : file_desc_t, io_desc_t, pio_double, pio_get_local_array_size, pio_freedecomp
     use dyn_grid, only : get_horiz_grid_dim_d, dyn_decomp
@@ -58,8 +58,9 @@ contains
     use cam_history_support, only: max_fieldname_len
     use cam_grid_support,    only: cam_grid_get_local_size, cam_grid_get_gcid
     use cam_map_utils,       only: iMap
-    use iop,                 only: readiopdata, setiopupdate
     use shr_const_mod,       only: SHR_CONST_PI
+    use scamMod,             only: setiopupdate, readiopdata
+    use se_single_column_mod, only: scm_setinitial
     implicit none
     type(file_desc_t),intent(inout) :: ncid_ini, ncid_topo
     type (dyn_import_t), target, intent(inout) :: dyn_in   ! dynamics import
@@ -429,7 +430,8 @@ contains
     
     if (single_column) then
       call setiopupdate()
-      call readiopdata(elem)
+      call readiopdata(hyam,hybm)
+      call scm_setinitial(elem)
     endif
 
     if (.not. single_column) then    

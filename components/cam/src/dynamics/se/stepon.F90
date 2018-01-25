@@ -24,8 +24,8 @@ module stepon
    use quadrature_mod, only: gauss, gausslobatto, quadrature_t
    use edgetype_mod,       only: EdgeBuffer_t
    use edge_mod,       only: initEdgeBuffer, FreeEdgeBuffer, edgeVpack, edgeVunpack
-   use iop,            only: readiopdata, setiopupdate
-   use scamMod,        only: use_iop, doiopupdate, single_column
+   use scamMod,        only: use_iop, doiopupdate, single_column, &
+                             setiopupdate, readiopdata
    use parallel_mod,   only : par
    use element_mod,    only : element_t
 
@@ -40,7 +40,7 @@ module stepon
   public stepon_run1    ! run method phase 1
   public stepon_run2    ! run method phase 2
   public stepon_run3    ! run method phase 3
-  public stepon_final  ! Finalization
+  public stepon_final   ! Finalization
   
 !----------------------------------------------------------------------
 !
@@ -508,6 +508,8 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
    use camsrfexch,  only: cam_out_t     
    use dyn_comp,    only: dyn_run
    use time_mod,    only: tstep
+   use hycoef,      only: hyam, hybm
+   use se_single_column_mod, only: scm_setfield 
    real(r8), intent(in) :: dtime   ! Time-step
    type(cam_out_t),     intent(inout) :: cam_out(:) ! Output from CAM to surface
    type(physics_state), intent(inout) :: phys_state(begchunk:endchunk)
@@ -529,7 +531,8 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
      ! Update IOP properties e.g. omega, divT, divQ
      
      if (doiopupdate) then
-       call readiopdata(elem)
+       call readiopdata(hyam,hybm)
+       call scm_setfield(elem)
      endif   
 
    endif   

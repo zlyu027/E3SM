@@ -72,11 +72,12 @@ contains
     
     use constituents,     only: pcnst, cnst_name, cnst_read_iv, cnst_get_ind
     use commap,           only: clat,clon
-    use iop,              only: setiopupdate,readiopdata
+    use scamMod,          only: readiopdata, setiopupdate
     use dyn_comp ,        only: dyn_import_t
     use physconst,        only: pi
     use cam_pio_utils,    only: cam_pio_get_var
-    
+    use hycoef,           only: hyam, hybm 
+    use eul_single_column_mod, only: scm_setinitial
 !
 ! Arguments
 !
@@ -283,7 +284,8 @@ contains
           loniop(1)=(mod(scmlon-2.0_r8+360.0_r8,360.0_r8))*pi/180.0_r8
           loniop(2)=(mod(scmlon+2.0_r8+360.0_r8,360.0_r8))*pi/180.0_r8
           call setiopupdate()
-          call readiopdata()
+          call readiopdata(hyam,hybm)
+          call scm_setinitial()
           ps(:,:,1)     = ps(:,:,n3)
           if (have_u) u3(:,:,:,1)   = u3(:,:,:,n3)
           if (have_v) v3(:,:,:,1)   = v3(:,:,:,n3)
