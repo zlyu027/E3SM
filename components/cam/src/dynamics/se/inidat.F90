@@ -87,7 +87,7 @@ contains
     real(r8), parameter :: D2_0 = 2.0_r8
     character*16 :: subname='READ_INIDAT'
 
-    if(par%dynproc) then
+    if(iam < par%nprocs) then
        elem=> dyn_in%elem
     else
        nullify(elem)
@@ -102,7 +102,7 @@ contains
     tmp = 0.0_r8
     allocate(qtmp(npsq*nelemd,nlev))
 
-    if (par%dynproc) then
+    if (iam < par%nprocs) then
       if(elem(1)%idxP%NumUniquePts <=0 .or. elem(1)%idxP%NumUniquePts > np*np) then
          write(iulog,*)  elem(1)%idxP%NumUniquePts
          call endrun(trim(subname)//': invalid idxP%NumUniquePts')
@@ -373,8 +373,8 @@ contains
     
     ! once we've read all the fields we do a boundary exchange to 
     ! update the redundent columns in the dynamics
-    if(par%dynproc) then
-       call initEdgeBuffer(par, edge, elem, (3+pcnst)*nlev+2)
+    if(iam < par%nprocs) then
+       call initEdgeBuffer(par, edge, elem, (3+pcnst)*nlev+2, numthreads_in=1)
     end if
     do ie=1,nelemd
        kptr=0
@@ -388,7 +388,7 @@ contains
        kptr=kptr+nlev
        call edgeVpack(edge, elem(ie)%state%Q(:,:,:,:),nlev*pcnst,kptr,ie)
     end do
-    if(par%dynproc) then
+    if(iam < par%nprocs) then
        call bndry_exchangeV(par,edge)
     end if
     do ie=1,nelemd
@@ -413,7 +413,7 @@ contains
        end do
     end do
 
-    if(par%dynproc) then
+    if(iam < par%nprocs) then
        call FreeEdgeBuffer(edge)
     end if
 

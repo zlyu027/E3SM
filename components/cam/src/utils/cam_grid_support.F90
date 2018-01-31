@@ -1986,7 +1986,7 @@ contains
         if (ierr /= PIO_NOERR) then
           ! Time to define the attribute
           ierr = pio_put_att(File, PIO_GLOBAL, trim(attr%name), attr%ival)
-          call cam_pio_handle_error(ierr, 'Unable to define attribute in write_cam_grid_attr_0d_int')
+!          call cam_pio_handle_error(ierr, 'Unable to define attribute in write_cam_grid_attr_0d_int')
         end if
       end if
     end if
