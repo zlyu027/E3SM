@@ -198,14 +198,10 @@ contains
         end if
       end if
 
-      write(*,*) 'NCWTF', single_column, dim1e
-
       if (single_column .and. dim1e == 1) then
-        write(*,*) 'NCWTF WENT HERE'
         strt(1) = dim1b
         cnt(1) = 1 
         call shr_scam_getCloseLatLon(ncid%fh,scmlat,scmlon,closelat,closelon,latidx,lonidx)
-        write(*,*) 'NCWTF lats and lons', scmlat, scmlon, closelat, closelon, latidx, lonidx
         strt(1) = lonidx
         ierr = pio_get_var(ncid, varid, strt, cnt, field)
 

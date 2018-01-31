@@ -509,7 +509,7 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
    use dyn_comp,    only: dyn_run
    use time_mod,    only: tstep
    use hycoef,      only: hyam, hybm
-   use se_single_column_mod, only: scm_setfield 
+   use se_single_column_mod, only: scm_setfield, scm_setinitial 
    real(r8), intent(in) :: dtime   ! Time-step
    type(cam_out_t),     intent(inout) :: cam_out(:) ! Output from CAM to surface
    type(physics_state), intent(inout) :: phys_state(begchunk:endchunk)
@@ -531,6 +531,7 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
      ! Update IOP properties e.g. omega, divT, divQ
      
      if (doiopupdate) then
+       call scm_setinitial(elem)
        call readiopdata(hyam,hybm)
        call scm_setfield(elem)
      endif   

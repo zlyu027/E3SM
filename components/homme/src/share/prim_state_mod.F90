@@ -704,65 +704,59 @@ subroutine prim_apply_forcing(elem,hvcoord,tl,n,t_before_advance,nets,nete)
     !   IE   Cp*dpdn*T  + (Cpv-Cp) Qdpdn*T
     !        Cp*dpdn(n)*T(n+1) + (Cpv-Cp) Qdpdn(n)*T(n+1)
     !        [Cp + (Cpv-Cp) Q(n)] *dpdn(n)*T(n+1) 
-    do ie=nets,nete
+
+    ie=1
 
 #if (defined COLUMN_OPENMP)
 !$omp parallel do private(k)
 #endif
-       do k=1,nlev
-          dpt1(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-               ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem(ie)%state%ps_v(:,:,t1)
-          dpt2(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-               ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem(ie)%state%ps_v(:,:,t2)
-       enddo
-
-      do k=1,nlev
-        p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*elem(ie)%state%ps_v(:,:,t2)
-      end do
- 
-      dt=2.0*tstep 
-
-      icount=1
-      do i=1,np
-        do j=1,np
-         
-          stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
-          stateQin1(:,:) = stateQin_qfcst(:,:)
-          stateQin2(:,:) = stateQin_qfcst(:,:)	
-    
-	  dummy1(:) = 0.0 
-          forecast_ps = elem(ie)%state%ps_v(i,j,1)
-        
-          call forecast(1,elem(ie)%state%ps_v(i,j,t2),&
-                 elem(ie)%state%ps_v(i,j,t2),forecast_ps,forecast_u,&
-		 elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
-		 forecast_v,elem(ie)%state%v(i,j,2,:,t2),&
-		 elem(ie)%state%v(i,j,2,:,t1),forecast_t,&
-		 elem(ie)%state%T(i,j,:,t2),elem(ie)%state%T(i,j,:,t1),&
-		 forecast_q,stateQin2,stateQin1,dt,elem(ie)%derived%fT(i,j,:,1),dummy1,dummy1,&
-                 stateQin_qfcst,p(i,j,:),1.0,stateQin1,1)		      
- 
-          do t=1,3
-            elem(ie)%state%T(i,j,:,t) = forecast_t(:)
-            elem(ie)%state%v(i,j,1,:,t) = forecast_u(:)
-            elem(ie)%state%v(i,j,2,:,t) = forecast_v(:)
-            elem(ie)%state%Q(i,j,:,:) = forecast_q(:,:)
-          enddo
-
-          elem(ie)%state%ps_v(i,j,:) = forecast_ps
-
-          do t=1,2
-            do pp=1,pcnst
-              elem(ie)%state%Qdp(i,j,:,pp,t)=forecast_q(:,pp)*dpt2(i,j,:)
-            enddo
-          enddo
-
-          icount=icount+1
-        enddo
-      enddo
-
+    do k=1,nlev
+      dpt1(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
+        ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem(ie)%state%ps_v(:,:,t1)
+      dpt2(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
+        ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem(ie)%state%ps_v(:,:,t2)
     enddo
+
+    do k=1,nlev
+      p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*elem(ie)%state%ps_v(:,:,t2)
+    end do
+ 
+    dt=2.0*tstep 
+
+    i=1
+    j=1
+        
+    stateQin_qfcst(:,:) = elem(ie)%state%Q(i,j,:,:)
+    stateQin1(:,:) = stateQin_qfcst(:,:)
+    stateQin2(:,:) = stateQin_qfcst(:,:)	
     
+    dummy1(:) = 0.0 
+    forecast_ps = elem(ie)%state%ps_v(i,j,1)
+        
+    call forecast(97,elem(ie)%state%ps_v(i,j,t2),&
+           elem(ie)%state%ps_v(i,j,t2),forecast_ps,forecast_u,&
+           elem(ie)%state%v(i,j,1,:,t2),elem(ie)%state%v(i,j,1,:,t1),& 
+	   forecast_v,elem(ie)%state%v(i,j,2,:,t2),&
+           elem(ie)%state%v(i,j,2,:,t1),forecast_t,&
+	   elem(ie)%state%T(i,j,:,t2),elem(ie)%state%T(i,j,:,t1),&
+	   forecast_q,stateQin2,stateQin1,dt,elem(ie)%derived%fT(i,j,:,1),dummy1,dummy1,&
+           stateQin_qfcst,p(i,j,:),stateQin1,1)		      
+ 
+    do t=1,3
+      elem(ie)%state%T(i,j,:,t) = forecast_t(:)
+      elem(ie)%state%v(i,j,1,:,t) = forecast_u(:)
+      elem(ie)%state%v(i,j,2,:,t) = forecast_v(:)
+      elem(ie)%state%Q(i,j,:,:) = forecast_q(:,:)
+    enddo
+
+    elem(ie)%state%ps_v(i,j,:) = forecast_ps
+
+    do t=1,2
+      do pp=1,pcnst
+        elem(ie)%state%Qdp(i,j,:,pp,t)=forecast_q(:,pp)*dpt2(i,j,:)
+      enddo
+    enddo
+
 end subroutine prim_apply_forcing   
 
 subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)

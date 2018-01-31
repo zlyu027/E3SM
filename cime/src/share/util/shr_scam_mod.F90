@@ -500,10 +500,6 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
      closelatidx = 1
    endif
 
-   write(*,*) 'TARGETLATLON ', targetLat, targetLon
-   write(*,*) 'CLOSELATANDLON ', closelat, closelon
-   write(*,*) 'CLOSEIDX', closelatidx, closelonidx
-
    return
 end subroutine shr_scam_getCloseLatLonPIO
 

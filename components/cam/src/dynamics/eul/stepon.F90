@@ -243,7 +243,8 @@ subroutine stepon_run3( ztodt, cam_out, phys_state, dyn_in, dyn_out )
 !
 !----------------------------------------------------------------------- 
   use dyn_comp,       only: dyn_import_t, dyn_export_t
-  use eul_control_mod,only: eul_nsplit
+  use eul_control_mod, only: eul_nsplit 
+  use eul_single_column_mod, only: scm_setinitial
   use hycoef,         only: hyam, hybm
   real(r8), intent(in) :: ztodt            ! twice time step unless nstep=0
   type(cam_out_t), intent(inout) :: cam_out(begchunk:endchunk)
@@ -262,7 +263,10 @@ subroutine stepon_run3( ztodt, cam_out, phys_state, dyn_in, dyn_out )
      
      ! Update IOP properties e.g. omega, divT, divQ
      
-     if (doiopupdate) call readiopdata(hyam,hybm)
+     if (doiopupdate) then
+       call scm_setinitial()
+       call readiopdata(hyam,hybm)
+     endif
      
   endif
 

@@ -9,7 +9,6 @@ module getinterpnetcdfdata
 !
   use cam_abortutils,    only: endrun
   use pmgrid,        only: plev
-!  use scamMod,       only: scm_crm_mode
   use cam_logfile,   only: iulog
   implicit none
   private
@@ -21,7 +20,7 @@ module getinterpnetcdfdata
 contains
 
 subroutine getinterpncdata( NCID, camlat, camlon, TimeIdx, &
-   varName, have_surfdat, surfdat, fill_ends, &
+   varName, have_surfdat, surfdat, fill_ends, scm_crm_mode, &
    press, npress, ps, hyam, hybm, outData, STATUS )
 
 !     getinterpncdata: extracts the entire level dimension for a 
@@ -43,6 +42,7 @@ subroutine getinterpncdata( NCID, camlat, camlon, TimeIdx, &
    real(r8), intent(in) :: camlat,camlon ! target lat and lon to be extracted  
    logical, intent(in)  :: have_surfdat  ! is surfdat provided
    logical, intent(in)  :: fill_ends ! extrapolate the end values
+   logical, intent(in)  :: scm_crm_mode
    integer, intent(in)  :: npress        ! number of dataset pressure levels
    real(r8), intent(in) :: press(npress) ! dataset pressure levels
    real(r8), intent(in) :: ps ! dataset pressure levels
@@ -198,7 +198,7 @@ subroutine getinterpncdata( NCID, camlat, camlon, TimeIdx, &
 !     fill in missing surface data by extrapolation
 !
 
-!      if(.not.scm_crm_mode) then
+      if(.not.scm_crm_mode) then
          if ( have_surfdat ) then
             tmp(npress) = surfdat
          else
@@ -212,7 +212,7 @@ subroutine getinterpncdata( NCID, camlat, camlon, TimeIdx, &
             endif
             surfdat = tmp(npress)
          endif
-!      endif
+      endif
 
 #if DEBUG > 1
 !

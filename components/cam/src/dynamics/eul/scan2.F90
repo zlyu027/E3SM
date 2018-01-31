@@ -70,7 +70,7 @@ subroutine scan2run (ztodt, cwava, etamid,t2      ,fu      ,fv    )
 #endif
    use physconst,    only: cpair
    use scamMod,      only: fixmascam,alphacam,betacam,use_iop,&
-                           single_column,forecast
+                           single_column
    use eul_single_column_mod, only: eul_post_forecast
    use pspect,       only: pnmax
    use tfilt_massfix, only: tfilt_massfixrun

@@ -80,7 +80,7 @@ CONTAINS
       call addfld ('TAURELAX',(/ 'lev' /),    'A','seconds','relaxation time constant',gridname=trim(dyngrid))
       call add_default ('TDIFF     ', 1, ' ')
       call add_default ('QDIFF     ', 1, ' ')
-   end subroutine scm_intht
+   end subroutine scm_intht   
 
 !#######################################################################
  end module history_scam
