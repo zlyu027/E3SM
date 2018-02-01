@@ -169,7 +169,7 @@ subroutine stepon_run1( ztodt, phys_state, phys_tend , pbuf2d, dyn_in, dyn_out)
   use dyn_comp,       only: dyn_import_t, dyn_export_t
   use time_manager,   only: get_nstep
   use prognostics,    only: pdeld
-  
+  use hycoef,         only: hyam, hybm  
   use dp_coupling,    only: d_p_coupling
   use eul_control_mod,only: eul_nsplit
   use physics_buffer, only : physics_buffer_desc
@@ -207,7 +207,7 @@ subroutine stepon_run1( ztodt, phys_state, phys_tend , pbuf2d, dyn_in, dyn_out)
   
   if (single_column) then
     iop_update_surface = .true. 
-    if (doiopupdate) call readiopdata( iop_update_surface )
+    if (doiopupdate) call readiopdata( iop_update_surface,hyam,hybm )
   endif
   
   !
