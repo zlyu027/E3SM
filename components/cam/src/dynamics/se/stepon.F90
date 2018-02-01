@@ -56,6 +56,9 @@ module stepon
 !
 ! !PRIVATE DATA MEMBERS:
 !
+
+  logical :: iop_update_surface
+
   type (derivative_t)   :: deriv           ! derivative struct
   type (quadrature_t)   :: gv,gp           ! quadratures on velocity and pressure grids
   type (EdgeBuffer_t) :: edgebuf              ! edge buffer
@@ -160,8 +163,10 @@ subroutine stepon_run1( dtime_out, phys_state, phys_tend,               &
   
   use dp_coupling, only: d_p_coupling
   use time_mod,    only: tstep, phys_tscale       ! dynamics timestep
+  use time_manager, only: is_last_step
   use control_mod, only: ftype
   use physics_buffer, only : physics_buffer_desc
+  use hycoef,      only: hyam, hybm
   implicit none
 !
 ! !OUTPUT PARAMETERS:
@@ -203,7 +208,7 @@ subroutine stepon_run1( dtime_out, phys_state, phys_tend,               &
   
   if (single_column) then
     iop_update_surface = .true. 
-    if (doiopupdate) call readiopdata( iop_update_surface )
+    if (doiopupdate) call readiopdata( iop_update_surface,hyam,hybm )
   endif   
    
 end subroutine stepon_run1
@@ -542,9 +547,10 @@ subroutine stepon_run3(dtime, cam_out, phys_state, dyn_in, dyn_out)
      
      ! Update IOP properties e.g. omega, divT, divQ
      
+     iop_update_surface = .false. 
      if (doiopupdate) then
        call scm_setinitial(elem)
-       call readiopdata(hyam,hybm)
+       call readiopdata(iop_update_surface,hyam,hybm)
        call scm_setfield(elem)
      endif   
 

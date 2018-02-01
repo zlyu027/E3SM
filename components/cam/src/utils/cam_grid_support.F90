@@ -2114,7 +2114,7 @@ contains
            attr%vardesc, existOK=.false.)
       ! long_name
       ierr = pio_put_att(File, attr%vardesc, 'long_name', trim(attr%long_name))
-      call cam_pio_handle_error(ierr, 'Error writing "long_name" attr in write_cam_grid_attr_1d_r8')
+!      call cam_pio_handle_error(ierr, 'Error writing "long_name" attr in write_cam_grid_attr_1d_r8')
     end if
 
   end subroutine write_cam_grid_attr_1d_r8

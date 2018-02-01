@@ -94,6 +94,8 @@ contains
     real(r8) :: scmposlon, minpoint, testlat, testlon, testval 
     character*16 :: subname='READ_INIDAT'
 
+    logical :: iop_update_surface
+
     if(par%dynproc) then
        elem=> dyn_in%elem
     else
@@ -429,8 +431,9 @@ contains
     end do
     
     if (single_column) then
+      iop_update_surface = .false.
       call setiopupdate()
-      call readiopdata(hyam,hybm)
+      call readiopdata(iop_update_surface,hyam,hybm)
       call scm_setinitial(elem)
     endif
 
@@ -439,7 +442,7 @@ contains
       ! once we've read all the fields we do a boundary exchange to 
       ! update the redundent columns in the dynamics
       if(par%dynproc) then
-        call initEdgeBuffer(par, edge, elem, (3+pcnst)*nlev+2, numthreads_in=1)
+        call initEdgeBuffer(par, edge, elem, (3+pcnst)*nlev+2)
       end if
       do ie=1,nelemd
         kptr=0

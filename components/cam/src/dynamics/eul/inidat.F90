@@ -73,7 +73,6 @@ contains
     use constituents,     only: pcnst, cnst_name, cnst_read_iv, cnst_get_ind
     use commap,           only: clat,clon
     use scamMod,          only: readiopdata, setiopupdate
-    use iop,              only: setiopupdate,readiopdata
     use dyn_comp ,        only: dyn_import_t
     use physconst,        only: pi
     use cam_pio_utils,    only: cam_pio_get_var

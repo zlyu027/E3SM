@@ -1216,11 +1216,11 @@ contains
     use scamMod, only: single_column
     use kinds, only : real_kind
     use dimensions_mod, only : np, np, nlev, npsq
-    use control_mod, only : use_cpstar
+    use control_mod, only : use_cpstar, qsplit
     use hybvcoord_mod, only : hvcoord_t
     use element_mod, only : element_t
     use physical_constants, only : Cp, cpwater_vapor
-    use time_mod, only: tstep
+    use time_mod
     use constituents, only: pcnst
     use time_manager, only: get_nstep
     use shr_const_mod, only: SHR_CONST_PI
@@ -1298,7 +1298,7 @@ contains
 	   forecast_v,elem(ie)%state%v(i,j,2,:,t2),&
            elem(ie)%state%v(i,j,2,:,t1),forecast_t,&
 	   elem(ie)%state%T(i,j,:,t2),elem(ie)%state%T(i,j,:,t1),&
-	   forecast_q,stateQin2,stateQin1,dt,elem(ie)%derived%fT(i,j,:,1),dummy1,dummy1,&
+	   forecast_q,stateQin2,stateQin1,dt,elem(ie)%derived%fT(i,j,:),dummy1,dummy1,&
            stateQin_qfcst,p(i,j,:),stateQin1,1)		      
  
     do t=1,3
