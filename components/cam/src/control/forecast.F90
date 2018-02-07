@@ -164,8 +164,6 @@ subroutine forecast(lat, psm1, psm2,ps, &
    end if
 
 !
-   ps = psobs
-
    call plevs0(nlon    ,plon   ,plev    ,psm1   ,pintm1  ,pmidm1 ,pdelm1)
    call plevs0(nlon    ,plon   ,plev    ,psm2   ,pintm2  ,pmidm2 ,pdelm2)
 !

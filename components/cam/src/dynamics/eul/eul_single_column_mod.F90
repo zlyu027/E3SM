@@ -11,6 +11,7 @@ use time_manager, only: get_nstep
 implicit none
 
 public scm_setinitial
+public scm_setfields
 public eul_post_forecast
 
 !===========================================================================
@@ -30,8 +31,6 @@ subroutine scm_setinitial
     call cnst_get_ind('CLDLIQ', icldliq)
     call cnst_get_ind('CLDICE', icldice)
 
-    if (have_ps) ps(1,1,n3)=psobs
-
     thelev=1
     do k=1,PLEV
       if (tobs(k) .ne. 0) then
@@ -41,23 +40,8 @@ subroutine scm_setinitial
     enddo
 
 1000 continue
-    if (get_nstep() .le. 1) then 
-      do k=thelev,PLEV
-        if (have_t) t3(1,k,1,n3)=tobs(k)
-        if (have_q) q3(1,k,1,1,n3)=qobs(k)
-        if (have_u) u3(1,k,1,n3)=uobs(k)
-        if (have_v) v3(1,k,1,n3)=vobs(k)
-        if (have_numliq) q3(1,k,inumliq,1,n3)=numliqobs(k)
-        if (have_cldliq) q3(1,k,icldliq,1,n3)=cldliqobs(k)
-        if (have_numice) q3(1,k,inumice,1,n3)=numiceobs(k)
-        if (have_cldice) q3(1,k,icldice,1,n3)=cldiceobs(k)
-      enddo 
-
+    if (get_nstep() .le. 1) then
       do k=1,thelev-1
-        t3(1,k,1,n3)=t3(1,k,1,1)
-        q3(1,k,1,1,n3)=q3(1,k,1,1,1)
-        u3(1,k,1,n3)=u3(1,k,1,1)
-        v3(1,k,1,n3)=v3(1,k,1,1)
         tobs(k)=t3(1,k,1,1)
         qobs(k)=q3(1,k,1,1,1)
       enddo
@@ -66,9 +50,38 @@ subroutine scm_setinitial
       qobs(:)=q3(1,:,1,1,n3)
     endif
 
+    if (get_nstep() .eq. 0) then
+      do k=thelev,PLEV
+        if (have_t) t3(1,k,1,n3)=tobs(k)
+        if (have_q) q3(1,k,1,1,n3)=qobs(k)
+      enddo
+
+      do k=1,thelev-1
+        if (have_t) t3(1,k,1,n3)=t3(1,k,1,1)
+        if (have_q) q3(1,k,1,1,n3)=q3(1,k,1,1,1)
+      enddo
+
+      if (have_ps) ps(1,1,n3)=psobs
+      if (have_numliq) q3(1,:,inumliq,1,n3)=numliqobs(:)
+      if (have_cldliq) q3(1,:,icldliq,1,n3)=cldliqobs(:)
+      if (have_numice) q3(1,:,inumice,1,n3)=numiceobs(:)
+      if (have_cldice) q3(1,:,icldice,1,n3)=cldiceobs(:)
+      if (have_u) u3(1,:,1,n3)=uobs(:)
+      if (have_v) v3(1,:,1,n3)=vobs(:)
+
+    endif
+
   endif
 
 end subroutine scm_setinitial
+
+subroutine scm_setfields
+
+  implicit none
+
+  if (have_ps) ps(1,1,n3)=psobs
+
+end subroutine scm_setfields
 
 subroutine eul_post_forecast(lat, psm1, qfcst, cwava, &
                    etamid  ,qminus  ,hw2al   ,hw2bl, &
