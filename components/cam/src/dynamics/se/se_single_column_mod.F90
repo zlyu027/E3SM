@@ -64,14 +64,16 @@ subroutine scm_setinitial(elem)
               if (have_q) elem(ie)%state%Q(i,j,k,1)=qobs(k)
             enddo
 
-            if (have_ps) elem(ie)%state%ps_v(i,j,1) = psobs
-            if (have_u) elem(ie)%state%v(i,j,1,k,1) = uobs(k)
-            if (have_v) elem(ie)%state%v(i,j,2,k,1) = vobs(k)
-            if (have_numliq) elem(ie)%state%Q(i,j,k,inumliq) = numliqobs(k)
-            if (have_cldliq) elem(ie)%state%Q(i,j,k,icldliq) = cldliqobs(k)
-            if (have_numice) elem(ie)%state%Q(i,j,k,inumice) = numiceobs(k)
-            if (have_cldice) elem(ie)%state%Q(i,j,k,icldice) = cldiceobs(k)
-            if (have_omega) elem(ie)%derived%omega_p(i,j,k) = wfld(k)
+            do k=1,PLEV
+              if (have_ps) elem(ie)%state%ps_v(i,j,1) = psobs
+              if (have_u) elem(ie)%state%v(i,j,1,k,1) = uobs(k)
+              if (have_v) elem(ie)%state%v(i,j,2,k,1) = vobs(k)
+              if (have_numliq) elem(ie)%state%Q(i,j,k,inumliq) = numliqobs(k)
+              if (have_cldliq) elem(ie)%state%Q(i,j,k,icldliq) = cldliqobs(k)
+              if (have_numice) elem(ie)%state%Q(i,j,k,inumice) = numiceobs(k)
+              if (have_cldice) elem(ie)%state%Q(i,j,k,icldice) = cldiceobs(k)
+              if (have_omega) elem(ie)%derived%omega_p(i,j,k) = wfld(k)
+            enddo
 
           endif
 
