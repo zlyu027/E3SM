@@ -1036,7 +1036,7 @@
          if (se_grid) then
            allocate(lats(ni))
          else
-           allocate(lons(nj))
+           allocate(lats(nj))
          endif
 
          allocate(lons(ni))
