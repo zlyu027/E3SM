@@ -235,7 +235,7 @@ contains
     ! as a function of soluble mineral N and total soil water outflow.
     !
     ! !USES:
-    use clm_varpar       , only : nlevdecomp, nlevsoi
+    use clm_varpar       , only : nlevdecomp, nlevsoi, nlevgrnd
     use clm_time_manager , only : get_step_size
     !
     ! !ARGUMENTS:
@@ -249,6 +249,7 @@ contains
     !
     ! !LOCAL VARIABLES:
     integer  :: j,c,fc                                 ! indices
+    integer  :: nlevbed				       ! number of layers to bedrock
     real(r8) :: dt                                     ! radiation time step (seconds)
     real(r8) :: sf                                     ! soluble fraction of mineral N (unitless)
     real(r8) :: sf_no3                                 ! soluble fraction of NO3 (unitless)
@@ -260,6 +261,7 @@ contains
     !-----------------------------------------------------------------------
 
     associate(& 
+    	 nlev2bed            => col_pp%nlevbed                            , & ! Input:  [integer (:)    ]  number of layers to bedrock
          h2osoi_liq          => waterstate_vars%h2osoi_liq_col            , & ! Input:  [real(r8) (:,:) ]  liquid water (kg/m2) (new) (-nlevsno+1:nlevgrnd)
 
          qflx_drain          => waterflux_vars%qflx_drain_col             , & ! Input:  [real(r8) (:)   ]  sub-surface runoff (mm H2O /s)                    
@@ -285,27 +287,26 @@ contains
 
       ! calculate the total soil water
       tot_water(bounds%begc:bounds%endc) = 0._r8
-      do j = 1,nlevsoi
-         do fc = 1,num_soilc
-            c = filter_soilc(fc)
+      do fc = 1,num_soilc
+      	 c = filter_soilc(fc)
+	 nlevbed = nlev2bed(c)
+      	 do j = 1,nlevbed
             tot_water(c) = tot_water(c) + h2osoi_liq(c,j)
          end do
       end do
 
       ! for runoff calculation; calculate total water to a given depth
       surface_water(bounds%begc:bounds%endc) = 0._r8
-      do j = 1,nlevsoi
-         if ( zisoi(j) <= depth_runoff_Nloss)  then
-            do fc = 1,num_soilc
-               c = filter_soilc(fc)
+      do fc = 1,num_soilc
+      	 c = filter_soilc(fc)
+	 nlevbed = nlev2bed(c)
+      	 do j = 1,nlevbed
+            if ( zisoi(j) <= depth_runoff_Nloss)  then
                surface_water(c) = surface_water(c) + h2osoi_liq(c,j)
-            end do
-         elseif ( zisoi(j-1) < depth_runoff_Nloss)  then
-            do fc = 1,num_soilc
-               c = filter_soilc(fc)
+            elseif ( zisoi(j-1) < depth_runoff_Nloss)  then
                surface_water(c) = surface_water(c) + h2osoi_liq(c,j) * ( (depth_runoff_Nloss - zisoi(j-1)) / col_pp%dz(c,j))
-            end do
-         endif
+	    end if
+         end do
       end do
 
       ! Loop through columns
@@ -513,7 +514,7 @@ contains
 
          fpg              =>  cnstate_vars%fpg_col                   , & ! Input:  [real(r8) (:) ]  fraction of potential gpp (no units)              
          gddmaturity      =>  cnstate_vars%gddmaturity_patch         , & ! Input:  [real(r8) (:) ]  gdd needed to harvest                             
-         croplive         =>  crop_vars%croplive_patch            , & ! Input:  [logical  (:) ]  true if planted and not harvested                  
+         croplive         =>  cnstate_vars%croplive_patch            , & ! Input:  [logical  (:) ]  true if planted and not harvested                  
 
          sminn            =>  nitrogenstate_vars%sminn_col           , & ! Input:  [real(r8) (:) ]  (kgN/m2) soil mineral N                           
          plant_ndemand    =>  nitrogenflux_vars%plant_ndemand_patch  , & ! Input:  [real(r8) (:) ]  N flux required to support initial GPP (gN/m2/s)  
@@ -667,8 +668,7 @@ contains
           do p = col_pp%pfti(c), col_pp%pftf(c)
               if (veg_pp%active(p).and. (veg_pp%itype(p) .ne. noveg)) then
                   ! calculate c cost of n2 fixation: fisher 2010 gbc doi:10.1029/2009gb003621
-                  r_fix = -6.25_r8*(exp(-3.62_r8 + 0.27_r8*(t_soi10cm_col(c)-273.15_r8)*(1.0_r8-0.5_r8&
-                       *(t_soi10cm_col(c)-273.15_r8)/25.15_r8))-2.0_r8) 
+                  r_fix = -6.25_r8*(exp(-3.62_r8 + 0.27_r8*(t_soi10cm_col(c)-273.15_r8)*(1.0_r8-0.5_r8*(t_soi10cm_col(c)-273.15_r8)/25.15_r8))-2.0_r8) 
                   ! calculate c cost of root n uptake: rastetter 2001, ecosystems, 4(4), 369-388.
                   r_nup = benefit_pgpp_pleafc(p) / max(pnup_pfrootc(p),1e-20_r8)
                   ! calculate fraction of root that is nodulated: wang 2007 gbc doi:10.1029/2006gb002797
@@ -679,8 +679,7 @@ contains
                   ! 78% atm * 6.1e-4 mol/L/atm * 28 g/mol * 1e3L/m3 * water content m3/m3 at 10 cm
                   N2_aq = 0.78_r8 * 6.1e-4_r8 *28._r8 *1.e3_r8 * h2osoi_vol(c,4)
                   ! calculate n2 fixation rate for each pft and add it to column total
-                  nfix_to_sminn(c) = nfix_to_sminn(c) + vmax_nfix(veg_pp%itype(p)) * frootc(p) * cn_scalar(p) *f_nodule&
-                       * t_scalar(c,1) * &
+                  nfix_to_sminn(c) = nfix_to_sminn(c) + vmax_nfix(veg_pp%itype(p)) * frootc(p) * cn_scalar(p) *f_nodule * t_scalar(c,1) * &
                      N2_aq/ (N2_aq + km_nfix(veg_pp%itype(p))) * veg_pp%wtcol(p)
               end if
           end do
