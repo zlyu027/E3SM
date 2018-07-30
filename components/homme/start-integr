@@ -1,0 +1,14 @@
+#!/bin/bash
+
+rm -rf tsl/
+acme-sl-integr/cime/scripts/create_newcase -case tsl -res ne30_ne30 -mach sandiatoss3 -compiler intel -compset FC5AV1C-L
+cd tsl
+./xmlchange CAM_TARGET=preqx-sl
+./case.setup
+./case.build --sharedlib-only
+./case.build -b atm
+
+
+
+
+
