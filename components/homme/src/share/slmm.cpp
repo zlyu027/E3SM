@@ -2762,7 +2762,9 @@ int main (int argc, char** argv) {
 #endif
 
 #ifndef IR_MAIN
-# include "config.h.c"
+#ifdef HAVE_CONFIG_H
+#include "config.h.c"
+#endif
 #else
 # define QSIZE_D 64
 #endif
