@@ -87,6 +87,7 @@ endif
 
 HOMMESL ?= $(shell $(CASEROOT)/xmlquery --caseroot $(CASEROOT) CAM_TARGET --value)
 ifeq ($(strip $(HOMMESL)), preqx-sl)
+   $(warning THIS IS AAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
    USE_CXX = true
    USE_HOMMESL = TRUE
 endif
