@@ -62,6 +62,7 @@ module element_ops
 
 contains
 
+! not including dp in input here? always a ps routine
   recursive subroutine get_field(elem,name,field,hvcoord,nt,ntQ)
   implicit none
   type (element_t),       intent(in) :: elem
@@ -71,16 +72,21 @@ contains
   integer,                intent(in) :: nt
   integer,                intent(in) :: ntQ
 
+  ! local
   integer :: k
   real(kind=real_kind), dimension(np,np,nlev) :: tmp, p, pnh, dp, omega, rho, T, cp_star, Rstar, kappa_star
 
+  do k=1,nlev
+    dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0+(hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem%state%ps_v(:,:,nt)
+  enddo
+
   select case(name)
-    case ('temperature','T'); call get_temperature(elem,field,hvcoord,nt,ntQ)
-    case ('pottemp','Th');    call get_pottemp(elem,field,hvcoord,nt,ntQ)
-    case ('phi','geo');       call get_phi(elem,field,hvcoord,nt,ntQ)
-    case ('dpnh_dp');         call get_dpnh_dp(elem,field,hvcoord,nt,ntQ)
-    case ('pnh');             call get_nonhydro_pressure(elem,field,tmp  ,hvcoord,nt,ntQ)
-    case ('exner');           call get_nonhydro_pressure(elem,tmp  ,field,hvcoord,nt,ntQ)
+    case ('temperature','T'); call get_temperature(elem,dp,field,hvcoord,nt,ntQ)
+    case ('pottemp','Th');    call get_pottemp(elem,dp,field,hvcoord,nt,ntQ)
+    case ('phi','geo');       call get_phi(elem,dp,field,hvcoord,nt,ntQ)
+    case ('dpnh_dp');         call get_dpnh_dp(elem,dp,field,hvcoord,nt,ntQ)
+    case ('pnh');             call get_nonhydro_pressure(elem,dp,field,tmp  ,hvcoord,nt,ntQ)
+    case ('exner');           call get_nonhydro_pressure(elem,dp,tmp  ,field,hvcoord,nt,ntQ)
 
     case ('p');
       do k=1,nlev
@@ -88,9 +94,7 @@ contains
       enddo
 
     case ('dp');
-      do k=1,nlev
-        field(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 +(hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem%state%ps_v(:,:,nt)
-      enddo
+      field = dp
 
     case ('omega');
       call get_field(elem,'p',p,hvcoord,nt,ntQ)
@@ -102,7 +106,7 @@ contains
       call get_field(elem,'dp',dp,hvcoord,nt,ntQ)
       call get_cp_star(cp_star,elem%state%Qdp(:,:,:,1,ntQ),dp)
       call get_kappa_star(kappa_star,elem%state%Qdp(:,:,:,1,ntQ),dp)
-      call get_temperature(elem,T,hvcoord,nt,ntQ)
+      call get_temperature(elem,dp,T,hvcoord,nt,ntQ)
 
       Rstar = cp_star*kappa_star
       field = pnh/(Rstar*T)
@@ -127,7 +131,7 @@ contains
   end subroutine
 
   !_____________________________________________________________________
-  subroutine get_pottemp(elem,pottemp,hvcoord,nt,ntQ)
+  subroutine get_pottemp(elem,dp,pottemp,hvcoord,nt,ntQ)
   !
   ! Should only be called outside timestep loop, state variables on reference levels
   !
@@ -136,18 +140,14 @@ contains
   type (element_t), intent(in)        :: elem
   real (kind=real_kind), intent(out)  :: pottemp(np,np,nlev)
   type (hvcoord_t),     intent(in)    :: hvcoord                      ! hybrid vertical coordinate struct
-  integer, intent(in) :: nt
-  integer, intent(in) :: ntQ
-  
-  !   local
-  real (kind=real_kind) :: dp(np,np,nlev)
+  integer, intent(in)                 :: nt
+  integer, intent(in)                 :: ntQ
+  real (kind=real_kind), intent(in)   :: dp(np,np,nlev)
+
+  ! local
   real (kind=real_kind) :: cp_star(np,np,nlev)
   integer :: k
 
-  do k=1,nlev
-     dp(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-          ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem%state%ps_v(:,:,nt)
-  enddo
   call get_cp_star(cp_star,elem%state%Qdp(:,:,:,1,ntQ),dp(:,:,:))
   
   pottemp(:,:,:) = elem%state%theta_dp_cp(:,:,:,nt)/(Cp_star(:,:,:)*dp(:,:,:))
@@ -156,7 +156,7 @@ contains
   
 
   !_____________________________________________________________________
-  subroutine get_temperature(elem,temperature,hvcoord,nt,ntQ)
+  subroutine get_temperature(elem,dp,temperature,hvcoord,nt,ntQ)
   !
   ! Should only be called outside timestep loop, state variables on reference levels
   !
@@ -165,11 +165,11 @@ contains
   type (element_t), intent(in)        :: elem
   real (kind=real_kind), intent(out)  :: temperature(np,np,nlev)
   type (hvcoord_t),     intent(in)    :: hvcoord                      ! hybrid vertical coordinate struct
-  integer, intent(in) :: nt
-  integer, intent(in) :: ntQ
-  
+  integer, intent(in)                 :: nt
+  integer, intent(in)                 :: ntQ
+  real (kind=real_kind), intent(in)   :: dp(np,np,nlev)
+
   !   local
-  real (kind=real_kind) :: dp(np,np,nlev)
   real (kind=real_kind) :: cp_star(np,np,nlev)
   real (kind=real_kind) :: kappa_star(np,np,nlev)
   real (kind=real_kind) :: exner(np,np,nlev)
@@ -178,17 +178,8 @@ contains
   real (kind=real_kind) :: pnh_i(np,np,nlevp)
   integer :: k
   
-  
-#if (defined COLUMN_OPENMP)
-  !$omp parallel do default(shared), private(k)
-#endif
-  do k=1,nlev
-     dp(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-          ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem%state%ps_v(:,:,nt)
-  enddo
   call get_cp_star(cp_star,elem%state%Qdp(:,:,:,1,ntQ),dp)
   call get_kappa_star(kappa_star,elem%state%Qdp(:,:,:,1,ntQ),dp)
-
 
   call get_pnh_and_exner(hvcoord,elem%state%theta_dp_cp(:,:,:,nt),&
           dp,elem%state%phinh(:,:,:,nt),elem%state%phis(:,:),kappa_star,&
@@ -206,28 +197,23 @@ contains
 
 
   !_____________________________________________________________________
-  subroutine get_dpnh_dp(elem,dpnh_dp,hvcoord,nt,ntQ)
+  subroutine get_dpnh_dp(elem,dp,dpnh_dp,hvcoord,nt,ntQ)
   implicit none
   
   type (element_t), intent(in)        :: elem
   real (kind=real_kind), intent(out)  :: dpnh_dp(np,np,nlev)
   type (hvcoord_t),     intent(in)    :: hvcoord                      ! hybrid vertical coordinate struct
-  integer, intent(in) :: nt
-  integer, intent(in) :: ntQ
-  
+  integer, intent(in)                 :: nt
+  integer, intent(in)                 :: ntQ
+  real (kind=real_kind), intent(in)   :: dp(np,np,nlev)
+
   !   local
-  real (kind=real_kind) :: dp(np,np,nlev)
   real (kind=real_kind) :: exner(np,np,nlev)
   real (kind=real_kind) :: pnh(np,np,nlev)
   real (kind=real_kind) :: dpnh(np,np,nlev)
   real (kind=real_kind) :: kappa_star(np,np,nlev)
   integer :: k
   
-  
-  do k=1,nlev
-     dp(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-          ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem%state%ps_v(:,:,nt)
-  enddo
   call get_kappa_star(kappa_star,elem%state%Qdp(:,:,:,1,ntQ),dp)
 
   call get_pnh_and_exner(hvcoord,elem%state%theta_dp_cp(:,:,:,nt),&
@@ -237,7 +223,7 @@ contains
   end subroutine 
 
   !_____________________________________________________________________
-  subroutine get_nonhydro_pressure(elem,pnh,exner,hvcoord,nt,ntQ)
+  subroutine get_nonhydro_pressure(elem,dp,pnh,exner,hvcoord,nt,ntQ)
     implicit none
     
     type (element_t),       intent(in)  :: elem
@@ -246,14 +232,11 @@ contains
     type (hvcoord_t),       intent(in)  :: hvcoord
     integer,                intent(in)  :: nt
     integer,                intent(in)  :: ntQ
-    
-    real (kind=real_kind), dimension(np,np,nlev) :: dp,dpnh,kappa_star
-    integer :: k
+    real (kind=real_kind),  intent(in)  :: dp(np,np,nlev)
 
-    do k=1,nlev
-      dp(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-      (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem%state%ps_v(:,:,nt)
-    enddo
+  !   local
+    real (kind=real_kind), dimension(np,np,nlev) :: dpnh,kappa_star
+    integer :: k
 
     call get_kappa_star(kappa_star,elem%state%Qdp(:,:,:,1,ntQ),dp)
 
@@ -265,7 +248,7 @@ contains
 
 
 
-  subroutine get_phi(elem,phi,hvcoord,nt,ntQ)
+  subroutine get_phi(elem,dp,phi,hvcoord,nt,ntQ)
     implicit none
     
     type (element_t),       intent(in)  :: elem
@@ -273,19 +256,17 @@ contains
     real (kind=real_kind),  intent(out) :: phi(np,np,nlev)
     integer,                intent(in)  :: nt
     integer,                intent(in)  :: ntQ
+    real (kind=real_kind),  intent(in)  :: dp(np,np,nlev)
     
-    real (kind=real_kind), dimension(np,np,nlev) :: dp,dpnh,kappa_star
+  !   local
+    real (kind=real_kind), dimension(np,np,nlev) :: dpnh,kappa_star
     real (kind=real_kind) :: pnh(np,np,nlev)
     real (kind=real_kind) :: exner(np,np,nlev)
     real (kind=real_kind) :: temp(np,np,nlev)
     integer :: k
 
     if(theta_hydrostatic_mode) then
-       do k=1,nlev
-          dp(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-               (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem%state%ps_v(:,:,nt)
-       enddo
-       
+
        call get_kappa_star(kappa_star,elem%state%Qdp(:,:,:,1,ntQ),dp)
        
        call get_pnh_and_exner(hvcoord,elem%state%theta_dp_cp(:,:,:,nt),&
@@ -327,7 +308,7 @@ contains
 
 
   !_____________________________________________________________________
-  subroutine set_thermostate(elem,temperature,hvcoord,nt,ntQ)
+  subroutine set_thermostate(elem,dp,temperature,hvcoord,nt,ntQ)
   !
   ! Assuming a hydrostatic intital state and given surface pressure,
   ! and no moisture, compute theta and phi 
@@ -339,21 +320,27 @@ contains
   
   type (element_t), intent(inout)   :: elem
   real (kind=real_kind), intent(in) :: temperature(np,np,nlev)
-  type (hvcoord_t),     intent(in)  :: hvcoord                      ! hybrid vertical coordinate struct
-  
+  type (hvcoord_t),     intent(in)  :: hvcoord                      ! hybrid vertical coordinate struct  
+  real (kind=real_kind), intent(in) :: dp(np,np,nlev)
+
   !   local
-  real (kind=real_kind) :: p(np,np,nlev)
-  real (kind=real_kind) :: dp(np,np,nlev)
+  real (kind=real_kind) :: p(np,np,nlev), ps(np,np)
   real (kind=real_kind) :: pnh(np,np,nlev)
   real (kind=real_kind) :: dpnh(np,np,nlev)
   real (kind=real_kind) :: exner(np,np,nlev)
   real (kind=real_kind) :: kappa_star(np,np,nlev)
-  integer :: k,nt,ntQ
+  integer :: i,j,k,nt,ntQ
+
+  ! how optimal is this, does it matter?
+  ! should i use summation by index?
+  do j=1,np
+    do i=1,np
+      ps(i,j) = sum(dp(i,j,:))
+    enddo
+  enddo
 
   do k=1,nlev
-     p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*elem%state%ps_v(:,:,nt)
-     dp(:,:,k) = ( hvcoord%hyai(k+1) - hvcoord%hyai(k) )*hvcoord%ps0 + &
-          ( hvcoord%hybi(k+1) - hvcoord%hybi(k) )*elem%state%ps_v(:,:,nt)
+     p(:,:,k) = hvcoord%hyam(k)*hvcoord%ps0 + hvcoord%hybm(k)*ps(:,:)
   enddo
 
   do k=1,nlev

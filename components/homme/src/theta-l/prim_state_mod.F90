@@ -89,7 +89,7 @@ contains
     real (kind=real_kind),allocatable  :: tmp3d(:,:,:,:)
     real (kind=real_kind)  :: tmp1(nets:nete)
     real (kind=real_kind)  :: ps(np,np)
-    real (kind=real_kind)  :: dp(np,np)
+    real (kind=real_kind)  :: dp(np,np,nlev)
     real (kind=real_kind)  :: phi_i(np,np,nlevp)
     real (kind=real_kind)  :: dphi(np,np,nlev)
     real (kind=real_kind)  :: tdiag(np,np,nlev)
@@ -209,8 +209,12 @@ contains
           call get_field(elem(ie),'dpnh_dp',tdiag,hvcoord,n0,n0q)
        endif
 
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,n0)
+       enddo
        ! layer thickness
-       call get_phi(elem(ie),dphi,phi_i,hvcoord,n0,n0q)
+       call get_phi(elem(ie),dp,dphi,phi_i,hvcoord,n0,n0q)
        do k=1,nlev
           dphi(:,:,k)=-(phi_i(:,:,k+1)-phi_i(:,:,k))
        enddo
@@ -846,7 +850,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)
        call get_kappa_star(kappa_star,elem(ie)%state%Qdp(:,:,:,1,t1_qdp),dpt1)
        call get_pnh_and_exner(hvcoord,elem(ie)%state%theta_dp_cp(:,:,:,t1),dpt1,&
             elem(ie)%state%phinh_i(:,:,:,t1),kappa_star,pnh,exner,dpnh_dp_i,pnh_i)
-       call get_phi(elem(ie),phi,phi_i,hvcoord,t1,t1_qdp)
+       call get_phi(elem(ie),dpt1,phi,phi_i,hvcoord,t1,t1_qdp)
 
    
        !   KE   .5 dp/dn U^2

@@ -514,8 +514,18 @@ contains
      ! apply forcing to Qdp
      elem(ie)%derived%FQps(:,:)=0
 
+     !need some notations to state that this dp is at the prev timelev, where
+     !forcing is computed
+#if (defined COLUMN_OPENMP)
+!$omp parallel do private(k)
+#endif
+     do k=1,nlev
+       dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                 (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(i)%state%ps_v(:,:,np1)
+     enddo
+
      ! apply forcing to temperature
-     call get_temperature(elem(ie),temperature,hvcoord,np1,np1_qdp)
+     call get_temperature(elem(ie),dp,temperature,hvcoord,np1,np1_qdp)
 #if (defined COLUMN_OPENMP)
 !$omp parallel do private(k)
 #endif
@@ -560,6 +570,7 @@ contains
 
 
      ! Qdp(np1) and ps_v(np1) were updated by forcing - update Q(np1)
+     ! this dp is sync-ed with ps_v(np1), after forcing update
 #if (defined COLUMN_OPENMP)
 !$omp parallel do private(q,k)
 #endif

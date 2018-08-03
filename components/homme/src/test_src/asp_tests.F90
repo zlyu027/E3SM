@@ -1063,8 +1063,14 @@ subroutine asp_baroclinic(elem,hybrid,hvcoord,nets,nete)
           elem(ie)%state%ps_v(i,j,:) = p0
        enddo
        enddo
+
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,1)
+       enddo 
+
        do idex=1,timelevels
-          call set_thermostate(elem(ie),temp,hvcoord,idex,1)
+          call set_thermostate(elem(ie),dp,temp,hvcoord,idex,1)
        enddo
     enddo
 
@@ -1281,8 +1287,14 @@ subroutine asp_tracer(elem,hybrid,hvcoord,nets,nete)
           enddo
        enddo
        enddo
+
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,1)
+       enddo
+
        do idex=1,timelevels
-          call set_thermostate(elem(ie),temperature,hvcoord,idex,1)
+          call set_thermostate(elem(ie),dp,temperature,hvcoord,idex,1)
        enddo
     enddo
 
@@ -1397,8 +1409,14 @@ subroutine asp_rossby(elem,hybrid,hvcoord,nets,nete)
           enddo
        enddo
        enddo
+
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,1)
+       enddo
+
        do idex=1,timelevels
-          call set_thermostate(elem(ie),temperature,hvcoord,idex,1)
+          call set_thermostate(elem(ie),dp,temperature,hvcoord,idex,1)
        enddo
     enddo
 
@@ -1419,7 +1437,7 @@ subroutine asp_mountain(elem,hybrid,hvcoord,nets,nete)
 
 !   local
     real (kind=real_kind)  :: lat,lon,eta(nlev),height,q5,q6
-    real (kind=real_kind)  :: u_wind,v_wind,temperature(np,np,nlev)
+    real (kind=real_kind)  :: u_wind,v_wind,temperature(np,np,nlev),dp(np,np,nlev)
     real (kind=real_kind)  :: surface_geopotential, surface_pressure, p
     integer :: i,j,k,ie,idex
 
@@ -1446,8 +1464,14 @@ subroutine asp_mountain(elem,hybrid,hvcoord,nets,nete)
           enddo
        enddo
        enddo
+
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,1)
+       enddo
+
        do idex=1,timelevels
-          call set_thermostate(elem(ie),temperature,hvcoord,idex,1)
+          call set_thermostate(elem(ie),dp,temperature,hvcoord,idex,1)
        enddo
     enddo
 
@@ -1502,8 +1526,14 @@ subroutine asp_gravity_wave(elem,hybrid,hvcoord,nets,nete,choice)
 
        enddo
        enddo
+
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,1)
+       enddo
+
        do idex=1,timelevels
-          call set_thermostate(elem(ie),temperature,hvcoord,idex,1)
+          call set_thermostate(elem(ie),dp,temperature,hvcoord,idex,1)
        enddo
     enddo
 

@@ -85,7 +85,7 @@ subroutine jw_baroclinic(elem,hybrid,hvcoord,nets,nete)
    real (kind=real_kind) :: r_d,omg,grv,erad
 
    real(kind=real_kind), allocatable :: var3d(:,:,:,:)
-   real(kind=real_kind) :: temperature(np,np,nlev)
+   real(kind=real_kind) :: temperature(np,np,nlev), dp(np,np,nlev)
 
    if (hybrid%masterthread) write(iulog,*) 'initializing Jablonowski and Williamson baroclinic instability test V1'
 
@@ -188,8 +188,13 @@ do ie=nets,nete
        end do
     end do
 
+    do k=1,nlev
+      dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,1)
+    enddo
+
     do tl=1,timelevels
-       call set_thermostate(elem(ie),temperature,hvcoord,tl,1)
+       call set_thermostate(elem(ie),dp,temperature,hvcoord,tl,1)
     enddo
 enddo
 
@@ -310,7 +315,7 @@ endif
     real (kind=real_kind), dimension(nlat-1) :: dmu
     real (kind=real_kind), dimension(nlat) :: ufull, dtdphi
     real (kind=real_kind)                  :: t1(np,np,nets:nete,nlev)
-    real (kind=real_kind)                  :: temperature(np,np,nlev)
+    real (kind=real_kind)                  :: temperature(np,np,nlev),dp(np,np,nlev)
     real (kind=real_kind), dimension(nfl) :: tfull, avg
     real (kind=real_kind) :: dlat
     real (kind=real_kind) :: z, fac
@@ -495,8 +500,14 @@ endif
        elem(ie)%state%phis(:,:) = 0.0D0
        elem(ie)%derived%fm = 0.0D0
        temperature(:,:,:)=t1(:,:,ie,:)
+
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,1)
+       enddo
+
        do tl=1,timelevels
-          call set_thermostate(elem(ie),temperature,hvcoord,tl,1)
+          call set_thermostate(elem(ie),dp,temperature,hvcoord,tl,1)
        enddo
 
     end do

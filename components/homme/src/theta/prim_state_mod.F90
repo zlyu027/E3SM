@@ -88,7 +88,7 @@ contains
     real (kind=real_kind),allocatable  :: tmp3d(:,:,:,:)
     real (kind=real_kind)  :: tmp1(nets:nete)
     real (kind=real_kind)  :: ps(np,np)
-    real (kind=real_kind)  :: dp(np,np)
+    real (kind=real_kind)  :: dp(np,np,nlev)
     real (kind=real_kind)  :: phi(np,np,nlev)
     real (kind=real_kind)  :: dphi(np,np,nlev-1)
     real (kind=real_kind)  :: tdiag(np,np,nlev)
@@ -209,7 +209,12 @@ contains
        endif
 
        tmp(:,:,ie)=elem(ie)%state%ps_v(:,:,n0)
-       call get_phi(elem(ie),phi,hvcoord,n0,n0q)
+
+       do k=1,nlev
+         dp(:,:,k)=(hvcoord%hyai(k+1)-hvcoord%hyai(k))*hvcoord%ps0 + &
+                   (hvcoord%hybi(k+1)-hvcoord%hybi(k))*elem(ie)%state%ps_v(:,:,n0)
+       enddo
+       call get_phi(elem(ie),dp,phi,hvcoord,n0,n0q)
 
        do k=1,nlev-1
           dphi(:,:,k)=phi(:,:,k)-phi(:,:,k+1)
@@ -831,7 +836,7 @@ subroutine prim_energy_halftimes(elem,hvcoord,tl,n,t_before_advance,nets,nete)
        enddo
        elem(ie)%accum%KEner(:,:,n)=suml(:,:)
 
-       call get_phi(elem(ie),phi,hvcoord,t1,t1_qdp)
+       call get_phi(elem(ie),dpt1,phi,hvcoord,t1,t1_qdp)
     
     !   PE   dp/dn PHIs
        suml=0

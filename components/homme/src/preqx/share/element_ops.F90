@@ -191,11 +191,11 @@ contains
 
 
   !_____________________________________________________________________
-  subroutine set_thermostate(elem,temperature,hvcoord,n0,n0_q)
+  subroutine set_thermostate(elem,dp,temperature,hvcoord,n0,n0_q)
   implicit none
   
   type (element_t), intent(inout)   :: elem
-  real (kind=real_kind), intent(in) :: temperature(np,np,nlev)
+  real (kind=real_kind), intent(in) :: temperature(np,np,nlev), dp(np,np,nlev)
   type (hvcoord_t),     intent(in)  :: hvcoord                      ! hybrid vertical coordinate struct
   integer :: n0,n0_q
 
