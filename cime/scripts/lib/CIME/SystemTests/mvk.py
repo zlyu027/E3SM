@@ -29,7 +29,7 @@ evv_lib_dir = os.path.abspath(os.path.dirname(evv4esm.__file__))
 logger = logging.getLogger(__name__)
 
 # Build executable with multiple instances
-ninst = 20
+ninst = 30
 
 
 class MVK(SystemTestsCommon):
