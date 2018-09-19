@@ -47,16 +47,21 @@ class MVK(SystemTestsCommon):
             self._case.set_value("COMPARE_BASELINE", False)
 
 
+
     def build_phase(self, sharedlib_only=False, model_only=False):
         # Only want this to happen once. It will impact the sharedlib build
         # so it has to happen there.
         if not model_only:
             logging.warn('Starting to build multi-instance exe')
+
+            self._case.set_value('MULTI_DRIVER', True)
+
             for comp in self._case.get_values("COMP_CLASSES"):
                 self._case.set_value('NTHRDS_{}'.format(comp), 1)
 
+                # Okay, this is required, or you get an illegal division by zero in the stupid
+                # generate_cice_decomp.pl script
                 ntasks = self._case.get_value("NTASKS_{}".format(comp))
-
                 self._case.set_value('NTASKS_{}'.format(comp), ntasks*ninst)
                 if comp != 'CPL':
                     self._case.set_value('NINST_{}'.format(comp), ninst)
