@@ -219,14 +219,14 @@ contains
         do j = 1, nSubCols
           do i = 1, nSunlit
             if((subCols%prec_frac(sunlit(i), j, k) == 1 .or. &
-		        subCols%prec_frac(sunlit(i), j, k) == 3) .and. &
+                subCols%prec_frac(sunlit(i), j, k) == 3) .and. &
                snowSize(i, j, k) > 0.                    .and. &
                gridBox%dtau_s_snow(sunlit(i),   k) > 0. ) then
-                 opticalThickness(i, j, k) = opticalThickness(i,j,k) + gridBox%dtau_c(sunlit(i), k)
-		       cloudSnow(i, j, k) = subcolHydro%mr_hydro(sunlit(i), j, k, I_LSSNOW)
-	        else
-               cloudSnow       (i, j, k) = 0.
-               snowSize        (i, j, k) = 0. 
+               opticalThickness(i, j, k) = opticalThickness(i,j,k) + gridBox%dtau_s_snow(sunlit(i), k)
+              cloudSnow(i, j, k) = subcolHydro%mr_hydro(sunlit(i), j, k, I_LSSNOW)
+            else
+              cloudSnow       (i, j, k) = 0.
+              snowSize        (i, j, k) = 0.
             end if 
           end do 
         end do
