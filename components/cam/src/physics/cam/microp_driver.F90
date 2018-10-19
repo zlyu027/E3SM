@@ -16,6 +16,7 @@ use phys_control,   only: phys_getopts
 use micro_mg_cam,   only: micro_mg_cam_readnl, micro_mg_cam_register, &
                           micro_mg_cam_implements_cnst, micro_mg_cam_init_cnst, &
                           micro_mg_cam_init, micro_mg_cam_tend
+use micro_p3_interface, only: micro_p3_interface_init  
 use cam_logfile,    only: iulog
 use cam_abortutils, only: endrun
 use perf_mod,       only: t_startf, t_stopf
@@ -137,7 +138,7 @@ subroutine microp_driver_init(pbuf2d)
 
    ! Initialize the microphysics parameterizations
    !-----------------------------------------------------------------------
-
+   call micro_p3_interface_init()
    select case (microp_scheme)
    case ('MG')
       call micro_mg_cam_init(pbuf2d)
