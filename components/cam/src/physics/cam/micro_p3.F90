@@ -107,7 +107,7 @@ contains
     character*(*), intent(in)    :: lookup_file_dir                !directory of the lookup tables
 
     character(len=16), parameter :: version_p3  = '2.8.2'          !version number of P3 package
-    character(len=1024)          :: version_header_table1          !version number from header, table 1
+    character(len=1024)          :: version_header_table1          !version number from header, table 1  !Aaron-There isn't a header in the file
     character(len=1024)          :: lookup_file_1                  !lookup table, main
     character(len=1024)          :: dumstr
     integer                      :: i,j,ii,jj,kk

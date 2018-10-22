@@ -48,6 +48,8 @@ real(r8), allocatable :: ssa_sw_ice(:,:)
 real(r8), allocatable :: asm_sw_ice(:,:)
 real(r8), allocatable :: abs_lw_ice(:,:)
 
+character(len=16) :: microp_scheme
+
 ! 
 ! indexes into pbuf for optical parameters of MG clouds
 ! 
@@ -76,6 +78,8 @@ subroutine cloud_rad_props_init()
    use slingo,         only: slingo_rad_props_init
    use ebert_curry,    only: ec_rad_props_init, scalefactor
 
+   use phys_control,   only: phys_getopts
+
    character(len=256) :: liquidfile 
    character(len=256) :: icefile 
    character(len=256) :: locfn
@@ -92,6 +96,8 @@ subroutine cloud_rad_props_init()
 
    integer :: err
 
+   call phys_getopts(microp_scheme_out=microp_scheme)
+
    liquidfile = liqopticsfile 
    icefile = iceopticsfile
 
@@ -104,8 +110,10 @@ subroutine cloud_rad_props_init()
    i_lambda = pbuf_get_index('LAMBDAC',errcode=err)
    i_iciwp  = pbuf_get_index('ICIWP',errcode=err)
    i_iclwp  = pbuf_get_index('ICLWP',errcode=err)
-   i_des    = pbuf_get_index('DES',errcode=err)
-   i_icswp  = pbuf_get_index('ICSWP',errcode=err)
+!   if (microp_scheme.ne.'P3') then !Aaron, uncomment when P3 is ready to run
+      i_des    = pbuf_get_index('DES',errcode=err)
+      i_icswp  = pbuf_get_index('ICSWP',errcode=err)
+!   end if
 
    ! old optics
    call cnst_get_ind('CLDICE', ixcldice)

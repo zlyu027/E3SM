@@ -75,6 +75,7 @@ module radiation_data
 
   ! MG microphys check
   logical, public :: mg_microphys
+  logical, public :: P3_microphys
 
 contains
 
@@ -137,21 +138,25 @@ contains
     if (.not.rad_data_output) return
    
     call phys_getopts(microp_scheme_out=microp_scheme)
-    mg_microphys =  (trim(microp_scheme) == 'MG')
+    mg_microphys =  (trim(microp_scheme) == 'MG' .or. trim(microp_scheme) == 'P3') !Aaron fix this when P3 is ready to run
+    p3_microphys =  (trim(microp_scheme) == 'P3')
 
     cld_ifld    = pbuf_get_index('CLD')
     concld_ifld = pbuf_get_index('CONCLD')
     rel_ifld    = pbuf_get_index('REL')
     rei_ifld    = pbuf_get_index('REI')
-    if (mg_microphys) then
+
+    if (mg_microphys .or. p3_microphys) then
        dei_ifld      = pbuf_get_index('DEI')
-       des_ifld      = pbuf_get_index('DES')
        mu_ifld       = pbuf_get_index('MU')
        lambdac_ifld  = pbuf_get_index('LAMBDAC')
        iciwp_ifld    = pbuf_get_index('ICIWP')
        iclwp_ifld    = pbuf_get_index('ICLWP')
-       icswp_ifld    = pbuf_get_index('ICSWP')
-       cldfsnow_ifld = pbuf_get_index('CLDFSNOW')
+       if (mg_microphys) then ! Snow not needed in P3
+          des_ifld      = pbuf_get_index('DES')
+          icswp_ifld    = pbuf_get_index('ICSWP')
+          cldfsnow_ifld = pbuf_get_index('CLDFSNOW')
+       end if
     endif
 
     call addfld (lndfrc_fldn, horiz_only,    rad_data_avgflag, 'fraction',&
@@ -217,11 +222,9 @@ contains
     call addfld (rei_fldn,   (/ 'lev' /), rad_data_avgflag,    'micron',&
          'radiation input: effective ice partical radius')
     
-    if (mg_microphys) then
+    if (mg_microphys .or. p3_microphys) then
        call addfld (dei_fldn,   (/ 'lev' /), rad_data_avgflag,    'micron',&
             'radiation input: effective ice partical diameter')
-       call addfld (des_fldn,   (/ 'lev' /), rad_data_avgflag,    'micron',&
-            'radiation input: effective snow partical diameter')
        call addfld (mu_fldn,        (/ 'lev' /), rad_data_avgflag,     ' ',&
             'radiation input: ice gamma parameter for optics (radiation)')
        call addfld (lambdac_fldn,        (/ 'lev' /), rad_data_avgflag,' ',&
@@ -230,10 +233,14 @@ contains
             'radiation input: In-cloud ice water path')
        call addfld (iclwp_fldn,    (/ 'lev' /), rad_data_avgflag,  'kg/m2',&
             'radiation input: In-cloud liquid water path')
-       call addfld (icswp_fldn,    (/ 'lev' /), rad_data_avgflag,  'kg/m2',&
-            'radiation input: In-cloud snow water path')
-       call addfld (cldfsnow_fldn, (/ 'lev' /), rad_data_avgflag, 'fraction',&
-            'radiation input: cloud liquid drops + snow')
+       if (mg_microphys) then ! Snow not needed in P3
+          call addfld (des_fldn,   (/ 'lev' /), rad_data_avgflag,    'micron',&
+               'radiation input: effective snow partical diameter')
+          call addfld (icswp_fldn,    (/ 'lev' /), rad_data_avgflag,  'kg/m2',&
+               'radiation input: In-cloud snow water path')
+          call addfld (cldfsnow_fldn, (/ 'lev' /), rad_data_avgflag, 'fraction',&
+               'radiation input: cloud liquid drops + snow')
+       end if
     endif
 
     call add_default (lndfrc_fldn,    rad_data_histfile_num, ' ')
@@ -268,15 +275,17 @@ contains
     call add_default (rel_fldn,       rad_data_histfile_num, ' ')
     call add_default (rei_fldn,       rad_data_histfile_num, ' ')
     
-    if (mg_microphys) then
+    if (mg_microphys .or. p3_microphys) then
        call add_default (dei_fldn,       rad_data_histfile_num, ' ')
-       call add_default (des_fldn,       rad_data_histfile_num, ' ')
        call add_default (mu_fldn,        rad_data_histfile_num, ' ')
        call add_default (lambdac_fldn,   rad_data_histfile_num, ' ')
        call add_default (iciwp_fldn,     rad_data_histfile_num, ' ')
        call add_default (iclwp_fldn,     rad_data_histfile_num, ' ')
-       call add_default (icswp_fldn,     rad_data_histfile_num, ' ')
-       call add_default (cldfsnow_fldn,  rad_data_histfile_num, ' ')
+       if (mg_microphys) then ! Snow not needed in P3
+          call add_default (des_fldn,       rad_data_histfile_num, ' ')
+          call add_default (icswp_fldn,     rad_data_histfile_num, ' ')
+          call add_default (cldfsnow_fldn,  rad_data_histfile_num, ' ')
+       end if
     endif
 
     ! rad constituents
@@ -417,9 +426,6 @@ contains
        call pbuf_get_field(pbuf,  dei_ifld, ptr     )
        call outfld(dei_fldn,      ptr, pcols, lchnk   )       
 
-       call pbuf_get_field(pbuf,  des_ifld, ptr     )
-       call outfld(des_fldn,      ptr, pcols, lchnk   )       
-
        call pbuf_get_field(pbuf,  mu_ifld, ptr      )
        call outfld(mu_fldn,       ptr, pcols, lchnk   ) 
 
@@ -430,13 +436,20 @@ contains
        call outfld(iciwp_fldn,    ptr, pcols, lchnk   )       
 
        call pbuf_get_field(pbuf,  iclwp_ifld, ptr   )
-       call outfld(iclwp_fldn,    ptr, pcols, lchnk   )       
+       call outfld(iclwp_fldn,    ptr, pcols, lchnk   )      
+ 
+       if (mg_microphys) then ! SNOW not needed in P3
 
-       call pbuf_get_field(pbuf,  icswp_ifld, ptr   )
-       call outfld(icswp_fldn,    ptr, pcols, lchnk   )       
+          call pbuf_get_field(pbuf,  des_ifld, ptr     )
+          call outfld(des_fldn,      ptr, pcols, lchnk   )       
 
-       call pbuf_get_field(pbuf,  cldfsnow_ifld, ptr, start=(/1,1,itim_old/), kount=(/pcols,pver,1/) )
-       call outfld(cldfsnow_fldn, ptr, pcols, lchnk   )
+          call pbuf_get_field(pbuf,  icswp_ifld, ptr   )
+          call outfld(icswp_fldn,    ptr, pcols, lchnk   )       
+
+          call pbuf_get_field(pbuf,  cldfsnow_ifld, ptr, start=(/1,1,itim_old/), kount=(/pcols,pver,1/) )
+          call outfld(cldfsnow_fldn, ptr, pcols, lchnk   )
+
+       end if
 
     endif
 
