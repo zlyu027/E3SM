@@ -213,6 +213,41 @@ subroutine stepon_run1( dtime_out, phys_state, phys_tend,               &
    
 end subroutine stepon_run1
 
+
+subroutine binterp(field)
+use dimensions_mod, only: nlev, np
+implicit none
+real(r8), intent(inout) :: field(np,np,nlev)
+
+real(r8)   :: x,y,noreast, nw, se, sw, gp(np)
+integer :: i,j,k
+
+!for bilin interp
+gp(1) = -1; gp(4) = 1; gp(2) =  -0.4472135955; gp(3) = 0.4472135955;
+
+do k=1,nlev
+            noreast = field(np,np,k)
+            nw = field(1,np,k)
+            se = field(np,1,k)
+            sw = field(1,1,k)
+            do i=1,np
+                x = gp(i)
+                do j=1,np
+                    y = gp(j)
+                    field(i,j,k) = 0.25d0*( &
+                                            (1.0d0-x)*(1.0d0-y)*sw + &
+                                            (1.0d0-x)*(y+1.0d0)*nw + &
+                                            (x+1.0d0)*(1.0d0-y)*se + &
+                                            (x+1.0d0)*(y+1.0d0)*noreast)
+                end do
+            end do
+enddo
+end subroutine binterp
+
+
+
+
+
 subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
    use bndry_mod,      only: bndry_exchangeV
    use dimensions_mod, only: nlev, nelemd, np, npsq
@@ -234,7 +269,8 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
    integer :: kptr, ie, ic, i, j, k, tl_f, tl_fQdp
    real(r8) :: rec2dt, dyn_ps0
    real(r8) :: dp(np,np,nlev),dp_tmp,fq,fq0,qn0, ftmp(npsq,nlev,2)
-   real(r8) :: dtime
+   real(r8) :: dtime,     extrf(np,np,nlev)
+
 
    dtime = get_step_size()
 
@@ -288,6 +324,22 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
       call TimeLevel_Qdp(TimeLevel, qsplit, tl_fQdp)
 
       dyn_ps0=ps0
+
+!before Q tendencies are applied, recompute FQ and everything else from external 4
+!corners to all other gll points via bilinear interp
+      call binterp(dyn_in%elem(ie)%derived%FT)
+
+      extrf(:,:,:) = dyn_in%elem(ie)%derived%FM(:,:,1,:)
+      call binterp(extrf)
+      dyn_in%elem(ie)%derived%FM(:,:,1,:) = extrf(:,:,:)
+
+      extrf(:,:,:) = dyn_in%elem(ie)%derived%FM(:,:,2,:)
+      call binterp(extrf)
+      dyn_in%elem(ie)%derived%FM(:,:,1,:) = extrf(:,:,:)
+
+      do ic=1,pcnst
+        call binterp(dyn_in%elem(ie)%derived%FQ(:,:,:,ic))
+      enddo
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! ftype=2,3,4:  apply forcing to Q,ps.  Return dynamics tendencies
