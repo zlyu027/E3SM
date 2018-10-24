@@ -54,8 +54,6 @@ class MVK(SystemTestsCommon):
         if not model_only:
             logging.warn('Starting to build multi-instance exe')
 
-            self._case.set_value('MULTI_DRIVER', True)
-
             for comp in self._case.get_values("COMP_CLASSES"):
                 self._case.set_value('NTHRDS_{}'.format(comp), 1)
 
@@ -112,7 +110,9 @@ class MVK(SystemTestsCommon):
 
             model = 'cam'
             comments += "  generating for model '{}'\n".format(model)
-            hists = _get_all_hist_files(testcase, model, rundir)
+            archive = self._case.get_env("archive")
+            file_extensions = archive.get_hist_file_extensions(archive.get_entry(model))
+            hists = _get_all_hist_files(model, rundir, file_extensions)
             logger.debug("mvk_hist_files: {}".format(hists))
 
             num_gen += len(hists)
