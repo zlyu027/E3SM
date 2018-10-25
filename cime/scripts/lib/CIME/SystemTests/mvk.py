@@ -18,6 +18,7 @@ from CIME.case.case_setup import case_setup
 from CIME.hist_utils import _get_all_hist_files, BLESS_LOG_NAME
 from CIME.utils import append_testlog, get_current_commit, get_timestamp, get_model
 from CIME.utils import expect
+from CIME.XML.tests import Tests
 
 import CIME.test_status
 
@@ -28,9 +29,6 @@ from evv4esm.__main__ import main as evv
 evv_lib_dir = os.path.abspath(os.path.dirname(evv4esm.__file__))
 logger = logging.getLogger(__name__)
 
-# Build executable with multiple instances
-ninst = 30
-
 
 class MVK(SystemTestsCommon):
 
@@ -38,37 +36,66 @@ class MVK(SystemTestsCommon):
         """
         initialize an object interface to the MVK test
         """
-        SystemTestsCommon.__init__(self, case)
 
-        if self._case.get_value("RESUBMIT") == 0 \
-                and self._case.get_value("GENERATE_BASELINE") is False:
-            self._case.set_value("COMPARE_BASELINE", True)
-        else:
-            self._case.set_value("COMPARE_BASELINE", False)
+        test_xml = Tests()
+        mvk_xml = test_xml.get_test_node("MVK")
+        self._mvk_nisnt = int(mvk_xml.xml_element.findtext('MVK_NINST', default='30'))
 
+        # neat trick to get True/False from text: https://stackoverflow.com/a/13706457
+        self._mvk_md = json.loads(mvk_xml.xml_element.findtext('MULTI_DRIVER', default='TRUE').lower())
+
+        with open('/autofs/nccs-svm1_home1/kennedy/E3SM/E3SM/cime/scripts/MVK_INIT.log', 'w') as mvklog:
+            mvklog.write('MVK:INIT: NINST={}\n'.format(self._mvk_nisnt))
+            mvklog.write('MVK:INIT: multidriver={}\n'.format(self._mvk_md))
+            mvklog.flush()
+
+            super(MVK, self).__init__(case)
+
+            self._case.set_value('MULTI_DRIVER', self._mvk_md)
+
+            # mvklog.write('MVK:INIT: NOW DO SETUP')
+            # case_setup(self._case, test_mode=False, reset=True)
+
+            if self._case.get_value("RESUBMIT") == 0 \
+                    and self._case.get_value("GENERATE_BASELINE") is False:
+                self._case.set_value("COMPARE_BASELINE", True)
+            else:
+                self._case.set_value("COMPARE_BASELINE", False)
+
+            self._case.flush()
 
 
     def build_phase(self, sharedlib_only=False, model_only=False):
         # Only want this to happen once. It will impact the sharedlib build
         # so it has to happen there.
         if not model_only:
-            logging.warn('Starting to build multi-instance exe')
+            logging.warning('Starting to build multi-instance exe')
+            with open('/autofs/nccs-svm1_home1/kennedy/E3SM/E3SM/cime/scripts/MVK_BUILD.log', 'w') as mvklog:
+                mvklog.write('MVK:BUILD: nisnt={}\n'.format(self._mvk_nisnt))
+                mvklog.write('MVK:BUILD: multidriver={}\n'.format(self._mvk_md))
+                mvklog.flush()
 
-            for comp in self._case.get_values("COMP_CLASSES"):
-                self._case.set_value('NTHRDS_{}'.format(comp), 1)
+                for comp in self._case.get_values("COMP_CLASSES"):
+                    mvklog.write('MVK:BUILD: NTHRDS_{}={}\n'.format(comp, 1))
+                    self._case.set_value('NTHRDS_{}'.format(comp), 1)
 
-                # Okay, this is required, or you get an illegal division by zero in the stupid
-                # generate_cice_decomp.pl script
-                ntasks = self._case.get_value("NTASKS_{}".format(comp))
-                self._case.set_value('NTASKS_{}'.format(comp), ntasks*ninst)
-                if comp != 'CPL':
-                    self._case.set_value('NINST_{}'.format(comp), ninst)
+                    # Okay, this is required, or you get an illegal division by zero in the stupid
+                    # generate_cice_decomp.pl script
+                    ntasks = self._case.get_value("NTASKS_{}".format(comp))
+                    mvklog.write('MVK:BUILD: NTASKS_{}={}\n'.format(comp, ntasks))
+                    self._case.set_value('NTASKS_{}'.format(comp), ntasks*self._mvk_nisnt)
+                    mvklog.write('MVK:BUILD: NTASKS_{}={}\n'.format(comp, ntasks*self._mvk_nisnt))
+                    if comp != 'CPL':
+                        self._case.set_value('NINST_{}'.format(comp), self._mvk_nisnt)
+                        mvklog.write('MVK:BUILD: NINST_{}={}\n'.format(comp, self._mvk_nisnt))
 
-            self._case.set_value('ATM_NCPL', 18)
+                self._case.set_value('ATM_NCPL', 18)
 
-            self._case.flush()
+                self._case.flush()
 
-            case_setup(self._case, test_mode=False, reset=True)
+                case_setup(self._case, test_mode=False, reset=True)
+
+                mvklog.flush()
 
         self.build_indv(sharedlib_only=sharedlib_only, model_only=model_only)
 
@@ -79,7 +106,7 @@ class MVK(SystemTestsCommon):
         # =================================================================
 
         # namelist specifications for each instance
-        for iinst in range(1, ninst+1):
+        for iinst in range(1, self._mvk_nisnt+1):
             with open('user_nl_cam_{:04d}'.format(iinst), 'w') as nl_atm_file:
                 nl_atm_file.write('new_random = .true.\n')
                 nl_atm_file.write('pertlim = 1.0e-10\n')
@@ -192,7 +219,7 @@ class MVK(SystemTestsCommon):
                     "dir1": run_dir,
                     "case2": "Baseline",
                     "dir2": base_dir,
-                    "ninst": ninst,
+                    "ninst": self._mvk_nisnt,
                     "critical": 13
                 }
             }

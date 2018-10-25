@@ -554,6 +554,7 @@ NODEFAIL          Tests restart upon detected node failure. Generates fake failu
     <HIST_OPTION>$STOP_OPTION</HIST_OPTION>
     <HIST_N>$STOP_N</HIST_N>
     <RESUBMIT>12</RESUBMIT>
+    <MULTI_DRIVER>TRUE</MULTI_DRIVER>
   </test>
 
   <test NAME="NCK">
