@@ -216,6 +216,16 @@ NODEFAIL          Tests restart upon detected node failure. Generates fake failu
 
 <config_test>
 
+    <test NAME="CONDA">
+    <DESC>Anaconda/miniconda environment smoke test</DESC>
+    <INFO_DBUG>1</INFO_DBUG>
+    <DOUT_S>FALSE</DOUT_S>
+    <CONTINUE_RUN>FALSE</CONTINUE_RUN>
+    <REST_OPTION>none</REST_OPTION>
+    <HIST_OPTION>$STOP_OPTION</HIST_OPTION>
+    <HIST_N>$STOP_N</HIST_N>
+  </test>
+
   <test NAME="DAE">
     <DESC>data assimilation test, default two 2-day DA cycles, no data modification</DESC>
     <INFO_DBUG>1</INFO_DBUG>
