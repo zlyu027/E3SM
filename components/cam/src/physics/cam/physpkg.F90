@@ -2533,7 +2533,7 @@ end if
           endif
 
           call t_startf('microp_tend')
-
+          print '(A10,5(E16.8,1x))', 'macro ', maxval(state%q(:,:,1)), maxval(state%q(:,:,2)), maxval(state%q(:,:,3)), maxval(state%q(:,:,4)), maxval(state%q(:,:,5))
 
           if (use_subcol_microp) then
              call microp_driver_tend(state_sc, ptend_sc, cld_macmic_ztodt, pbuf)
@@ -2577,6 +2577,7 @@ end if
                snow_str(:ncol)/cld_macmic_num_steps, zero)
 
           call t_stopf('microp_tend')
+          print '(A10,5(E16.8,1x))', 'micro-p3 ', maxval(state%q(:,:,1)), maxval(state%q(:,:,2)), maxval(state%q(:,:,3)), maxval(state%q(:,:,4)), maxval(state%q(:,:,5))
 
         else 
         ! If microphysics is off, set surface cloud liquid/ice and rain/snow fluxes to zero

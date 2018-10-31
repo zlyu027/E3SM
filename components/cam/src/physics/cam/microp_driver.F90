@@ -74,7 +74,6 @@ subroutine microp_driver_register
       call micro_mg_cam_register()
    case ('P3') ! Change to P3 version when possible
       call micro_p3_register()
-      !call micro_mg_cam_register()
    case ('RK')
       ! microp_driver doesn't handle this one
       continue
@@ -152,8 +151,7 @@ subroutine microp_driver_init(pbuf2d)
    case ('MG')
       call micro_mg_cam_init(pbuf2d)
    case ('P3')
-      call micro_p3_init()
-!      call micro_mg_cam_init(pbuf2d)
+      call micro_p3_init(pbuf2d)
    case ('RK')
       ! microp_driver doesn't handle this one
       continue
@@ -167,6 +165,7 @@ end subroutine microp_driver_init
 !===============================================================================
 
 subroutine microp_driver_tend(state, ptend, dtime, pbuf)
+   use ppgrid, only: pver
 
    ! Call the microphysics parameterization run methods.
 
@@ -182,6 +181,7 @@ subroutine microp_driver_tend(state, ptend, dtime, pbuf)
 
    integer :: lchnk
    integer :: ncol
+   integer :: i,k
 
    !======================================================================
 
@@ -189,7 +189,12 @@ subroutine microp_driver_tend(state, ptend, dtime, pbuf)
    ncol  = state%ncol
 
    ! Call MG Microphysics
-
+   print '(A10)', 'TOP LEVEL:'
+   do i = 1,ncol
+   do k = 1,pver
+      print '(A10,2I,3(1x,E16.8))', '   -', i, k, state%t(i,k), state%q(i,k,1), state%pmid(i,k)
+   end do
+   end do
    select case (microp_scheme)
    case ('MG')
       call t_startf('microp_mg_cam_tend')
@@ -198,7 +203,6 @@ subroutine microp_driver_tend(state, ptend, dtime, pbuf)
    case ('P3') ! Change to P3 tend only when possible
       call t_startf('microp_mg_cam_tend')
       call micro_p3_tend(state, ptend, dtime, pbuf)
-!      call micro_mg_cam_tend(state, ptend, dtime, pbuf)
       call t_stopf('microp_mg_cam_tend')
    case ('RK')
       ! microp_driver doesn't handle this one

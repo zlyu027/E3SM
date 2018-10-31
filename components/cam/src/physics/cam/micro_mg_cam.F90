@@ -1602,6 +1602,12 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
    psetcols = state%psetcols
    ngrdcol  = state%ngrdcol
 
+   print '(A10)', 'INTERFACE LEVEL:'
+   do i = 1,ncol
+   do k = 1,pver
+      print '(A10,2I,3(1x,E16.8))', '   -', i, k, state%t(i,k), state%q(i,k,1), state%pmid(i,k)
+   end do
+   end do
    itim_old = pbuf_old_tim_idx()
 
    call phys_getopts(use_subcol_microp_out=use_subcol_microp)
@@ -2120,6 +2126,12 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
          packed_qs = packer%pack(state_loc%q(:,:,ixsnow))
          packed_ns = packer%pack(state_loc%q(:,:,ixnumsnow))
       end if
+      print '(A10,1x,I4)', 'iter = ', it
+      do i = 1,ncol
+      do k = 1,nlev
+      print '(A10,1x,2(I4,1x),3(E16.8,1x))', '  --vari', i, k, state_loc%q(i,k,1), state_loc%t(i,k), state_loc%pmid(i,k)
+      end do
+      end do
 
       select case (micro_mg_version)
       case (1)

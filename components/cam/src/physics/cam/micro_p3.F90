@@ -31,6 +31,7 @@ MODULE MICRO_P3
 
    use spmd_utils,       only: masterproc
    use cam_logfile,      only: iulog
+   use shr_kind_mod,   only: r8=>shr_kind_r8
   implicit none
 
   public  :: p3_init,p3_main
@@ -47,9 +48,9 @@ MODULE MICRO_P3
   integer, private, parameter :: tabsize      = 12  ! number of quantities used from lookup table
   integer, private, parameter :: colltabsize  =  2  ! number of ice-rain collection  quantities used from lookup table
 
-  real, private, parameter    :: real_rcollsize = real(rcollsize)
+  real(r8), private, parameter    :: real_rcollsize = real(rcollsize)
 
-  real, private, dimension(densize,rimsize,isize,tabsize) :: itab   !ice lookup table values
+  real(r8), private, dimension(densize,rimsize,isize,tabsize) :: itab   !ice lookup table values
 
   !ice lookup table values for ice-rain collision/collection
   double precision, private, dimension(densize,rimsize,isize,rcollsize,colltabsize)    :: itabcoll
@@ -59,10 +60,10 @@ MODULE MICRO_P3
 
   ! droplet spectral shape parameter for mass spectra, used for Seifert and Beheng (2001)
   ! warm rain autoconversion/accretion option only (iparam = 1)
-  real, private, dimension(16) :: dnu
+  real(r8), private, dimension(16) :: dnu
 
   ! physical and mathematical constants
-  real, private  :: rhosur,rhosui,ar,br,f1r,f2r,ecr,rhow,kr,kc,bimm,aimm,rin,mi0,nccnst,  &
+  real(r8), private  :: rhosur,rhosui,ar,br,f1r,f2r,ecr,rhow,kr,kc,bimm,aimm,rin,mi0,nccnst,  &
        eci,eri,bcn,cpw,e0,cons1,cons2,cons3,cons4,cons5,cons6,cons7,         &
        inv_rhow,qsmall,nsmall,bsmall,cp,g,rd,rv,ep_2,inv_cp,mw,osm,   &
        vi,epsm,rhoa,map,ma,rr,bact,inv_rm1,inv_rm2,sig1,nanew1,f11,f21,sig2, &
@@ -71,10 +72,10 @@ MODULE MICRO_P3
        clbfact_dep
 
   ! lookup table values for rain shape parameter mu_r
-  real, private, dimension(150) :: mu_r_table
+  real(r8), private, dimension(150) :: mu_r_table
 
   ! lookup table values for rain number- and mass-weighted fallspeeds and ventilation parameters
-  real, private, dimension(300,10) :: vn_table,vm_table,revap_table
+  real(r8), private, dimension(300,10) :: vn_table,vm_table,revap_table
 
 contains
 
@@ -111,7 +112,7 @@ contains
     character(len=1024)          :: lookup_file_1                  !lookup table, main
     character(len=1024)          :: dumstr
     integer                      :: i,j,ii,jj,kk
-    real                         :: dum
+    real(r8)                     :: dum
     integer                      :: dumi
 
     !------------------------------------------------------------------------------------------!
@@ -149,7 +150,7 @@ contains
     g      = 9.816
     rd     = 287.15
     rv     = 461.51
-    ep_2   = 0.622
+    ep_2   = 0.622  ! ratio of molecular mass of water to the molecular mass of dry air
     rhosur = 100000./(rd*273.15)
     rhosui = 60000./(rd*253.15)
     ar     = 841.99667
@@ -190,7 +191,7 @@ contains
     nmltratio = 0.2
 
     ! saturation pressure at T = 0 C
-    e0    = polysvp1(273.15,0)
+    e0    = polysvp1(273.15_r8,0)
 
     cons1 = piov6*rhow
     cons2 = 4.*piov3*rhow
@@ -307,8 +308,8 @@ contains
 
   subroutine p3_get_tables(mu_r_user, revap_user, vn_user, vm_user)
     ! This can be called instead of p3_init_b.
-    real, dimension(150), intent(out) :: mu_r_user
-    real, dimension(300,10), intent(out) :: vn_user, vm_user, revap_user
+    real(r8), dimension(150), intent(out) :: mu_r_user
+    real(r8), dimension(300,10), intent(out) :: vn_user, vm_user, revap_user
     mu_r_user(:) = mu_r_table(:)
     revap_user(:,:) = revap_table(:,:)
     vn_user(:,:) = vn_table(:,:)
@@ -317,8 +318,8 @@ contains
 
   subroutine p3_set_tables(mu_r_user, revap_user, vn_user, vm_user)
     ! This can be called instead of p3_init_b.
-    real, dimension(150), intent(in) :: mu_r_user
-    real, dimension(300,10), intent(in) :: vn_user, vm_user, revap_user
+    real(r8), dimension(150), intent(in) :: mu_r_user
+    real(r8), dimension(300,10), intent(in) :: vn_user, vm_user, revap_user
     mu_r_table(:) = mu_r_user(:)
     revap_table(:,:) = revap_user(:,:)
     vn_table(:,:) = vn_user(:,:)
@@ -328,7 +329,7 @@ contains
   SUBROUTINE p3_init_b()
     implicit none
     integer                      :: i,ii,jj,kk
-    real                         :: lamr,mu_r,lamold,dum,initlamr,dm,dum1,dum2,dum3,dum4,dum5,  &
+    real(r8)                     :: lamr,mu_r,lamold,dum,initlamr,dm,dum1,dum2,dum3,dum4,dum5,  &
          dd,amg,vt,dia
 
     !------------------------------------------------------------------------------------------!
@@ -425,11 +426,11 @@ contains
 
              !note: factor of 4.*mu_r is non-answer changing and only needed to
              !      prevent underflow/overflow errors, same with 3.*mu_r for dum5
-             dum1 = dum1 + vt*10.**(mu_r*alog10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
-             dum2 = dum2 + 10.**(mu_r*alog10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
-             dum3 = dum3 + vt*10.**((mu_r+3.)*alog10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
-             dum4 = dum4 + 10.**((mu_r+3.)*alog10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
-             dum5 = dum5 + (vt*dia)**0.5*10.**((mu_r+1.)*alog10(dia)+3.*mu_r)*exp(-lamr*dia)*dd*1.e-6
+             dum1 = dum1 + vt*10.**(mu_r*log10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
+             dum2 = dum2 + 10.**(mu_r*log10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
+             dum3 = dum3 + vt*10.**((mu_r+3.)*log10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
+             dum4 = dum4 + 10.**((mu_r+3.)*log10(dia)+4.*mu_r)*exp(-lamr*dia)*dd*1.e-6
+             dum5 = dum5 + (vt*dia)**0.5*10.**((mu_r+1.)*log10(dia)+3.*mu_r)*exp(-lamr*dia)*dd*1.e-6
 
           enddo ! kk-loop (over PSD)
 
@@ -439,7 +440,7 @@ contains
 
           vn_table(jj,ii)    = dum1/dum2
           vm_table(jj,ii)    = dum3/dum4
-          revap_table(jj,ii) = 10.**(alog10(dum5)+(mu_r+1.)*alog10(lamr)-(3.*mu_r))
+          revap_table(jj,ii) = 10.**(log10(dum5)+(mu_r+1.)*log10(lamr)-(3.*mu_r))
 
        enddo meansize_loop
 
@@ -471,33 +472,33 @@ contains
 
     !----- Input/ouput arguments:  ----------------------------------------------------------!
 
-    real, intent(inout), dimension(its:ite,kts:kte)      :: qc         ! cloud, mass mixing ratio         kg kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: qc         ! cloud, mass mixing ratio         kg kg-1
     ! note: Nc may be specified or predicted (set by log_predictNc)
-    real, intent(inout), dimension(its:ite,kts:kte)      :: nc         ! cloud, number mixing ratio       #  kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: qr         ! rain, mass mixing ratio          kg kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: nr         ! rain, number mixing ratio        #  kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: qitot      ! ice, total mass mixing ratio     kg kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: qirim      ! ice, rime mass mixing ratio      kg kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: nitot      ! ice, total number mixing ratio   #  kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: birim      ! ice, rime volume mixing ratio    m3 kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: ssat       ! supersaturation (i.e., qv-qvs)   kg kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: nc         ! cloud, number mixing ratio       #  kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: qr         ! rain, mass mixing ratio          kg kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: nr         ! rain, number mixing ratio        #  kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: qitot      ! ice, total mass mixing ratio     kg kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: qirim      ! ice, rime mass mixing ratio      kg kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: nitot      ! ice, total number mixing ratio   #  kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: birim      ! ice, rime volume mixing ratio    m3 kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: ssat       ! supersaturation (i.e., qv-qvs)   kg kg-1
 
-    real, intent(inout), dimension(its:ite,kts:kte)      :: qv         ! water vapor mixing ratio         kg kg-1
-    real, intent(inout), dimension(its:ite,kts:kte)      :: th         ! potential temperature            K
-    real, intent(inout), dimension(its:ite,kts:kte)      :: th_old     ! beginning of time step value of theta K
-    real, intent(inout), dimension(its:ite,kts:kte)      :: qv_old     ! beginning of time step value of qv    kg kg-1
-    real, intent(in),    dimension(its:ite,kts:kte)      :: pres       ! pressure                         Pa
-    real, intent(in),    dimension(its:ite,kts:kte)      :: dzq        ! vertical grid spacing            m
-    real, intent(in)                                     :: dt         ! model time step                  s
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: qv         ! water vapor mixing ratio         kg kg-1
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: th         ! potential temperature            K
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: th_old     ! beginning of time step value of theta K
+    real(r8), intent(inout), dimension(its:ite,kts:kte)      :: qv_old     ! beginning of time step value of qv    kg kg-1
+    real(r8), intent(in),    dimension(its:ite,kts:kte)      :: pres       ! pressure                         Pa
+    real(r8), intent(in),    dimension(its:ite,kts:kte)      :: dzq        ! vertical grid spacing            m
+    real(r8), intent(in)                                     :: dt         ! model time step                  s
 
-    real, intent(out),   dimension(its:ite)              :: prt_liq    ! precipitation rate, liquid       m s-1
-    real, intent(out),   dimension(its:ite)              :: prt_sol    ! precipitation rate, solid        m s-1
-    real, intent(out),   dimension(its:ite,kts:kte)      :: diag_ze    ! equivalent reflectivity          dBZ
-    real, intent(out),   dimension(its:ite,kts:kte)      :: diag_effc  ! effective radius, cloud          m
-    real, intent(out),   dimension(its:ite,kts:kte)      :: diag_effi  ! effective radius, ice            m
-    real, intent(out),   dimension(its:ite,kts:kte)      :: diag_vmi   ! mass-weighted fall speed of ice  m s-1
-    real, intent(out),   dimension(its:ite,kts:kte)      :: diag_di    ! mean diameter of ice             m
-    real, intent(out),   dimension(its:ite,kts:kte)      :: diag_rhoi  ! bulk density of ice              kg m-1
+    real(r8), intent(out),   dimension(its:ite)              :: prt_liq    ! precipitation rate, liquid       m s-1
+    real(r8), intent(out),   dimension(its:ite)              :: prt_sol    ! precipitation rate, solid        m s-1
+    real(r8), intent(out),   dimension(its:ite,kts:kte)      :: diag_ze    ! equivalent reflectivity          dBZ
+    real(r8), intent(out),   dimension(its:ite,kts:kte)      :: diag_effc  ! effective radius, cloud          m
+    real(r8), intent(out),   dimension(its:ite,kts:kte)      :: diag_effi  ! effective radius, ice            m
+    real(r8), intent(out),   dimension(its:ite,kts:kte)      :: diag_vmi   ! mass-weighted fall speed of ice  m s-1
+    real(r8), intent(out),   dimension(its:ite,kts:kte)      :: diag_di    ! mean diameter of ice             m
+    real(r8), intent(out),   dimension(its:ite,kts:kte)      :: diag_rhoi  ! bulk density of ice              kg m-1
 
     integer, intent(in)                                  :: its,ite    ! array bounds (horizontal)
     integer, intent(in)                                  :: kts,kte    ! array bounds (vertical)
@@ -507,91 +508,91 @@ contains
 
     !----- Local variables and parameters:  -------------------------------------------------!
 
-    real, dimension(its:ite,kts:kte) :: mu_r  ! shape parameter of rain
-    real, dimension(its:ite,kts:kte) :: t     ! temperature at the beginning of the microhpysics step [K]
-    real, dimension(its:ite,kts:kte) :: t_old ! temperature at the beginning of the model time step [K]
+    real(r8), dimension(its:ite,kts:kte) :: mu_r  ! shape parameter of rain
+    real(r8), dimension(its:ite,kts:kte) :: t     ! temperature at the beginning of the microhpysics step [K]
+    real(r8), dimension(its:ite,kts:kte) :: t_old ! temperature at the beginning of the model time step [K]
 
     ! 2D size distribution and fallspeed parameters:
 
-    real, dimension(its:ite,kts:kte) :: lamc
-    real, dimension(its:ite,kts:kte) :: lamr
-    real, dimension(its:ite,kts:kte) :: logn0r
-    real, dimension(its:ite,kts:kte) :: mu_c
-    !real, dimension(its:ite,kts:kte) :: diag_effr   (currently not used)
-    real, dimension(its:ite,kts:kte) :: nu
-    real, dimension(its:ite,kts:kte) :: cdist
-    real, dimension(its:ite,kts:kte) :: cdist1
-    real, dimension(its:ite,kts:kte) :: cdistr
-    real, dimension(its:ite,kts:kte) :: Vt_qc
+    real(r8), dimension(its:ite,kts:kte) :: lamc
+    real(r8), dimension(its:ite,kts:kte) :: lamr
+    real(r8), dimension(its:ite,kts:kte) :: logn0r
+    real(r8), dimension(its:ite,kts:kte) :: mu_c
+    !real(r8), dimension(its:ite,kts:kte) :: diag_effr   (currently not used)
+    real(r8), dimension(its:ite,kts:kte) :: nu
+    real(r8), dimension(its:ite,kts:kte) :: cdist
+    real(r8), dimension(its:ite,kts:kte) :: cdist1
+    real(r8), dimension(its:ite,kts:kte) :: cdistr
+    real(r8), dimension(its:ite,kts:kte) :: Vt_qc
 
     ! liquid-phase microphysical process rates:
     !  (all Q process rates in kg kg-1 s-1)
     !  (all N process rates in # kg-1)
 
-    real :: qrcon   ! rain condensation
-    real :: qcacc   ! cloud droplet accretion by rain
-    real :: qcaut   ! cloud droplet autoconversion to rain
-    real :: ncacc   ! change in cloud droplet number from accretion by rain
-    real :: ncautc  ! change in cloud droplet number from autoconversion
-    real :: ncslf   ! change in cloud droplet number from self-collection
-    real :: nrslf   ! change in rain number from self-collection
-    real :: ncnuc   ! change in cloud droplet number from activation of CCN
-    real :: qccon   ! cloud droplet condensation
-    real :: qcnuc   ! activation of cloud droplets from CCN
-    real :: qrevp   ! rain evaporation
-    real :: qcevp   ! cloud droplet evaporation
-    real :: nrevp   ! change in rain number from evaporation
-    real :: ncautr  ! change in rain number from autoconversion of cloud water
+    real(r8) :: qrcon   ! rain condensation
+    real(r8) :: qcacc   ! cloud droplet accretion by rain
+    real(r8) :: qcaut   ! cloud droplet autoconversion to rain
+    real(r8) :: ncacc   ! change in cloud droplet number from accretion by rain
+    real(r8) :: ncautc  ! change in cloud droplet number from autoconversion
+    real(r8) :: ncslf   ! change in cloud droplet number from self-collection
+    real(r8) :: nrslf   ! change in rain number from self-collection
+    real(r8) :: ncnuc   ! change in cloud droplet number from activation of CCN
+    real(r8) :: qccon   ! cloud droplet condensation
+    real(r8) :: qcnuc   ! activation of cloud droplets from CCN
+    real(r8) :: qrevp   ! rain evaporation
+    real(r8) :: qcevp   ! cloud droplet evaporation
+    real(r8) :: nrevp   ! change in rain number from evaporation
+    real(r8) :: ncautr  ! change in rain number from autoconversion of cloud water
 
     ! ice-phase microphysical process rates:
     !  (all Q process rates in kg kg-1 s-1)
     !  (all N process rates in # kg-1)
 
-    real :: qccol     ! collection of cloud water by ice
-    real :: qwgrth    ! wet growth rate
-    real :: qidep     ! vapor deposition
-    real :: qrcol     ! collection rain mass by ice
-    real :: qinuc     ! deposition/condensation freezing nuc
-    real :: nccol     ! change in cloud droplet number from collection by ice
-    real :: nrcol     ! change in rain number from collection by ice
-    real :: ninuc     ! change in ice number from deposition/cond-freezing nucleation
-    real :: qisub     ! sublimation of ice
-    real :: qimlt     ! melting of ice
-    real :: nimlt     ! melting of ice
-    real :: nisub     ! change in ice number from sublimation
-    real :: nislf     ! change in ice number from collection within a category
-    real :: qchetc    ! contact freezing droplets
-    real :: qcheti    ! immersion freezing droplets
-    real :: qrhetc    ! contact freezing rain
-    real :: qrheti    ! immersion freezing rain
-    real :: nchetc    ! contact freezing droplets
-    real :: ncheti    ! immersion freezing droplets
-    real :: nrhetc    ! contact freezing rain
-    real :: nrheti    ! immersion freezing rain
-    real :: nrshdr    ! source for rain number from collision of rain/ice above freezing and shedding
-    real :: qcshd     ! source for rain mass due to cloud water/ice collision above freezing and shedding or wet growth and shedding
-    real :: qcmul     ! change in q, ice multiplication from rime-splitnering of cloud water (not included in the paper)
-    real :: qrmul     ! change in q, ice multiplication from rime-splitnering of rain (not included in the paper)
-    real :: nimul     ! change in Ni, ice multiplication from rime-splintering (not included in the paper)
-    real :: ncshdc    ! source for rain number due to cloud water/ice collision above freezing  and shedding (combined with NRSHD in the paper)
-    real :: rhorime_c ! density of rime (from cloud)
+    real(r8) :: qccol     ! collection of cloud water by ice
+    real(r8) :: qwgrth    ! wet growth rate
+    real(r8) :: qidep     ! vapor deposition
+    real(r8) :: qrcol     ! collection rain mass by ice
+    real(r8) :: qinuc     ! deposition/condensation freezing nuc
+    real(r8) :: nccol     ! change in cloud droplet number from collection by ice
+    real(r8) :: nrcol     ! change in rain number from collection by ice
+    real(r8) :: ninuc     ! change in ice number from deposition/cond-freezing nucleation
+    real(r8) :: qisub     ! sublimation of ice
+    real(r8) :: qimlt     ! melting of ice
+    real(r8) :: nimlt     ! melting of ice
+    real(r8) :: nisub     ! change in ice number from sublimation
+    real(r8) :: nislf     ! change in ice number from collection within a category
+    real(r8) :: qchetc    ! contact freezing droplets
+    real(r8) :: qcheti    ! immersion freezing droplets
+    real(r8) :: qrhetc    ! contact freezing rain
+    real(r8) :: qrheti    ! immersion freezing rain
+    real(r8) :: nchetc    ! contact freezing droplets
+    real(r8) :: ncheti    ! immersion freezing droplets
+    real(r8) :: nrhetc    ! contact freezing rain
+    real(r8) :: nrheti    ! immersion freezing rain
+    real(r8) :: nrshdr    ! source for rain number from collision of rain/ice above freezing and shedding
+    real(r8) :: qcshd     ! source for rain mass due to cloud water/ice collision above freezing and shedding or wet growth and shedding
+    real(r8) :: qcmul     ! change in q, ice multiplication from rime-splitnering of cloud water (not included in the paper)
+    real(r8) :: qrmul     ! change in q, ice multiplication from rime-splitnering of rain (not included in the paper)
+    real(r8) :: nimul     ! change in Ni, ice multiplication from rime-splintering (not included in the paper)
+    real(r8) :: ncshdc    ! source for rain number due to cloud water/ice collision above freezing  and shedding (combined with NRSHD in the paper)
+    real(r8) :: rhorime_c ! density of rime (from cloud)
 
     logical   :: log_wetgrowth
 
-    real :: Eii_fact,epsi
-    real :: eii ! temperature dependent aggregation efficiency
+    real(r8) :: Eii_fact,epsi
+    real(r8) :: eii ! temperature dependent aggregation efficiency
 
-    real, dimension(its:ite,kts:kte) :: diam_ice
+    real(r8), dimension(its:ite,kts:kte) :: diam_ice
 
-    real, dimension(its:ite,kts:kte)      :: inv_dzq,inv_rho,ze_ice,ze_rain,prec,rho,       &
+    real(r8), dimension(its:ite,kts:kte)      :: inv_dzq,inv_rho,ze_ice,ze_rain,prec,rho,       &
          rhofacr,rhofaci,acn,xxls,xxlv,xlf,qvs,qvi,sup,supi,vtrmi1,       &
          tmparr1
 
-    real, dimension(kts:kte) ::  V_qr,V_qit,V_nit,V_nr,V_qc,V_nc,flux_qit,        &
+    real(r8), dimension(kts:kte) ::  V_qr,V_qit,V_nit,V_nr,V_qc,V_nc,flux_qit,        &
          flux_qx,flux_nx,                     &
          flux_nit,flux_qir,flux_bir
 
-    real    :: lammax,lammin,mu,dv,sc,dqsdt,ab,kap,epsr,epsc,xx,aaa,epsilon,sigvl,epsi_tot, &
+    real(r8) :: lammax,lammin,mu,dv,sc,dqsdt,ab,kap,epsr,epsc,xx,aaa,epsilon,sigvl,epsi_tot, &
          aact,sm1,sm2,uu1,uu2,dum,dum1,dum2,    &
          dumqv,dumqvs,dums,ratio,qsat0,dum3,dum4,dum5,dum6,rdumii, &
          rdumjj,dqsidt,abi,dumqvi,rhop,v_impact,ri,iTc,D_c,tmp1,  &
@@ -614,33 +615,40 @@ contains
 
     ! quantities related to process rates/parameters, interpolated from lookup tables:
 
-    real    :: f1pr01   ! number-weighted fallspeed
-    real    :: f1pr02   ! mass-weighted fallspeed
-    real    :: f1pr03   ! ice collection within a category
-    real    :: f1pr04   ! collection of cloud water by ice
-    real    :: f1pr05   ! melting
-    real    :: f1pr06   ! effective radius
-    real    :: f1pr07   ! collection of rain number by ice
-    real    :: f1pr08   ! collection of rain mass by ice
-    real    :: f1pr09   ! minimum ice number (lambda limiter)
-    real    :: f1pr10   ! maximum ice number (lambda limiter)
-!    real    :: f1pr11   ! not used
-!    real    :: f1pr12   ! not used
-    real    :: f1pr13   ! reflectivity
-    real    :: f1pr14   ! melting (ventilation term)
-    real    :: f1pr15   ! mass-weighted mean diameter
-    real    :: f1pr16   ! mass-weighted mean particle density
-!    real    :: f1pr17   ! ice-ice category collection change in number (not used)
-!    real    :: f1pr18   ! ice-ice category collection change in mass (not used)
+    real(r8) :: f1pr01   ! number-weighted fallspeed
+    real(r8) :: f1pr02   ! mass-weighted fallspeed
+    real(r8) :: f1pr03   ! ice collection within a category
+    real(r8) :: f1pr04   ! collection of cloud water by ice
+    real(r8) :: f1pr05   ! melting
+    real(r8) :: f1pr06   ! effective radius
+    real(r8) :: f1pr07   ! collection of rain number by ice
+    real(r8) :: f1pr08   ! collection of rain mass by ice
+    real(r8) :: f1pr09   ! minimum ice number (lambda limiter)
+    real(r8) :: f1pr10   ! maximum ice number (lambda limiter)
+!    real(r8) :: f1pr11   ! not used
+!    real(r8) :: f1pr12   ! not used
+    real(r8) :: f1pr13   ! reflectivity
+    real(r8) :: f1pr14   ! melting (ventilation term)
+    real(r8) :: f1pr15   ! mass-weighted mean diameter
+    real(r8) :: f1pr16   ! mass-weighted mean particle density
+!    real(r8) :: f1pr17   ! ice-ice category collection change in number (not used)
+!    real(r8) :: f1pr18   ! ice-ice category collection change in mass (not used)
 
     !--These will be added as namelist parameters in the future
     logical, parameter :: debug_ON     = .false.  !.true. to switch on debugging checks/traps throughout code
     logical, parameter :: debug_ABORT  = .false.  !.true. will result in forced abort in s/r 'check_values'
-
+    integer :: pstep
     !-----------------------------------------------------------------------------------!
     !  End of variables/parameters declarations
     !-----------------------------------------------------------------------------------!
-
+   print '(A10)', 'INTERFACE LEVEL:'
+   do i = its,ite
+   do k = kts,kte
+      print '(A10,2I,3(1x,E16.8))', '   -', i, k, th(i,k), qv(i,k), pres(i,k)
+   end do
+   end do
+    pstep = 0
+    print '(A3,I2,2(E16.8,1x))', '  -s', pstep, maxval(qc), maxval(nc)
     ! direction of vertical leveling:
     !PMC got rid of 'model' option so we could just replace ktop with kts everywhere...
     ktop = kts        !k of top level
@@ -680,7 +688,7 @@ contains
 
     tmparr1 = (pres*1.e-5)**(rd*inv_cp)
     t       = th    *tmparr1    !compute temperature from theta (value at beginning of microphysics step)
-    t_old   = th_old*tmparr1    !compute temperature from theta (value at beginning of model time step)
+    t_old   = th_old*tmparr1    !compute temperature from theta (value at beginning of model time step)  ! Aaron, not clear if this is correct yet
     qv      = max(qv,0.)        !clip water vapor to prevent negative values passed in (beginning of microphysics)
     !==
     !-----------------------------------------------------------------------------------!
@@ -711,7 +719,7 @@ contains
           qvi(i,k)     = qv_sat(t_old(i,k),pres(i,k),1)
 
           ! if supersaturation is not predicted or during the first time step, then diagnose from qv and T (qvs)
-          if (.not.(log_predictSsat).or.it.eq.1) then
+          if (.not.(log_predictSsat).or.it.eq.1) then  ! Aaron, for now it is always this since log_predictSsat is .false.
              ssat(i,k)    = qv_old(i,k)-qvs(i,k)
              sup(i,k)     = qv_old(i,k)/qvs(i,k)-1.
              supi(i,k)    = qv_old(i,k)/qvi(i,k)-1.
@@ -720,6 +728,7 @@ contains
              sup(i,k)     = ssat(i,k)/qvs(i,k)
              supi(i,k)    = (ssat(i,k)+qvs(i,k)-qvi(i,k))/qvi(i,k)
           endif
+          print '(A19,1x,I2,7(E16.8,1x))', '  ssat-', k, qvs(i,k), t_old(i,k), pres(i,k), ssat(i,k), sup(i,k), qv_old(i,k), tmparr1(i,k)
 
           rhofacr(i,k) = (rhosur*inv_rho(i,k))**0.54
           rhofaci(i,k) = (rhosui*inv_rho(i,k))**0.54
@@ -727,7 +736,7 @@ contains
           acn(i,k)     = g*rhow/(18.*dum)  ! 'a' parameter for droplet fallspeed (Stokes' law)
 
           !specify cloud droplet number (for 1-moment version)
-          if (.not.(log_predictNc)) then
+          if (.not.(log_predictNc)) then  ! Aaron, for now it is always this since log_predictNc is .false.
              nc(i,k) = nccnst*inv_rho(i,k)
           endif
 
@@ -780,7 +789,8 @@ contains
           !===
 
        enddo k_loop_1
-
+    pstep = 1
+    print '(A3,I2,2(E16.8,1x))', '  -s', pstep, maxval(qc), maxval(nc)
        if (debug_ON) then
           tmparr1(i,:) = th(i,:)*(pres(i,:)*1.e-5)**(rd*inv_cp)
           call check_values(qv,tmparr1,i,it,debug_ABORT,200)
@@ -796,6 +806,7 @@ contains
        !   main k-loop (for processes):
        k_loop_main: do k = kbot,ktop,kdir
 
+    print '(A5,I2,4(1x,E16.8))', '   -', k, qc(i,k), nc(i,k)
           ! if relatively dry and no hydrometeors at this level, skip to end of k-loop (i.e. skip this level)
           log_exitlevel = .true.
           if (qc(i,k).ge.qsmall .or. qr(i,k).ge.qsmall) log_exitlevel = .false.
@@ -827,7 +838,7 @@ contains
           log_wetgrowth = .false.
 
           !----------------------------------------------------------------------
-          predict_supersaturation: if (log_predictSsat) then
+          predict_supersaturation: if (log_predictSsat) then  ! Aaron, for now we don't do this since log_predictSsat is .false.
 
              ! Adjust cloud water and thermodynamics to prognostic supersaturation
              ! following the method in Grabowski and Morrison (2008).
@@ -859,6 +870,8 @@ contains
              endif
 
           endif predict_supersaturation
+    pstep = 2
+    print '(A3,I2,2(E16.8,1x))', '  -s', pstep, maxval(qc), maxval(nc)
           !----------------------------------------------------------------------
 
           ! skip micro process calculations except nucleation/acvtivation if there no hydrometeors are present
@@ -1274,16 +1287,16 @@ contains
           oxx = 1./xx
 
           if (qc(i,k).ge.qsmall) &
-               qccon = (aaa*epsc*oxx+(ssat(i,k)-aaa*oxx)*odt*epsc*oxx*(1.-dexp(-dble(xx*dt))))/ab
+               qccon = (aaa*epsc*oxx+(ssat(i,k)-aaa*oxx)*odt*epsc*oxx*(1._r8-dexp(-dble(xx*dt))))/ab
           if (qr(i,k).ge.qsmall) &
-               qrcon = (aaa*epsr*oxx+(ssat(i,k)-aaa*oxx)*odt*epsr*oxx*(1.-dexp(-dble(xx*dt))))/ab
+               qrcon = (aaa*epsr*oxx+(ssat(i,k)-aaa*oxx)*odt*epsr*oxx*(1._r8-dexp(-dble(xx*dt))))/ab
 
           !for very small water contents, evaporate instantly
           if (sup(i,k).lt.-0.001 .and. qc(i,k).lt.1.e-12)  qccon = -qc(i,k)*odt
           if (sup(i,k).lt.-0.001 .and. qr(i,k).lt.1.e-12)  qrcon = -qr(i,k)*odt
-
-          if (qccon.lt.0.) then
-             qcevp = -qccon
+          print '(A10,I2,11(1x,E16.8))', '  -qcon', k, qccon, sup(i,k), qc(i,k)*odt, aaa, epsc, oxx, ssat(i,k), xx, t(i,k), odt, ab
+          if (qccon.lt.0.) then  ! Aaron, this is what is being triggered to remove all cloud liq in Dycoms SCM run
+             qcevp = -qccon  ! qccon is negative because ssat is negative and aaa=0
              qccon = 0.
           endif
 
@@ -1369,7 +1382,7 @@ contains
              qcnuc = dum*odt
           endif
 
-          if (log_predictNc) then
+          if (log_predictNc) then  ! Aaron, for now we don't do since log_predictNs is .false.
 
              ! for predicted Nc, calculate activation explicitly from supersaturation
              ! note that this is also applied at the first time step
@@ -1614,6 +1627,7 @@ contains
           !-- ice-phase dependent processes:
 
           qc(i,k) = qc(i,k) + (-qchetc-qcheti-qccol-qcshd)*dt
+    print '(A10,I2,7(1x,E16.8))', '   -ice', k, qc(i,k), nc(i,k), qchetc, qcheti, qccol, qcshd, dt
           if (log_predictNc) then
              nc(i,k) = nc(i,k) + (-nccol-nchetc-ncheti)*dt
           endif
@@ -1680,6 +1694,7 @@ contains
           !-- warm-phase only processes:
           qc(i,k) = qc(i,k) + (-qcacc-qcaut+qcnuc+qccon-qcevp)*dt
           qr(i,k) = qr(i,k) + (qcacc+qcaut+qrcon-qrevp)*dt
+    print '(A10,I2,7(1x,E16.8))', '   -warm', k, qc(i,k), nc(i,k), qcacc, qcaut, qcnuc, qccon, qcevp ! Aaron, right here all water is gone through qcevp and qcacc (mostly qcevp)
 
           if (log_predictNc) then
              nc(i,k) = nc(i,k) + (-ncacc-ncautc+ncslf+ncnuc)*dt
@@ -1698,7 +1713,7 @@ contains
           !==
 
           ! clipping for small hydrometeor values
-          if (qc(i,k).lt.qsmall) then
+          if (qc(i,k).lt.qsmall) then  ! Aaron, see above, since qc is gone this is triggered and nc is now 0 too
              qv(i,k) = qv(i,k) + qc(i,k)
              th(i,k) = th(i,k) - th(i,k)/t(i,k)*qc(i,k)*xxlv(i,k)*inv_cp
              qc(i,k) = 0.
@@ -1706,6 +1721,7 @@ contains
           else
              log_hydrometeorsPresent = .true.
           endif
+    print '(A10,I2,2(1x,E16.8))', '   -clip', k, qc(i,k), nc(i,k)
 
           if (qr(i,k).lt.qsmall) then
              qv(i,k) = qv(i,k) + qr(i,k)
@@ -1734,6 +1750,8 @@ contains
 555       continue
 
        enddo k_loop_main
+    pstep = 3
+    print '(A3,I2,2(E16.8,1x))', '  -s', pstep, maxval(qc), maxval(nc)
 
        !NOTE: At this point, it is possible to have negative (but small) nc, nr, nitot.  This is not
        !      a problem; those values get clipped to zero in the sedimentation section (if necessary).
@@ -1884,10 +1902,12 @@ contains
                 k = k_qxtop
                 fluxdiv_qx = -flux_qx(k)*inv_dzq(i,k)
                 qc(i,k) = qc(i,k) + fluxdiv_qx*dt_sub*inv_rho(i,k)
+    print '(A5,I2,4(1x,E16.8))', '   -', k, qc(i,k), nc(i,k), fluxdiv_qx, inv_rho(i,k)
 
                 do k = k_qxtop-kdir,k_temp,-kdir
                    fluxdiv_qx = (flux_qx(k+kdir) - flux_qx(k))*inv_dzq(i,k)
                    qc(i,k) = qc(i,k) + fluxdiv_qx*dt_sub*inv_rho(i,k)
+    print '(A5,I2,4(1x,E16.8))', '   -', k, qc(i,k), nc(i,k), fluxdiv_qx, inv_rho(i,k)
                 enddo
 
                 dt_left = dt_left - dt_sub  !update time remaining for sedimentation
@@ -1896,6 +1916,8 @@ contains
              enddo substep_sedi_c1
 
           ENDIF two_moment
+    pstep = 4
+    print '(A3,I2,2(E16.8,1x))', '  -s', pstep, maxval(qc), maxval(nc)
 
           prt_liq(i) = prt_accum*inv_rhow*odt  !note, contribution from rain is added below
 
@@ -2198,6 +2220,8 @@ contains
           endif
 
        enddo k_loop_fz
+    pstep = 5
+    print '(A3,I2,2(E16.8,1x))', '  -s', pstep, maxval(qc), maxval(nc)
 
        !  if (debug_ON) call check_values(qv,T,i,it,debug_ABORT,700)
 
@@ -2320,6 +2344,8 @@ contains
           endif
 
        enddo k_loop_final_diagnostics
+    pstep = 6
+    print '(A3,I2,2(E16.8,1x))', '  -s', pstep, maxval(qc), maxval(nc)
 
        !   if (debug_ON) call check_values(qv,Ti,it,debug_ABORT,800)
 
@@ -2371,7 +2397,7 @@ contains
 
     implicit none
 
-    real    :: dum1,dum4,dum5,proc,iproc1,gproc1,tmp1,tmp2
+    real(r8) :: dum1,dum4,dum5,proc,iproc1,gproc1,tmp1,tmp2
     integer :: dumjj,dumii,dumi,index
 
     ! get value at current density index
@@ -2413,7 +2439,7 @@ contains
 
     implicit none
 
-    real    :: dum1,dum3,dum4,dum5,proc,dproc1,dproc2,iproc1,gproc1,tmp1,tmp2
+    real(r8) :: dum1,dum3,dum4,dum5,proc,dproc1,dproc2,iproc1,gproc1,tmp1,tmp2
     integer :: dumjj,dumii,dumj,dumi,index
 
 
@@ -2490,27 +2516,27 @@ contains
 
     implicit none
 
-    real    :: T
+    real(r8) :: T
     integer :: i_type
 
     ! REPLACE GOFF-GRATCH WITH FASTER FORMULATION FROM FLATAU ET AL. 1992, TABLE 4 (RIGHT-HAND COLUMN)
 
     ! ice
-    real a0i,a1i,a2i,a3i,a4i,a5i,a6i,a7i,a8i
+    real(r8) a0i,a1i,a2i,a3i,a4i,a5i,a6i,a7i,a8i
     data a0i,a1i,a2i,a3i,a4i,a5i,a6i,a7i,a8i /&
          6.11147274, 0.503160820, 0.188439774e-1, &
          0.420895665e-3, 0.615021634e-5,0.602588177e-7, &
          0.385852041e-9, 0.146898966e-11, 0.252751365e-14/
 
     ! liquid
-    real a0,a1,a2,a3,a4,a5,a6,a7,a8
+    real(r8) a0,a1,a2,a3,a4,a5,a6,a7,a8
 
     ! V1.7
     data a0,a1,a2,a3,a4,a5,a6,a7,a8 /&
          6.11239921, 0.443987641, 0.142986287e-1, &
          0.264847430e-3, 0.302950461e-5, 0.206739458e-7, &
          0.640689451e-10,-0.952447341e-13,-0.976195544e-15/
-    real dt
+    real(r8) dt
 
     !-------------------------------------------
 
@@ -2573,18 +2599,18 @@ contains
 
     ! arguments:
     integer, intent(out) :: dumi,dumjj,dumii,dumzz
-    real,    intent(out) :: dum1,dum4,dum5,dum6
+    real(r8),    intent(out) :: dum1,dum4,dum5,dum6
     integer, intent(in)  :: isize,rimsize,densize
-    real,    intent(in)  :: qitot,nitot,qirim,rhop
+    real(r8),    intent(in)  :: qitot,nitot,qirim,rhop
 
     !------------------------------------------------------------------------------------------!
 
     ! find index for qi (normalized ice mass mixing ratio = qitot/nitot)
-    !             dum1 = (alog10(qitot)+16.)/0.70757  !orig
-    !             dum1 = (alog10(qitot)+16.)*1.41328
+    !             dum1 = (log10(qitot)+16.)/0.70757  !orig
+    !             dum1 = (log10(qitot)+16.)*1.41328
     ! we are inverting this equation from the lookup table to solve for i:
     ! qitot/nitot=261.7**((i+10)*0.1)*1.e-18
-    dum1 = (alog10(qitot/nitot)+18.)/(0.1*alog10(261.7))-10.
+    dum1 = (log10(qitot/nitot)+18.)/(0.1*log10(261.7))-10.
     dumi = int(dum1)
     ! set limits (to make sure the calculated index doesn't exceed range of lookup table)
     dum1 = min(dum1,real(isize))
@@ -2632,12 +2658,12 @@ contains
 
     ! arguments:
     integer, intent(out) :: dumj
-    real,    intent(out) :: dum3
+    real(r8),    intent(out) :: dum3
     integer, intent(in)  :: rcollsize
-    real,    intent(in)  :: qr,nr
+    real(r8),    intent(in)  :: qr,nr
 
     ! local variables:
-    real                 :: dumlr
+    real(r8)             :: dumlr
 
     !------------------------------------------------------------------------------------------!
 
@@ -2646,7 +2672,7 @@ contains
     if (qr.ge.qsmall .and. nr.gt.0.) then
        ! calculate scaled mean size for consistency with ice lookup table
        dumlr = (qr/(pi*rhow*nr))**thrd
-       dum3  = (alog10(1.*dumlr)+5.)*10.70415
+       dum3  = (log10(1.*dumlr)+5.)*10.70415
        dumj  = int(dum3)
        ! set limits
        dum3  = min(dum3,real_rcollsize)
@@ -2673,8 +2699,8 @@ contains
 
     ! arguments:
     integer, intent(out) :: dumii,dumjj
-    real,    intent(out) :: dum1,rdumii,rdumjj,inv_dum3
-    real,    intent(in)  :: mu_r,lamr
+    real(r8),    intent(out) :: dum1,rdumii,rdumjj,inv_dum3
+    real(r8),    intent(in)  :: mu_r,lamr
 
     !------------------------------------------------------------------------------------------!
 
@@ -2715,13 +2741,13 @@ contains
     implicit none
 
     !arguments:
-    real, dimension(:), intent(in)  :: dnu
-    real,     intent(in)            :: qc,rho
-    real,     intent(inout)         :: nc
-    real,     intent(out)           :: mu_c,nu,lamc,cdist,cdist1
+    real(r8), dimension(:), intent(in)  :: dnu
+    real(r8),     intent(in)            :: qc,rho
+    real(r8),     intent(inout)         :: nc
+    real(r8),     intent(out)           :: mu_c,nu,lamc,cdist,cdist1
 
     !local variables
-    real                            :: lammin,lammax
+    real(r8)                        :: lammin,lammax
     integer                         :: dumi
 
     !--------------------------------------------------------------------------
@@ -2778,14 +2804,14 @@ contains
     implicit none
 
     !arguments:
-    real, dimension(:), intent(in)  :: mu_r_table
-    real,     intent(in)            :: qr
-    real,     intent(inout)         :: nr
-    real,     intent(out)           :: rdumii,lamr,mu_r,cdistr,logn0r
+    real(r8), dimension(:), intent(in)  :: mu_r_table
+    real(r8),     intent(in)            :: qr
+    real(r8),     intent(inout)         :: nr
+    real(r8),     intent(out)           :: rdumii,lamr,mu_r,cdistr,logn0r
     integer,  intent(out)           :: dumii
 
     !local variables:
-    real                            :: inv_dum,lammax,lammin
+    real(r8)                        :: inv_dum,lammax,lammin
 
     !--------------------------------------------------------------------------
 
@@ -2828,7 +2854,7 @@ contains
        endif
 
        cdistr  = nr/gamma(mu_r+1.)
-       logn0r  = alog10(nr)+(mu_r+1.)*alog10(lamr)-alog10(gamma(mu_r+1)) !note: logn0r is calculated as log10(n0r)
+       logn0r  = log10(nr)+(mu_r+1.)*log10(lamr)-log10(gamma(mu_r+1)) !note: logn0r is calculated as log10(n0r)
 
     else
 
@@ -2852,9 +2878,9 @@ contains
     implicit none
 
     !arguments:
-    real, intent(in)    :: qi_tot
-    real, intent(inout) :: qi_rim,bi_rim
-    real, intent(out)   :: rho_rime
+    real(r8), intent(in)    :: qi_tot
+    real(r8), intent(inout) :: qi_rim,bi_rim
+    real(r8), intent(out)   :: rho_rime
 
     !--------------------------------------------------------------------------
 
@@ -2903,11 +2929,11 @@ contains
     implicit none
 
     !arguments:
-    real, intent(inout)               :: nitot_local      !PMC - scalar now that nCat deleted.
-    real, intent(in)                  :: max_total_Ni,inv_rho_local
+    real(r8), intent(inout)               :: nitot_local      !PMC - scalar now that nCat deleted.
+    real(r8), intent(in)                  :: max_total_Ni,inv_rho_local
 
     !local variables:
-    real                              :: dum
+    real(r8)                          :: dum
 
     if (nitot_local.ge.1.e-20) then
        dum = max_total_Ni*inv_rho_local/nitot_local
@@ -2930,17 +2956,22 @@ contains
     implicit none
 
     !Calling parameters:
-    real    :: t_atm  !temperature [K]
-    real    :: p_atm  !pressure    [Pa]
+    real(r8) :: t_atm  !temperature [K]
+    real(r8) :: p_atm  !pressure    [Pa]
     integer :: i_wrt  !index, 0 = w.r.t. liquid, 1 = w.r.t. ice
 
     !Local variables:
-    real            :: e_pres         !saturation vapor pressure [Pa]
+    real(r8)        :: e_pres         !saturation vapor pressure [Pa]
 
     !------------------
 
     e_pres = polysvp1(t_atm,i_wrt)
     qv_sat = ep_2*e_pres/max(1.e-3,(p_atm-e_pres))
+
+!  Wallace and Hobbs pg. 82
+!    ws = 0.622*es/(p-es)  
+!    e = equilibrium vapor pressure
+!    p is the total pressure
 
     return
   end function qv_sat
@@ -2968,18 +2999,18 @@ contains
     implicit none
 
     !Calling parameters:
-    real, dimension(:,:),   intent(in) :: Qv,T
+    real(r8), dimension(:,:),   intent(in) :: Qv,T
     integer,                intent(in) :: source_ind,i,timestepcount
     logical,                intent(in) :: force_abort         !.TRUE. = forces abort if value violation is detected
 
     !Local variables:
-    real, parameter :: T_low  = 173.
-    real, parameter :: T_high = 323.
-    real, parameter :: Q_high = 40.e-3
-    real, parameter :: N_high = 1.e+20
-    real, parameter :: B_high = Q_high*1.e-3
-    real, parameter :: x_high = 1.e+30
-    real, parameter :: x_low  = 0.
+    real(r8), parameter :: T_low  = 173.
+    real(r8), parameter :: T_high = 323.
+    real(r8), parameter :: Q_high = 40.e-3
+    real(r8), parameter :: N_high = 1.e+20
+    real(r8), parameter :: B_high = Q_high*1.e-3
+    real(r8), parameter :: x_high = 1.e+30
+    real(r8), parameter :: x_low  = 0.
     integer         :: k,nk
     logical         :: trap,badvalue_found
 
