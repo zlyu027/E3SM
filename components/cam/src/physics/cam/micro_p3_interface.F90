@@ -746,9 +746,10 @@ module micro_p3_interface
     logical :: log_predictNc           !prognostic droplet concentration or not?
     integer :: col_type ! Flag to store whether accessing grid or sub-columns in pbuf_get_field
     integer :: icol, ncol, k
-    integer :: psetcols
+    integer :: psetcols, lchnk
 
     psetcols = state%psetcols
+    lchnk = state%lchnk
 
     ! Associate Pbuf Variables
     !==============
@@ -778,6 +779,8 @@ module micro_p3_interface
     call pbuf_get_field(pbuf, iciwpst_idx,     iciwpst,     col_type=col_type)
     call pbuf_get_field(pbuf, iclwpst_idx,     iclwpst,     col_type=col_type)
     call pbuf_get_field(pbuf, qme_idx,         qme,         col_type=col_type)
+    
+    ncol = state%ncol
     ! INITIALIZE PTEND
     !==============
     !ptend is an output variable. Since not substepping in micro, don't need 
@@ -811,13 +814,17 @@ module micro_p3_interface
     ! Aaron- is_first_step=1 only for first step of initial run, per:
     !      logical function is_first_step()
     !              Return true on first step of initial run only.
-    if ( is_first_step() ) then
-       th_old=state%t*state%exner !this is wrong, just using to get started.
-       qv_old=state%q(:,:,1)
-    else
-       th_old = th !use th from end of last p3 step
-       qv_old = qv !use qv from end of last p3 step
-    end if
+    do icol = 1,ncol
+       do k = 1,pver
+          if ( is_first_step() ) then
+             th_old(icol,k)=state%t(icol,k)*(state%pmid(icol,k)*1.e-5)**(-287.15/1005.)!*state%exner(icol,k) !this is wrong, just using to get started.
+             qv_old(icol,k)=state%q(icol,k,1)
+          else
+             th_old(icol,k) = th(icol,k) !use th from end of last p3 step
+             qv_old(icol,k) = qv(icol,k) !use qv from end of last p3 step
+          end if
+       end do
+    end do
 
     ! CONVERT T TO POTENTIAL TEMPERATURE
     !==============
@@ -826,11 +833,10 @@ module micro_p3_interface
 
     ! COMPUTE GEOMETRIC THICKNESS OF GRID
     !==============
-    ncol = state%ncol
     do icol = 1,ncol
        do k = 1,pver
           dzq(icol,k) = state%zi(icol,k) - state%zi(icol,k+1)
-          th(icol,k)  = state%t(icol,k)*state%exner(icol,k)
+          th(icol,k)  = state%t(icol,k)*(state%pmid(icol,k)*1.e-5)**(-287.15/1005.) !*state%exner(icol,k)
        end do
     end do
 
@@ -957,11 +963,16 @@ module micro_p3_interface
           ptend%q(icol,k,ixnumice)  = (numice(icol,k)  - state%q(icol,k,ixnumice) )/dtime
           ptend%q(icol,k,ixcldrim)  = (rim(icol,k)     - state%q(icol,k,ixcldrim) )/dtime
           ptend%q(icol,k,ixrimvol)  = (rimvol(icol,k)  - state%q(icol,k,ixrimvol) )/dtime
+
        end do
     end do
 
+    prec_pcw = prt_liq + prt_sol
+    prec_sed = 0._r8
+    prec_str = prec_pcw + prec_sed
+
+    snow_pcw = prt_sol
     snow_sed = 0._r8
-    snow_pcw = 0._r8 !prt_sol
     snow_str = snow_pcw + snow_sed
 
     !note s=cp*T has units J/kg
@@ -969,9 +980,9 @@ module micro_p3_interface
 
     !WRITE OUTPUT
     !=============
-!   call outfld('AQRAIN',      qrout2,      psetcols, lchnk, avg_subcol_field=use_subcol_microp)
+   call outfld('AQRAIN',      rain,      psetcols, lchnk, avg_subcol_field=use_subcol_microp)
 !   call outfld('AQSNOW',      qsout2,      psetcols, lchnk, avg_subcol_field=use_subcol_microp)
-!   call outfld('ANRAIN',      nrout2,      psetcols, lchnk, avg_subcol_field=use_subcol_microp)
+   call outfld('ANRAIN',      numrain,      psetcols, lchnk, avg_subcol_field=use_subcol_microp)
 !   call outfld('ANSNOW',      nsout2,      psetcols, lchnk, avg_subcol_field=use_subcol_microp)
 !   call outfld('AREL',        efcout_grid,      pcols, lchnk)
 !   call outfld('AREI',        efiout_grid,      pcols, lchnk)
