@@ -49,7 +49,7 @@ endif
 # Intel fortran compiler (using default library paths from the INC_NETCDF and 
 # LIB_NETCDF environment variables above)
 ifeq ($(FC),ifort)
-    FFLAGS += -g -check all -fpe0 -traceback -ftz -convert big_endian -fp-model precise
+    FFLAGS += -g -check all -check noarg_temp_created -fpe0 -traceback -ftz -convert big_endian -fp-model precise
     LDFLAGS += -L$(LIB_NETCDF) -lnetcdf -lnetcdff
 endif
 
