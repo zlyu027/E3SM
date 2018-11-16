@@ -5,17 +5,20 @@ RM = rm
 .SUFFIXES:
 .SUFFIXES: .F90 .o
 
-FC = lf95
-DEBUG = FALSE
-
-
-# Check for the NetCDF library and include directories 
-ifeq ($(LIB_NETCDF),$(null))
-LIB_NETCDF := /usr/local/lib
+# Set the default fortran compiler, but allow this to be overridden by setting 
+# the FC environment variable 
+ifeq ($(FC),$(null))
+    FC = lf95
+    DEBUG = FALSE
 endif
 
+# Check for the NetCDF library and include directories; if these environment 
+# variables are not present, then set defaults
+ifeq ($(LIB_NETCDF),$(null))
+    LIB_NETCDF := /usr/local/lib
+endif
 ifeq ($(INC_NETCDF),$(null))
-INC_NETCDF := /usr/local/include
+    INC_NETCDF := /usr/local/include
 endif
 
 # Determine platform 
@@ -23,33 +26,36 @@ UNAMES := $(shell uname -s)
 UNAMEM := $(findstring CRAY,$(shell uname -m))
 
 #------------------------------------------------------------------------
-# LF95
+# Set flags for compiler in use
 #------------------------------------------------------------------------
-#
-# setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/usr/local/netcdf-4.1.3-gcc-4.4.4-13-lf9581/lib
-#
-ifeq ($(FC),lf95)
-#
-# Tramhill
-#
-  INC_NETCDF :=/usr/local/netcdf-4.1.3-gcc-4.4.4-13-lf9581/include
-  LIB_NETCDF :=/usr/local/netcdf-4.1.3-gcc-4.4.4-13-lf9581/lib
 
-  LDFLAGS = -L$(LIB_NETCDF) -lnetcdf -lnetcdff -lcurl -lhdf5 -lhdf5_hl -mcmodel=medium 
-  FFLAGS   := -c --trace --trap --wide -CcdRR8 -I$(INC_NETCDF)
-  ifeq ($(DEBUG),TRUE)
-#   FFLAGS += --chk aesu  -Cpp --trace
-    FFLAGS += -g --chk a,e,s,u --pca
-  else
-    FFLAGS += -O
-  endif
+# LF95
+ifeq ($(FC),lf95)
+	
+	# Library paths for Tramhill
+    INC_NETCDF :=/usr/local/netcdf-4.1.3-gcc-4.4.4-13-lf9581/include
+    LIB_NETCDF :=/usr/local/netcdf-4.1.3-gcc-4.4.4-13-lf9581/lib
+
+    LDFLAGS = -L$(LIB_NETCDF) -lnetcdf -lnetcdff -lcurl -lhdf5 -lhdf5_hl -mcmodel=medium 
+    FFLAGS   := -c --trace --trap --wide -CcdRR8 -I$(INC_NETCDF)
+    ifeq ($(DEBUG),TRUE)
+        FFLAGS += -g --chk a,e,s,u --pca
+    else
+        FFLAGS += -O
+    endif
 
 endif
 
+# Intel fortran compiler (using default library paths from the INC_NETCDF and 
+# LIB_NETCDF environment variables above)
+ifeq ($(FC),ifort)
+    FFLAGS += -g -check all -fpe0 -traceback -ftz -convert big_endian -fp-model precise
+    LDFLAGS += -L$(LIB_NETCDF) -lnetcdf -lnetcdff
+endif
 
 
 .F90.o:
-	$(FC) $(FFLAGS) $<
+	$(FC) -c $(FFLAGS) $<
 
 #------------------------------------------------------------------------
 # Default rules and macros
