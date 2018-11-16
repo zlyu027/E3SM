@@ -20,7 +20,7 @@ module nctopo_util_mod
   use dimensions_mod,     only: nelemd, nlev, np, npsq
   implicit none
   private
-  public nctopo_util_inidat, nctopo_util_driver
+  public nctopo_util_inidat, nctopo_util_finalize, nctopo_util_driver
 
 
   real(r8),allocatable :: SGHdyn(:,:,:),SGH30dyn(:,:,:),PHISdyn(:,:,:)
@@ -145,12 +145,18 @@ contains
      
     
     deallocate(tmp)
+
+  end subroutine nctopo_util_inidat
+
+
+  subroutine nctopo_util_finalize()
+
+    ! Deallocate memory for arrays used in topography smoothing
     deallocate(PHISdyn)
     deallocate(SGHdyn)
     deallocate(SGH30dyn)
 
-  end subroutine nctopo_util_inidat
-
+  end subroutine nctopo_util_finalize
 
 
   subroutine nctopo_util_driver(elem,hybrid,nets,nete)

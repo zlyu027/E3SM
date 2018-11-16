@@ -574,6 +574,8 @@ end subroutine stepon_run3
 ! !INTERFACE:
 subroutine stepon_final(dyn_in, dyn_out)
 
+   use nctopo_util_mod, only: nctopo_util_finalize
+
 ! !PARAMETERS:
   ! WARNING: intent(out) here means that pointers in dyn_in and dyn_out
   ! are nullified. Unless this memory is released in some other routine,
@@ -591,6 +593,8 @@ subroutine stepon_final(dyn_in, dyn_out)
 !-----------------------------------------------------------------------
 !BOC
 
+  ! Deallocate memory for topography smoothing
+  call nctopo_util_finalize()
 
 !EOC
 end subroutine stepon_final
