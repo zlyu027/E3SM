@@ -329,13 +329,21 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
 !corners to all other gll points via bilinear interp
       call binterp(dyn_in%elem(ie)%derived%FT)
 
-      extrf(:,:,:) = dyn_in%elem(ie)%derived%FM(:,:,1,:)
+      do k=1,nlev
+        extrf(:,:,k) = dyn_in%elem(ie)%derived%FM(:,:,1,k)
+      enddo
       call binterp(extrf)
-      dyn_in%elem(ie)%derived%FM(:,:,1,:) = extrf(:,:,:)
+      do k=1,nlev
+        dyn_in%elem(ie)%derived%FM(:,:,1,:) = extrf(:,:,:)
+      enddo
 
-      extrf(:,:,:) = dyn_in%elem(ie)%derived%FM(:,:,2,:)
+      do k=1,nlev
+        extrf(:,:,:) = dyn_in%elem(ie)%derived%FM(:,:,2,:)
+      enddo
       call binterp(extrf)
-      dyn_in%elem(ie)%derived%FM(:,:,1,:) = extrf(:,:,:)
+      do k=1,nlev
+        dyn_in%elem(ie)%derived%FM(:,:,1,:) = extrf(:,:,:)
+      enddo
 
       do ic=1,pcnst
         call binterp(dyn_in%elem(ie)%derived%FQ(:,:,:,ic))
