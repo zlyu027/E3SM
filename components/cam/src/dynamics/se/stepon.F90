@@ -214,6 +214,9 @@ subroutine stepon_run1( dtime_out, phys_state, phys_tend,               &
 end subroutine stepon_run1
 
 
+
+#undef PG_OPTION1
+#ifdef PG_OPTION1
 subroutine binterp(field)
 use dimensions_mod, only: nlev, np
 implicit none
@@ -243,10 +246,7 @@ do k=1,nlev
             end do
 enddo
 end subroutine binterp
-
-
-
-
+#endif
 
 subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
    use bndry_mod,      only: bndry_exchangeV
@@ -269,8 +269,10 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
    integer :: kptr, ie, ic, i, j, k, tl_f, tl_fQdp
    real(r8) :: rec2dt, dyn_ps0
    real(r8) :: dp(np,np,nlev),dp_tmp,fq,fq0,qn0, ftmp(npsq,nlev,2)
-   real(r8) :: dtime,     extrf(np,np,nlev)
-
+   real(r8) :: dtime
+#ifdef PG_OPTION1
+   real(r8) :: extrf(np,np,nlev)
+#endif
 
    dtime = get_step_size()
 
@@ -325,6 +327,8 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
 
       dyn_ps0=ps0
 
+
+#ifdef PG_OPTION1
 !before Q tendencies are applied, recompute FQ and everything else from external 4
 !corners to all other gll points via bilinear interp
       call binterp(dyn_in%elem(ie)%derived%FT)
@@ -348,6 +352,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
       do ic=1,pcnst
         call binterp(dyn_in%elem(ie)%derived%FQ(:,:,:,ic))
       enddo
+#endif
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! ftype=2,3,4:  apply forcing to Q,ps.  Return dynamics tendencies
