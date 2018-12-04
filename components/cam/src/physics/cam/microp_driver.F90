@@ -189,12 +189,12 @@ subroutine microp_driver_tend(state, ptend, dtime, pbuf)
    ncol  = state%ncol
 
    ! Call MG Microphysics
-   print '(A10)', 'TOP LEVEL:'
-   do i = 1,ncol
-   do k = 1,pver
-      print '(A10,2I,3(1x,E16.8))', '   -', i, k, state%t(i,k), state%q(i,k,1), state%pmid(i,k)
-   end do
-   end do
+!   print '(A10)', 'TOP LEVEL:'
+!   do i = 1,ncol
+!   do k = 1,pver
+!      print '(A10,2I,3(1x,E16.8))', '   -', i, k, state%t(i,k), state%q(i,k,1), state%pmid(i,k)
+!   end do
+!   end do
    select case (microp_scheme)
    case ('MG')
       call t_startf('microp_mg_cam_tend')

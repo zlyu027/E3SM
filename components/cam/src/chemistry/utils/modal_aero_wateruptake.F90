@@ -2,6 +2,7 @@ module modal_aero_wateruptake
 
 !   RCE 07.04.13:  Adapted from MIRAGE2 code
 
+use spmd_utils,       only: masterproc
 use shr_kind_mod,     only: r8 => shr_kind_r8
 use physconst,        only: pi, rhoh2o
 use ppgrid,           only: pcols, pver

@@ -11,6 +11,7 @@ use ppgrid,       only: pcols, pver
 use physconst,    only: gravit, rair, tmelt
 use phys_control, only: cam_physpkg_is
 use cam_logfile,  only: iulog
+use spmd_utils,       only: masterproc
 
 implicit none
 save
