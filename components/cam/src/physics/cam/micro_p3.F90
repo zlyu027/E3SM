@@ -26,6 +26,12 @@
 ! Version:       2.8.2.4 + Peter's fixes                                                   !
 ! Last updated:  2018-09-11                                                                !
 !__________________________________________________________________________________________!
+!                                                                                          !
+! AaronDonahue: Need to change dz coordinate system to dp to match E3SM                    !
+!               Need to finish fixing all universal constants so that they match E3SM      !
+!               Need to add all of the output variables to P3_interface layer              !
+!__________________________________________________________________________________________!
+
 
 MODULE MICRO_P3
 
@@ -163,7 +169,7 @@ contains
     f2r    = 0.32_r8
     ecr    = 1._r8
     rhow   = rhoh2o
-    cpw    = 4218._r8
+    cpw    = 4218._r8  ! Aaron, Specific Heat of Liq. Water at 0deg C
     inv_rhow = 1.0_r8/rhow !1.e-3  !inverse of (max.) density of liquid water
 
     ! limits for rime density [kg m-3]
@@ -610,7 +616,7 @@ contains
 
     real(r8), dimension(its:ite,kts:kte)      :: inv_dzq,inv_rho,ze_ice,ze_rain,prec,rho,       &
          rhofacr,rhofaci,acn,xxls,xxlv,xlf,qvs,qvi,sup,supi,vtrmi1,       &
-         tmparr1
+         tmparr1, inv_exn
 
     real(r8), dimension(kts:kte) ::  V_qr,V_qit,V_nit,V_nr,V_qc,V_nc,flux_qit,        &
          flux_qx,flux_nx,                     &
@@ -721,6 +727,7 @@ contains
       qi_int(3) = qi_int(3) + qitot(i,k)*pdel(i,k)/gravit
       qb_int(3) = qb_int(3) + qirim(i,k)*pdel(i,k)/gravit
 
+      rho(i,k)     = pdel(i,k)/(dzq(i,k)*gravit)
       qv_int_brad(3) = qv_int_brad(3) + qv(i,k)*rho(i,k)*dzq(i,k)
       qc_int_brad(3) = qc_int_brad(3) + qc(i,k)*rho(i,k)*dzq(i,k)
       qr_int_brad(3) = qr_int_brad(3) + qr(i,k)*rho(i,k)*dzq(i,k)
@@ -833,6 +840,7 @@ contains
     ! AaronDonahue END EXTRA STUFF
 
     tmparr1 = (pres*1.e-5)**(rd*inv_cp)
+    inv_exn = 1.0_r8/tmparr1
     t       = th    *tmparr1    !compute temperature from theta (value at beginning of microphysics step)
     t_old   = th_old*tmparr1    !compute temperature from theta (value at beginning of model time step)  ! Aaron, not clear if this is correct yet
     qv      = max(qv,0._r8)        !clip water vapor to prevent negative values passed in (beginning of microphysics)
@@ -919,7 +927,7 @@ contains
           if (qc(i,k).lt.qsmall .or. (qc(i,k).lt.1.e-8 .and. sup(i,k).lt.-0.1)) then
              qc_tnd(10) = qc_tnd(10) - qc(i,k)*pdel(i,k)/gravit
              qv(i,k) = qv(i,k) + qc(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qc(i,k)*xxlv(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qc(i,k)*xxlv(i,k)*inv_cp
              qc(i,k) = 0._r8
              nc(i,k) = 0._r8
           else
@@ -928,7 +936,7 @@ contains
 
           if (qr(i,k).lt.qsmall .or. (qr(i,k).lt.1.e-8 .and. sup(i,k).lt.-0.1)) then
              qv(i,k) = qv(i,k) + qr(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
              qr(i,k) = 0._r8
              nr(i,k) = 0._r8
           else
@@ -938,7 +946,7 @@ contains
           if (qitot(i,k).lt.qsmall .or. (qitot(i,k).lt.1.e-8 .and.             &
                supi(i,k).lt.-0.1)) then
              qv(i,k) = qv(i,k) + qitot(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qitot(i,k)*xxls(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qitot(i,k)*xxls(i,k)*inv_cp
              qitot(i,k) = 0._r8
              nitot(i,k) = 0._r8
              qirim(i,k) = 0._r8
@@ -950,7 +958,7 @@ contains
           if (qitot(i,k).ge.qsmall .and. qitot(i,k).lt.1.e-8 .and.             &
                t(i,k).ge.zerodegc) then
              qr(i,k) = qr(i,k) + qitot(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qitot(i,k)*xlf(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qitot(i,k)*xlf(i,k)*inv_cp
              qitot(i,k) = 0._r8
              nitot(i,k) = 0._r8
              qirim(i,k) = 0._r8
@@ -1057,7 +1065,7 @@ contains
              if (abs(epsilon).ge.1.e-15) then
                 qc(i,k)   = qc(i,k)+epsilon
                 qv(i,k)   = qv(i,k)-epsilon
-                th(i,k)   = th(i,k)+epsilon*th(i,k)/t(i,k)*xxlv(i,k)*inv_cp
+                th(i,k)   = th(i,k)+epsilon*inv_exn(i,k)*xxlv(i,k)*inv_cp
                 ! recalculate variables if there was adjustment
                 t(i,k)    = th(i,k)*(1.e-5*pres(i,k))**(rd*inv_cp)
                 qvs(i,k)  = qv_sat(t(i,k),pres(i,k),0)
@@ -1807,7 +1815,7 @@ contains
              qrcol  = qrcol*ratio
              qrheti = qrheti*ratio
              qrmul  = qrmul*ratio
-             !qrhetc = qrhetc*ratio
+             !qrhetc = qrhetc*ratio ! Aaron Why is this commented out?
           endif
 
           ! ice
@@ -1894,9 +1902,9 @@ contains
 
           qv(i,k) = qv(i,k) + (-qidep+qisub-qinuc)*dt
 
-          th(i,k) = th(i,k) + th(i,k)/t(i,k)*((qidep-qisub+qinuc)*     &
+          th(i,k) = th(i,k) + inv_exn(i,k)*((qidep-qisub+qinuc)*     &
                xxls(i,k)*inv_cp +(qrcol+qccol+qchetc+   &
-               qcheti+qrhetc+qrheti-qimlt+qrmul)*       &  ! Aaron added qrmul
+               qcheti+qrhetc+qrheti-qimlt)*       &  ! Aaron should be adding qrmul?
                xlf(i,k)*inv_cp)*dt
 
           !==
@@ -1910,7 +1918,7 @@ contains
           qc_tnd(7) = qc_tnd(7) +qcnuc*pdel(i,k)/gravit*dt
           qc_tnd(8) = qc_tnd(8) +qccon*pdel(i,k)/gravit*dt
           qc_tnd(9) = qc_tnd(9) -qcevp*pdel(i,k)/gravit*dt
-          if (masterproc.and.mydebug) write(iulog,'(A20,1x,7(E15.7,1x))') '-- qv vs. qc', qcnuc, qccon, qcevp, qvqc_tnd(1), qvqc_tnd(2), qvqc_tnd(3), pdel(i,k)/gravit
+!          if (masterproc.and.mydebug) write(iulog,'(A20,1x,7(E15.7,1x))') '-- qv vs. qc', qcnuc, qccon, qcevp, qvqc_tnd(1), qvqc_tnd(2), qvqc_tnd(3), pdel(i,k)/gravit
           qc(i,k) = qc(i,k) + (-qcacc-qcaut+qcnuc+qccon-qcevp)*dt
           qr(i,k) = qr(i,k) + (qcacc+qcaut+qrcon-qrevp)*dt
 !    print '(A10,I2,7(1x,E16.8))', '   -warm', k, qc(i,k), nc(i,k), qcacc, qcaut, qcnuc, qccon, qcevp ! Aaron, right here all water is gone through qcevp and qcacc (mostly qcevp)
@@ -1927,7 +1935,7 @@ contains
           endif
 
           qv(i,k) = qv(i,k) + (-qcnuc-qccon-qrcon+qcevp+qrevp)*dt
-          th(i,k) = th(i,k) + th(i,k)/t(i,k)*((qcnuc+qccon+qrcon-qcevp-qrevp)*xxlv(i,k)*    &
+          th(i,k) = th(i,k) + inv_exn(i,k)*((qcnuc+qccon+qrcon-qcevp-qrevp)*xxlv(i,k)*    &
                inv_cp)*dt
           !==
 
@@ -1935,7 +1943,7 @@ contains
           if (qc(i,k).lt.qsmall) then  ! Aaron, see above, since qc is gone this is triggered and nc is now 0 too
              qc_tnd(10) = qc_tnd(10) - qc(i,k)*pdel(i,k)/gravit
              qv(i,k) = qv(i,k) + qc(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qc(i,k)*xxlv(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qc(i,k)*xxlv(i,k)*inv_cp
              qc(i,k) = 0._r8
              nc(i,k) = 0._r8
           else
@@ -1945,7 +1953,7 @@ contains
 
           if (qr(i,k).lt.qsmall) then
              qv(i,k) = qv(i,k) + qr(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
              qr(i,k) = 0._r8
              nr(i,k) = 0._r8
           else
@@ -1954,7 +1962,7 @@ contains
 
           if (qitot(i,k).lt.qsmall) then
              qv(i,k) = qv(i,k) + qitot(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qitot(i,k)*xxls(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qitot(i,k)*xxls(i,k)*inv_cp
              qitot(i,k) = 0._r8
              nitot(i,k) = 0._r8
              qirim(i,k) = 0._r8
@@ -2071,7 +2079,7 @@ contains
                 fluxdiv_qx = -flux_qx(k)*inv_dzq(i,k)
                 fluxdiv_nx = -flux_nx(k)*inv_dzq(i,k)
                 qc_tnd(11) = qc_tnd(11) + fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit
-                if (masterproc.and.mydebug) write(iulog,'(A10,1x,I4,1x,E15.7)') 'qc_tnd', k, fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit 
+!                if (masterproc.and.mydebug) write(iulog,'(A10,1x,I4,1x,E15.7)') 'qc_tnd', k, fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit 
                 qc(i,k) = qc(i,k) + fluxdiv_qx*dt_sub*inv_rho(i,k)
                 nc(i,k) = nc(i,k) + fluxdiv_nx*dt_sub*inv_rho(i,k)
 
@@ -2079,7 +2087,7 @@ contains
                    fluxdiv_qx = (flux_qx(k+kdir) - flux_qx(k))*inv_dzq(i,k)
                    fluxdiv_nx = (flux_nx(k+kdir) - flux_nx(k))*inv_dzq(i,k)
                    qc_tnd(11) = qc_tnd(11) + fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit
-                   if (masterproc.and.mydebug) write(iulog,'(A10,1x,I4,1x,E15.7)') 'qc_tnd', k, fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit 
+!                   if (masterproc.and.mydebug) write(iulog,'(A10,1x,I4,1x,E15.7)') 'qc_tnd', k, fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit 
                    qc(i,k) = qc(i,k) + fluxdiv_qx*dt_sub*inv_rho(i,k)
                    nc(i,k) = nc(i,k) + fluxdiv_nx*dt_sub*inv_rho(i,k)
                 enddo
@@ -2130,7 +2138,7 @@ contains
                 fluxdiv_qx = -flux_qx(k)*inv_dzq(i,k)
                 qc_tnd(11) = qc_tnd(11) + fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit
                 qc_tnd(12) = qc_tnd(12) + V_qc(k)*qc(i,k)
-                if (masterproc.and.mydebug) write(iulog,'(A10,3(1x,I4),5(1x,E15.7))') 'qc_tnd 1mom', k, k_temp, k_qxtop, V_qc(k)*qc(i,k), flux_qx(k), fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit, qc_tnd(11), qc_tnd(12)
+!                if (masterproc.and.mydebug) write(iulog,'(A10,3(1x,I4),5(1x,E15.7))') 'qc_tnd 1mom', k, k_temp, k_qxtop, V_qc(k)*qc(i,k), flux_qx(k), fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit, qc_tnd(11), qc_tnd(12)
                 qc(i,k) = qc(i,k) + fluxdiv_qx*dt_sub*inv_rho(i,k)
 !    print '(A5,I2,4(1x,E16.8))', '   -', k, qc(i,k), nc(i,k), fluxdiv_qx, inv_rho(i,k)
 
@@ -2138,7 +2146,7 @@ contains
                    fluxdiv_qx = (flux_qx(k+kdir) - flux_qx(k))*inv_dzq(i,k)
                    qc_tnd(11) = qc_tnd(11) + fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit
                    qc_tnd(12) = qc_tnd(12) + V_qc(k)*qc(i,k)
-                   if (masterproc.and.mydebug) write(iulog,'(A10,3(1x,I4),5(1x,E15.7))') 'qc_tnd 1mom', k, k_temp, k_qxtop, V_qc(k)*qc(i,k), flux_qx(k), fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit, qc_tnd(11), qc_tnd(12)
+!                   if (masterproc.and.mydebug) write(iulog,'(A10,3(1x,I4),5(1x,E15.7))') 'qc_tnd 1mom', k, k_temp, k_qxtop, V_qc(k)*qc(i,k), flux_qx(k), fluxdiv_qx*dt_sub*inv_rho(i,k)*pdel(i,k)/gravit, qc_tnd(11), qc_tnd(12)
                    qc(i,k) = qc(i,k) + fluxdiv_qx*dt_sub*inv_rho(i,k)
 !    print '(A5,I2,4(1x,E16.8))', '   -', k, qc(i,k), nc(i,k), fluxdiv_qx, inv_rho(i,k)
                 enddo
@@ -2452,7 +2460,7 @@ contains
              qitot(i,k) = qitot(i,k) + Q_nuc
              birim(i,k) = birim(i,k) + Q_nuc*inv_rho_rimeMax
              nitot(i,k) = nitot(i,k) + N_nuc
-             th(i,k) = th(i,k) + th(i,k)/t(i,k)*Q_nuc*xlf(i,k)*inv_cp
+             th(i,k) = th(i,k) + inv_exn(i,k)*Q_nuc*xlf(i,k)*inv_cp
              qc(i,k) = 0._r8  != qc(i,k) - Q_nuc
              nc(i,k) = 0._r8  != nc(i,k) - N_nuc
           endif
@@ -2465,7 +2473,7 @@ contains
              qitot(i,k) = qitot(i,k) + Q_nuc
              birim(i,k) = birim(i,k) + Q_nuc*inv_rho_rimeMax
              nitot(i,k) = nitot(i,k) + N_nuc
-             th(i,k) = th(i,k) + th(i,k)/t(i,k)*Q_nuc*xlf(i,k)*inv_cp
+             th(i,k) = th(i,k) + inv_exn(i,k)*Q_nuc*xlf(i,k)*inv_cp
              qr(i,k) = 0._r8  ! = qr(i,k) - Q_nuc
              nr(i,k) = 0._r8  ! = nr(i,k) - N_nuc
           endif
@@ -2490,7 +2498,7 @@ contains
           else
              qc_tnd(10) = qc_tnd(10) - qc(i,k)*pdel(i,k)/gravit
              qv(i,k) = qv(i,k)+qc(i,k)
-             th(i,k) = th(i,k)-th(i,k)/t(i,k)*qc(i,k)*xxlv(i,k)*inv_cp
+             th(i,k) = th(i,k)-inv_exn(i,k)*qc(i,k)*xxlv(i,k)*inv_cp
              qc(i,k) = 0._r8
              nc(i,k) = 0._r8
           endif
@@ -2521,7 +2529,7 @@ contains
              ze_rain(i,k) = max(ze_rain(i,k),1.e-22)
           else
              qv(i,k) = qv(i,k)+qr(i,k)
-             th(i,k) = th(i,k)-th(i,k)/t(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
+             th(i,k) = th(i,k)-inv_exn(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
              qr(i,k) = 0._r8
              nr(i,k) = 0._r8
           endif
@@ -2577,7 +2585,7 @@ contains
           else
 
              qv(i,k) = qv(i,k) + qitot(i,k)
-             th(i,k) = th(i,k) - th(i,k)/t(i,k)*qitot(i,k)*xxls(i,k)*inv_cp
+             th(i,k) = th(i,k) - inv_exn(i,k)*qitot(i,k)*xxls(i,k)*inv_cp
              qitot(i,k) = 0._r8
              nitot(i,k) = 0._r8
              qirim(i,k) = 0._r8
@@ -2865,7 +2873,7 @@ contains
     else
 
        print*
-       print*,'** polysvp1 i_type must be 0 or 1 but is: ',i_type
+       print*,'** polysvp1 i_type must be 0 or 1 but is: ',i_type, T
        print*
        stop
 
@@ -3255,7 +3263,6 @@ contains
     real(r8)        :: e_pres         !saturation vapor pressure [Pa]
 
     !------------------
-
     e_pres = polysvp1(t_atm,i_wrt)
     qv_sat = ep_2*e_pres/max(1.e-3,(p_atm-e_pres))
 

@@ -551,7 +551,7 @@ end subroutine check_energy_get_integrals
                 state%count = state%count + 1
                 write(iulog,"(i5,2f10.2,6e15.7)") i, state%lat(i), state%lon(i), te(i),te_xpd(i),te_dif(i),  &
                       te_tnd(i)*ztodt,te_rer(i), tend%te_tnd(i)*ztodt
-                write(iulog,"(A20,1x,A15,1x,6(E15.7,1x))") 'Individual:', '', wv(i), wl(i), wr(i), se(i), ke(i), latvap*wv(i)+latice*(wv(i)+wl(i)+wr(i))  !Added by Aaron
+                write(iulog,"(A20,1x,A15,1x,7(E15.7,1x))") 'Individual:', '', wv(i), wl(i), wr(i), wi(i), se(i), ke(i), latvap*wv(i)+latice*(wv(i)+wl(i)+wr(i))  !Added by Aaron
              endif
           end do
        end if
