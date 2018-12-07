@@ -215,7 +215,7 @@ end subroutine stepon_run1
 
 
 
-#undef PG_OPTION1
+#define PG_OPTION1
 #ifdef PG_OPTION1
 subroutine binterp(field)
 use dimensions_mod, only: nlev, np
@@ -346,7 +346,7 @@ subroutine stepon_run2(phys_state, phys_tend, dyn_in, dyn_out )
       enddo
       call binterp(extrf)
       do k=1,nlev
-        dyn_in%elem(ie)%derived%FM(:,:,1,:) = extrf(:,:,:)
+        dyn_in%elem(ie)%derived%FM(:,:,2,:) = extrf(:,:,:)
       enddo
 
       do ic=1,pcnst
