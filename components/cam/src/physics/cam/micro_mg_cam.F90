@@ -2788,12 +2788,6 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
          end if
       end do
    end do
-   ! Aaron, test rei,rel,lambdac,mu,dei
-   rei_grid = 0._r8
-   rel_grid = 0._r8
-   dei_grid = 0._r8
-   lambdac_grid = 0._r8
-   mu_grid = 0._r8
 
    mgreffrain_grid(:ngrdcol,:pver) = reff_rain_grid(:ngrdcol,:pver)
    mgreffsnow_grid(:ngrdcol,:pver) = reff_snow_grid(:ngrdcol,:pver)
